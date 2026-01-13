@@ -1,0 +1,60 @@
+{
+  "name": "ai-cli-complete-notify",
+  "version": "1.0.3",
+  "description": "AI CLI Complete Notify：多种 AI CLI 任务完成提醒（Claude/Codex/Gemini），支持耗时阈值与多通道推送。",
+  "main": "desktop/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "dist": "electron-packager . ai-cli-complete-notify --platform=win32 --arch=x64 --out dist --overwrite --prune=true --icon=desktop/assets/tray.ico",
+    "dist:portable": "electron-builder --win portable",
+    "pack": "electron-builder --dir",
+    "wizard": "node setup-wizard.js",
+    "test": "node ai-reminder.js config"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "nodemailer": "^6.10.1"
+  },
+  "devDependencies": {
+    "electron": "^32.3.3",
+    "electron-builder": "^25.1.8",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.aicli.complete.notify",
+    "productName": "ai-cli-complete-notify",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**/*",
+      "src/**/*",
+      "ai-reminder.js",
+      "notify-system.js",
+      "setup-wizard.js",
+      "telegram-notify.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "config.example.json",
+        "to": "config.example.json"
+      },
+      {
+        "from": ".env.example",
+        "to": ".env.example"
+      }
+    ],
+    "win": {
+      "icon": "desktop/assets/tray.ico",
+      "target": [
+        "portable"
+      ],
+      "artifactName": "ai-cli-complete-notify-${version}.exe"
+    }
+  }
+}

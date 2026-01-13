@@ -1,0 +1,47 @@
+# 环境变量文件 - 包含敏感信息
+.env
+.env.local
+.env.production
+.env.development
+
+# 依赖目录
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 日志文件
+*.log
+task-completion-log.jsonl
+user-inputs.jsonl
+
+# 运行时数据
+.ai-reminder/
+
+# 本地配置（可能包含 webhook / token）
+config.json
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.temp
+
+# 构建输出
+dist/
+build/
+
+# 测试覆盖率
+coverage/
+
+# 缓存文件
+.cache/
+.npm/

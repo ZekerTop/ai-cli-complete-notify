@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ai-cli-complete-notify</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brandTitle" id="productName">ai-cli-complete-notify</div>
+          <div class="brandSub" data-i18n="brand.subtitle">多种 AI CLI 任务完成提醒</div>
+          <div class="brandControls">
+            <div class="sideToggle">
+              <span data-i18n="ui.watchToggle">监听</span>
+              <label class="switch" aria-label="watch toggle">
+                <input id="watchToggle" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="sideSelect">
+              <label for="languageSelect" data-i18n="ui.language">语言</label>
+              <select id="languageSelect">
+                <option value="zh-CN">中文</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a class="navItem" href="#channels" data-i18n="nav.channels">通道</a>
+          <a class="navItem" href="#sources" data-i18n="nav.sources">来源</a>
+          <a class="navItem" href="#watch" data-i18n="nav.watch">监听</a>
+          <a class="navItem" href="#test" data-i18n="nav.test">测试</a>
+          <a class="navItem" href="#advanced" data-i18n="nav.advanced">高级</a>
+        </nav>
+
+        <div class="sideActions">
+          <button id="githubBtn" class="ghost linkBtn" title="项目地址">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.18-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.45.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+            </svg>
+            <span class="linkLabel">项目地址</span>
+          </button>
+          <button id="openDataDir" class="ghost" data-i18n="btn.openDataDir">打开数据目录</button>
+          <button id="openConfigPath" class="ghost" data-i18n="btn.openSettings">打开 settings.json</button>
+        </div>
+
+        <div class="sideFooter">
+          <div class="row">
+            <button id="reloadBtn" class="ghost" data-i18n="btn.reload">重载</button>
+          </div>
+          <div class="hint" id="hint"></div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="panel" id="channels">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.channels.title">全局通道</h2>
+              <div class="sub" data-i18n="section.channels.sub">全局开关 + 每来源开关同时生效</div>
+            </div>
+          </div>
+          <div class="grid" id="globalChannels"></div>
+        </section>
+
+        <section class="panel" id="sources">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.sources.title">来源配置</h2>
+              <div class="sub" data-i18n="section.sources.sub">按来源独立控制：启用、阈值、各通道开关</div>
+            </div>
+          </div>
+          <div class="sources" id="sources"></div>
+        </section>
+
+        <section class="panel" id="watch">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.watch.title">交互式监听（watch）</h2>
+              <div class="sub" data-i18n="section.watch.sub">适用于交互式不退出 / VSCode 插件：自动监听日志，在每次回复完成后提醒</div>
+            </div>
+            <div class="badge" id="watchStatus"></div>
+          </div>
+
+          <div class="watchGrid">
+            <div class="watchCard">
+              <div class="watchRow">
+                <label class="chip"><input id="watchClaude" type="checkbox" checked />Claude</label>
+                <label class="chip"><input id="watchCodex" type="checkbox" checked />Codex</label>
+                <label class="chip"><input id="watchGemini" type="checkbox" checked />Gemini</label>
+              </div>
+              <div class="watchRow">
+                <label data-i18n="watch.polling">轮询(ms)</label>
+                <input id="watchIntervalMs" type="number" min="500" step="100" value="1000" />
+                <label data-i18n="watch.debounce">Gemini 去抖(ms)</label>
+                <input id="watchGeminiQuietMs" type="number" min="500" step="100" value="3000" />
+              </div>
+              <div class="watchRow">
+                <button id="watchStartBtn" data-i18n="btn.watchStart">开始监听</button>
+                <button id="watchStopBtn" class="ghost" data-i18n="btn.watchStop">停止</button>
+              </div>
+              <div class="hint" data-i18n="watch.hint">
+                建议把监听常驻开启（比如开机自启/放在后台终端），这样无论你在终端还是 VSCode 里用 Claude/Codex/Gemini，都能自动提醒。
+              </div>
+            </div>
+
+            <div class="watchCard">
+              <div class="watchLogHead" data-i18n="watch.logs">监听日志</div>
+              <pre class="log" id="watchLog"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="test">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.test.title">测试提醒</h2>
+              <div class="sub" data-i18n="section.test.sub">用于验证通道是否可用（强制发送，不受阈值影响）</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label data-i18n="test.source">来源</label>
+            <select id="testSource">
+              <option value="claude">Claude</option>
+              <option value="codex">Codex</option>
+              <option value="gemini">Gemini</option>
+            </select>
+            <label data-i18n="test.duration">耗时(分钟)</label>
+            <input id="testDuration" type="number" min="0" step="1" value="10" />
+            <label data-i18n="test.message">内容</label>
+            <input id="testTask" type="text" value="测试提醒（强制发送）" />
+            <button id="testBtn" data-i18n="btn.send">发送</button>
+          </div>
+          <pre class="log" id="log"></pre>
+        </section>
+
+        <section class="panel" id="advanced">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.advanced.title">高级</h2>
+              <div class="sub" data-i18n="section.advanced.sub">格式化与展示相关配置</div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="toggleRow">
+              <input id="includeSourcePrefixInTitle" type="checkbox" />
+              <span data-i18n="advanced.titlePrefix">标题包含来源前缀（例如 [Codex]）</span>
+            </label>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            <label data-i18n="advanced.closeBehavior">关闭按钮行为</label>
+            <select id="closeBehavior">
+              <option value="ask" data-i18n="close.ask">每次询问</option>
+              <option value="tray" data-i18n="close.tray">隐藏到托盘</option>
+              <option value="exit" data-i18n="close.exit">直接退出</option>
+            </select>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            <label class="toggleRow">
+              <input id="autostart" type="checkbox" />
+              <span data-i18n="advanced.autostart">开机自启动（登录后自动在后台运行）</span>
+            </label>
+            <div class="hint" data-i18n="advanced.autostartHint">Windows/macOS 支持开机自启动；Linux 需自行配置。</div>
+          </div>
+          <div class="hint" data-i18n="advanced.closeHint">选择“隐藏到托盘”后，点击右上角关闭不会退出，会在右下角托盘保留图标，点击即可重新打开。</div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,73 @@
+{
+  "version": 2,
+  "app": {
+    "host": "127.0.0.1",
+    "port": 3210
+  },
+  "format": {
+    "includeSourcePrefixInTitle": true
+  },
+  "channels": {
+    "feishu": {
+      "enabled": true,
+      "webhookUrl": "",
+      "webhookUrlEnv": "FEISHU_WEBHOOK_URL"
+    },
+    "telegram": {
+      "enabled": true,
+      "botToken": "",
+      "chatId": "",
+      "botTokenEnv": "TELEGRAM_BOT_TOKEN",
+      "chatIdEnv": "TELEGRAM_CHAT_ID",
+      "proxyUrl": "",
+      "proxyEnvCandidates": [
+        "HTTPS_PROXY",
+        "HTTP_PROXY",
+        "https_proxy",
+        "http_proxy"
+      ]
+    },
+    "sound": {
+      "enabled": true,
+      "tts": true,
+      "fallbackBeep": true
+    },
+    "desktop": {
+      "enabled": true,
+      "balloonMs": 6000
+    }
+  },
+  "sources": {
+    "claude": {
+      "enabled": true,
+      "minDurationMinutes": 0,
+      "channels": {
+        "feishu": true,
+        "telegram": false,
+        "sound": true,
+        "desktop": true
+      }
+    },
+    "codex": {
+      "enabled": true,
+      "minDurationMinutes": 0,
+      "channels": {
+        "feishu": true,
+        "telegram": false,
+        "sound": true,
+        "desktop": true
+      }
+    },
+    "gemini": {
+      "enabled": true,
+      "minDurationMinutes": 0,
+      "channels": {
+        "feishu": true,
+        "telegram": false,
+        "sound": true,
+        "desktop": true
+      }
+    }
+  }
+}
+

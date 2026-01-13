@@ -20,14 +20,14 @@ Multi-channel notifications for AI CLIs (Claude / Codex / Gemini). Supports dura
 
 ## Quick Start
 **Windows**
-1. Download the latest `ai-cli-complete-notify.exe` from Releases.
+1. Download the latest `ai-cli-complete-notify.exe` from [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases).
 2. Place it in your folder (e.g., `C:\Tools\`).
 3. Copy `.env.example` to `.env` in the same folder and fill Webhook/Token/SMTP.
 4. Double-click to run the desktop app (CLI also available).
 
 **macOS/Linux**
 ```bash
-git clone <repository-url>
+git clone https://github.com/ZekerTop/ai-cli-complete-notify.git
 cd ai-cli-complete-notify
 npm install
 cp .env.example .env   # Windows: copy .env.example .env

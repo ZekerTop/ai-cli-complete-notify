@@ -76,13 +76,21 @@ body {
   box-shadow: 0 22px 60px rgba(0,0,0,0.40);
 }
 
-.brandRow {
+.brandHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .brandTitle { font-size: 18px; font-weight: 800; letter-spacing: 0.2px; }
+.brandVersion {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.14);
+}
 .brandSub { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .brandControls { margin-top: 12px; }
 .brandControls .sideSelect {
@@ -262,13 +270,17 @@ input[type="text"], input[type="number"], select {
   padding: 8px 10px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(0,0,0,0.22);
+  background: rgba(6,10,24,0.55);
   color: var(--text);
   outline: none;
 }
 input[type="text"]:focus, input[type="number"]:focus, select:focus {
   border-color: rgba(110,123,255,0.60);
   box-shadow: 0 0 0 4px rgba(110,123,255,0.18);
+}
+select option {
+  background: #0b1022;
+  color: var(--text);
 }
 
 button {

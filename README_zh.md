@@ -18,14 +18,14 @@
 
 ## 快速开始
 **Windows**
-1. 从 Releases 下载 `ai-cli-complete-notify.exe`。
+1. 从 [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases) 下载 `ai-cli-complete-notify.exe`。
 2. 放到任意目录（如 `C:\Tools\`）。
 3. 将 `.env.example` 复制为 `.env`，填写 Webhook/Token/SMTP。
 4. 双击运行桌面应用（命令行也可用）。
 
 **macOS/Linux**
 ```bash
-git clone <仓库地址>
+git clone https://github.com/ZekerTop/ai-cli-complete-notify.git
 cd ai-cli-complete-notify
 npm install
 cp .env.example .env   # Windows: copy .env.example .env

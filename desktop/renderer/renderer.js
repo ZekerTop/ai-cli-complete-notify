@@ -425,6 +425,7 @@ async function main() {
 
   $('openDataDir').addEventListener('click', () => window.completeNotify.openPath(meta.dataDir));
   $('openConfigPath').addEventListener('click', () => window.completeNotify.openPath(meta.configPath));
+  if (meta.version && $('productVersion')) $('productVersion').textContent = `v${meta.version}`;
   if ($('githubBtn')) {
     $('githubBtn').addEventListener('click', () => {
       try {

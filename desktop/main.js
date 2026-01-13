@@ -126,10 +126,10 @@ async function runCliAndExit(argv) {
 
 function createWindow() {
   const workAreaSize = screen.getPrimaryDisplay().workAreaSize;
-  const width = Math.min(1180, workAreaSize.width);
-  const height = Math.min(760, workAreaSize.height);
-  const minWidth = Math.min(860, workAreaSize.width);
-  const minHeight = Math.min(620, workAreaSize.height);
+  const width = Math.min(1200, workAreaSize.width);
+  const height = Math.min(860, workAreaSize.height); // taller to avoid sidebar scroll
+  const minWidth = Math.min(900, workAreaSize.width);
+  const minHeight = Math.min(700, workAreaSize.height);
   const windowIcon = path.join(__dirname, 'assets', process.platform === 'win32' ? 'tray.ico' : 'tray.png');
 
   const win = new BrowserWindow({
@@ -140,7 +140,7 @@ function createWindow() {
     center: true,
     icon: windowIcon,
     autoHideMenuBar: true,
-    title: PRODUCT_NAME,
+    title: `${PRODUCT_NAME} v${app.getVersion()}`,
     backgroundColor: '#0b1022',
     webPreferences: {
       contextIsolation: true,
@@ -316,7 +316,8 @@ function setupIpc(win) {
     return {
       productName: PRODUCT_NAME,
       dataDir: getDataDir(),
-      configPath: getConfigPath()
+      configPath: getConfigPath(),
+      version: app.getVersion()
     };
   });
 

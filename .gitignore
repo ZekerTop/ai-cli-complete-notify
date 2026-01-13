@@ -38,6 +38,7 @@ Thumbs.db
 # 构建输出
 dist/
 build/
+package-zip.ps1
 
 # 测试覆盖率
 coverage/

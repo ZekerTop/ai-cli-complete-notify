@@ -38,14 +38,18 @@ function getStatePath() {
 function getEnvPathCandidates() {
   const candidates = [];
 
-  candidates.push(path.join(process.cwd(), '.env'));
-  candidates.push(path.join(getDataDir(), '.env'));
-
   try {
+    // Prefer next to the executable (dist 目录第一层)
     candidates.push(path.join(path.dirname(process.execPath), '.env'));
   } catch (error) {
     // ignore
   }
+
+  // 然后尝试当前工作目录（便于 dev）
+  candidates.push(path.join(process.cwd(), '.env'));
+
+  // 最后尝试数据目录
+  candidates.push(path.join(getDataDir(), '.env'));
 
   return candidates;
 }

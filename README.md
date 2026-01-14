@@ -6,7 +6,7 @@ Version: 1.0.3
 ---
 
 ## Overview
-Multi-channel notifications for AI CLIs (Claude / Codex / Gemini). Supports duration thresholds, desktop UI, CLI, and multiple channels (Webhook, Telegram, Email, Desktop, Sound).
+Multi-channel notifications for AI CLIs (Claude / Codex / Gemini). Supports duration thresholds, desktop UI, CLI, and multiple channels (Webhook, Telegram, Email, Desktop, Sound), with optional wearables/app notifications if your band app mirrors system notifications.
 
 ## Features
 | Feature | Description |
@@ -100,7 +100,3 @@ Runtime settings live in `settings.json`:
 - Thresholds need timing data (`run`/`start-stop`/`watch`); `notify` ignores thresholds.
 - Default webhook payload is Feishu JSON; adapt if your webhook format differs.
 - Autostart switch is in Advanced (Win/macOS).
-- Screenshots belong in `docs/images/`.
-
-## License
-ISC

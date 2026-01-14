@@ -6,7 +6,7 @@
 ---
 
 ## 简介
-面向 Claude / Codex / Gemini 的多通道任务完成提醒，支持耗时阈值、桌面端与 CLI、Webhook/Telegram/邮件/桌面/声音通知。
+面向 Claude Code / Codex / Gemini 的多通道任务完成提醒，支持耗时阈值、桌面端与 CLI、Webhook（飞书/钉钉/企微）/Telegram/邮件/桌面/声音通知；如需手环提醒，可在手环 App 中开启对应用通知的转发。
 
 ## 特性
 - 分源控制：Claude/Codex/Gemini 独立启用与阈值。
@@ -97,7 +97,3 @@ TELEGRAM_CHAT_ID=your_chat_id
 - 阈值需有计时数据（`run`/`start-stop`/`watch`）；`notify` 忽略阈值。
 - 通用 Webhook 默认飞书 JSON，如目标格式不同需自行调整。
 - 开机自启在“高级”中（Win/macOS）。
-- 截图放 `docs/images/`，README 中用相对路径引用。
-
-## License
-ISC

@@ -6,15 +6,15 @@
 
 English | [中文](README_zh.md)
 
+![桌面端预览](docs/images/exe预览.png)
+
+</div>
 ---
 
 ### 📖 Introduction
 
 An intelligent task completion notification tool for Claude Code / Codex / Gemini, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
 
-</div>
-
-<div align="center">
 
 **Supported Notification Methods:**
 
@@ -22,7 +22,6 @@ An intelligent task completion notification tool for Claude Code / Codex / Gemin
 
 🖥️ Desktop Notifications • 🔊 Sound/TTS Alerts • ⌚ Smart Band Alerts
 
-</div>
 
 ## ✨ Key Features
 
@@ -84,10 +83,10 @@ npm run dev
 
 ### Interface Preview
 
-- ![Desktop Preview](docs/images/exe预览.png)
-- ![Global Channels](docs/images/全局通道.png)
-- ![Source Settings](docs/images/各cli来源.png)
-- ![Monitor / Test / Advanced](docs/images/监听、测试、高级功能.png)
+![Desktop Preview](docs/images/exe预览.png)
+![Global Channels](docs/images/全局通道.png)
+![Source Settings](docs/images/各cli来源.png)
+![Monitor / Test / Advanced](docs/images/监听、测试、高级功能.png)
 
 ### Tray Function
 

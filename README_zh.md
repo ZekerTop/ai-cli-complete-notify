@@ -1,24 +1,36 @@
+<div align="center">
+
 # 🔔 AI CLI Complete Notify
 
-版本：1.1.0
+**版本：1.1.0**
 
 [English](README.md) | 中文
 
+- ![桌面端预览](docs/images/exe预览.png)
+
 ---
 
-## 📖 简介
+### 📖 简介
 
 面向 Claude Code / Codex / Gemini 的智能任务完成提醒工具，支持多种通知渠道和灵活的配置选项。当 AI 助手完成长时间任务时，自动通过多种方式通知您，让您无需守在电脑前等待。
 
+</div>
+
+<div align="center">
+
 **支持的通知方式：**
-- 📱 Webhook（飞书/钉钉/企业微信）
-- 💬 Telegram Bot
-- 📧 邮件（SMTP）
-- 🖥️ 桌面通知
-- 🔊 声音/TTS 提醒
-- ⌚ 手环提醒（通过手环 App 转发通知）
+
+📱 Webhook（飞书/钉钉/企业微信）• 💬 Telegram Bot • 📧 邮件（SMTP）
+
+🖥️ 桌面通知 • 🔊 声音/TTS 提醒 • ⌚ 手环提醒
+
+</div>
+
+<div align="center">
 
 ## ✨ 核心特性
+
+</div>
 
 - 🎯 **智能去抖**：根据任务类型自动调整提醒时机，有工具调用时等待 60 秒，无工具调用时仅需 15 秒
 - 🔀 **分源控制**：Claude / Codex / Gemini 独立启用与阈值设置
@@ -28,7 +40,11 @@
 - 🖥️ **桌面应用**：图形界面配置，支持中英文切换、托盘隐藏、开机自启
 - 🔐 **配置分离**：运行配置与敏感信息分离，安全可靠
 
+<div align="center">
+
 ## 💡 推荐配置
+
+</div>
 
 **重要提示**：为了获得最佳使用体验，建议在使用 Claude Code / Codex / Gemini 时授予 AI 助手**完整的文件读写权限**。
 
@@ -38,7 +54,11 @@
 - ✅ 提醒时机更加精准，避免误报或漏报
 - ✅ AI 可以更好地管理项目文件和配置
 
+<div align="center">
+
 ## 🚀 快速开始
+
+</div>
 
 ### Windows 用户
 
@@ -65,7 +85,11 @@ cp .env.example .env
 npm run dev
 ```
 
+<div align="center">
+
 ## 🖥️ 桌面应用使用
+
+</div>
 
 ### 界面说明
 
@@ -87,7 +111,11 @@ npm run dev
 
 选择"隐藏到托盘"后，应用会最小化到系统托盘。图标可能在任务栏的 ^ 折叠区域中。
 
+<div align="center">
+
 ## 💻 命令行使用
+
+</div>
 
 ### 直接通知
 
@@ -131,7 +159,11 @@ ai-cli-complete-notify.exe watch --sources all --gemini-quiet-ms 3000
 - `--claude-quiet-ms`：Claude 去抖时间（毫秒）
 - `--force`：强制发送通知，忽略阈值
 
+<div align="center">
+
 ## ⚙️ 配置说明
+
+</div>
 
 ### 环境变量配置（.env）
 
@@ -175,7 +207,11 @@ TELEGRAM_CHAT_ID=your_chat_id
 
 ⚠️ `.env` 文件已在 `.gitignore` 中，请勿将包含敏感信息的配置文件提交到代码仓库。
 
+<div align="center">
+
 ## 🔧 开发与构建
+
+</div>
 
 ### 开发模式
 
@@ -196,13 +232,19 @@ npm run dist:portable
 # 在目标系统上使用 electron-packager 或 electron-builder 打包
 ```
 
+<div align="center">
+
 ## 📝 使用提示
+
+</div>
 
 - ⏱️ **阈值功能**需要有计时数据（通过 `run` / `start-stop` / `watch` 模式），`notify` 命令会忽略阈值直接发送
 - 🔗 **通用 Webhook** 默认使用飞书 JSON 格式，如需对接其他平台请自行调整格式
 - 🚀 **开机自启**功能在"高级"选项卡中配置（支持 Windows / macOS）
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
+
+<div align="center">
 
 ## 📄 许可证
 
@@ -215,3 +257,5 @@ ISC
 ---
 
 **享受智能提醒，让 AI 为您工作！** 🎉
+
+</div>

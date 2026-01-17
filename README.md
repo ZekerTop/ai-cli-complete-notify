@@ -1,24 +1,34 @@
+<div align="center">
+
 # 🔔 AI CLI Complete Notify
 
-Version: 1.1.0
+**Version: 1.1.0**
 
 English | [中文](README_zh.md)
 
 ---
 
-## 📖 Introduction
+### 📖 Introduction
 
 An intelligent task completion notification tool for Claude Code / Codex / Gemini, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
 
+</div>
+
+<div align="center">
+
 **Supported Notification Methods:**
-- 📱 Webhook (Feishu/DingTalk/WeCom)
-- 💬 Telegram Bot
-- 📧 Email (SMTP)
-- 🖥️ Desktop Notifications
-- 🔊 Sound/TTS Alerts
-- ⌚ Smart Band Alerts (via band app notification forwarding)
+
+📱 Webhook (Feishu/DingTalk/WeCom) • 💬 Telegram Bot • 📧 Email (SMTP)
+
+🖥️ Desktop Notifications • 🔊 Sound/TTS Alerts • ⌚ Smart Band Alerts
+
+</div>
+
+<div align="center">
 
 ## ✨ Key Features
+
+</div>
 
 - 🎯 **Smart Debouncing**: Automatically adjusts notification timing based on task type - 60s for tool calls, only 15s without tool calls
 - 🔀 **Source Control**: Independent enable/disable and threshold settings for Claude / Codex / Gemini
@@ -28,7 +38,11 @@ An intelligent task completion notification tool for Claude Code / Codex / Gemin
 - 🖥️ **Desktop Application**: GUI configuration with language switching, tray hiding, and auto-start
 - 🔐 **Configuration Separation**: Runtime configuration separated from sensitive information for security
 
+<div align="center">
+
 ## 💡 Recommended Configuration
+
+</div>
 
 **Important**: For the best experience, it's recommended to grant AI assistants **full file read/write permissions** when using Claude Code / Codex / Gemini.
 
@@ -38,7 +52,11 @@ Benefits:
 - ✅ More precise notification timing, avoiding false positives or missed notifications
 - ✅ AI can better manage project files and configurations
 
+<div align="center">
+
 ## 🚀 Quick Start
+
+</div>
 
 ### Windows Users
 
@@ -65,7 +83,11 @@ cp .env.example .env
 npm run dev
 ```
 
+<div align="center">
+
 ## 🖥️ Desktop Application Usage
+
+</div>
 
 ### Interface Overview
 
@@ -87,7 +109,11 @@ npm run dev
 
 After selecting "Hide to tray", the application minimizes to the system tray. The icon may be in the ^ collapsed area of the taskbar.
 
+<div align="center">
+
 ## 💻 Command Line Usage
+
+</div>
 
 ### Direct Notification
 
@@ -131,7 +157,11 @@ ai-cli-complete-notify.exe watch --sources all --gemini-quiet-ms 3000
 - `--claude-quiet-ms`: Claude debounce time (milliseconds)
 - `--force`: Force send notification, ignore threshold
 
+<div align="center">
+
 ## ⚙️ Configuration
+
+</div>
 
 ### Environment Variables (.env)
 
@@ -175,7 +205,11 @@ This file is automatically managed by the desktop application and contains sourc
 
 ⚠️ The `.env` file is in `.gitignore`. Do not commit configuration files containing sensitive information to the code repository.
 
+<div align="center">
+
 ## 🔧 Development & Build
+
+</div>
 
 ### Development Mode
 
@@ -196,13 +230,19 @@ npm run dist:portable
 # Package on target system using electron-packager or electron-builder
 ```
 
+<div align="center">
+
 ## 📝 Usage Tips
+
+</div>
 
 - ⏱️ **Threshold function** requires timing data (via `run` / `start-stop` / `watch` mode), `notify` command ignores threshold and sends directly
 - 🔗 **Generic Webhook** uses Feishu JSON format by default, adjust format if integrating with other platforms
 - 🚀 **Auto-start on boot** is configured in the "Advanced" tab (supports Windows / macOS)
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
+
+<div align="center">
 
 ## 📄 License
 
@@ -215,3 +255,5 @@ Issues and Pull Requests are welcome!
 ---
 
 **Enjoy smart notifications and let AI work for you!** 🎉
+
+</div>

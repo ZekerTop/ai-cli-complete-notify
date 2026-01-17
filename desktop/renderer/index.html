@@ -100,7 +100,19 @@
               <div class="watchRow">
                 <label data-i18n="watch.polling">轮询(ms)</label>
                 <input id="watchIntervalMs" type="number" min="500" step="100" value="1000" />
-                <label data-i18n="watch.debounce">Gemini 去抖(ms)</label>
+              </div>
+              <div class="watchRow">
+                <div class="labelWithHint">
+                  <label data-i18n="watch.claudeDebounce">Claude 去抖(ms)</label>
+                  <span class="hintIcon" title="等待多久没有新消息后才发送提醒，避免在 Claude 还在执行任务时就提醒">?</span>
+                </div>
+                <input id="watchClaudeQuietMs" type="number" min="1000" step="1000" value="60000" />
+              </div>
+              <div class="watchRow">
+                <div class="labelWithHint">
+                  <label data-i18n="watch.debounce">Gemini 去抖(ms)</label>
+                  <span class="hintIcon" title="等待多久没有新消息后才发送提醒，避免在 Gemini 还在输出时就提醒">?</span>
+                </div>
                 <input id="watchGeminiQuietMs" type="number" min="500" step="100" value="3000" />
               </div>
               <div class="watchRow">

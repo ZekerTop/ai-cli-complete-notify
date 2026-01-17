@@ -1,6 +1,6 @@
 {
   "name": "ai-cli-complete-notify",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "AI CLI Complete Notify：多种 AI CLI 任务完成提醒（Claude/Codex/Gemini），支持耗时阈值与多通道推送。",
   "main": "desktop/main.js",
   "scripts": {

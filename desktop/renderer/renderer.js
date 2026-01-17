@@ -45,6 +45,7 @@ const I18N = {
     'section.advanced.sub': '格式化与展示相关配置',
 
     'watch.polling': '轮询(ms)',
+    'watch.claudeDebounce': 'Claude 去抖(ms)',
     'watch.debounce': 'Gemini 去抖(ms)',
     'watch.hint': '建议把监听常驻开启（比如开机自启/放在后台终端），这样无论你在终端还是 VSCode 里用 Claude/Codex/Gemini，都能自动提醒。',
     'watch.logs': '监听日志',
@@ -122,6 +123,7 @@ const I18N = {
     'section.advanced.sub': 'Formatting and UI preferences',
 
     'watch.polling': 'Polling (ms)',
+    'watch.claudeDebounce': 'Claude debounce (ms)',
     'watch.debounce': 'Gemini debounce (ms)',
     'watch.hint': 'Keep watch running in the background so notifications work for both terminal and VSCode.',
     'watch.logs': 'Watch logs',
@@ -590,10 +592,13 @@ async function main() {
     if ($('watchClaude') && $('watchClaude').checked) sources.push('claude');
     if ($('watchCodex') && $('watchCodex').checked) sources.push('codex');
     if ($('watchGemini') && $('watchGemini').checked) sources.push('gemini');
+    const geminiQuietMs = Number($('watchGeminiQuietMs')?.value || 3000);
+    const claudeQuietMs = Number($('watchClaudeQuietMs')?.value || 60000);
     return {
       sources: sources.length ? sources.join(',') : 'all',
       intervalMs: Number($('watchIntervalMs')?.value || 1000),
-      geminiQuietMs: Number($('watchGeminiQuietMs')?.value || 3000)
+      geminiQuietMs,
+      claudeQuietMs
     };
   }
 

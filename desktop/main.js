@@ -405,11 +405,13 @@ function setupIpc(win) {
     const sources = payload && payload.sources ? String(payload.sources) : 'all';
     const intervalMs = payload && Number.isFinite(Number(payload.intervalMs)) ? Number(payload.intervalMs) : 1000;
     const geminiQuietMs = payload && Number.isFinite(Number(payload.geminiQuietMs)) ? Number(payload.geminiQuietMs) : 3000;
+    const claudeQuietMs = payload && Number.isFinite(Number(payload.claudeQuietMs)) ? Number(payload.claudeQuietMs) : 60000;
 
     watchStop = startWatch({
       sources,
       intervalMs,
       geminiQuietMs,
+      claudeQuietMs,
       log: (line) => {
         try {
           if (win && !win.isDestroyed()) win.webContents.send('completeNotify:watchLog', String(line));

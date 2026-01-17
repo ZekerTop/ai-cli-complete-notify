@@ -144,7 +144,7 @@ function summarizeResult(result) {
   return `sent: ${ok}/${total}`;
 }
 
-function startClaudeWatch({ intervalMs, quietPeriodMs, log }) {
+function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.claude', 'projects');
   const follower = new JsonlFollower({ seedBytes: 256 * 1024 });
@@ -155,18 +155,21 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log }) {
     lastUserTextAt: null,
     lastAssistantAt: null,
     lastNotifiedAt: null,
+    notifiedForTurn: false,
     lastCwd: null,
     pendingTimer: null
   };
 
-  const quietMs = Math.max(500, quietPeriodMs || 3000);
+  const quietMs = Math.max(500, claudeQuietMs || quietPeriodMs || 60000);
 
   async function maybeNotify(ts) {
     if (state.lastAssistantAt == null || state.lastUserTextAt == null) return;
     if (state.lastNotifiedAt === state.lastAssistantAt) return;
+    if (state.notifiedForTurn) return;
     if (ts != null && ts !== state.lastAssistantAt) return;
 
     state.lastNotifiedAt = state.lastAssistantAt;
+    state.notifiedForTurn = true;
     const durationMs =
       state.lastAssistantAt >= state.lastUserTextAt ? state.lastAssistantAt - state.lastUserTextAt : null;
     const cwd = state.lastCwd || process.cwd();
@@ -187,19 +190,31 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log }) {
     if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
 
     if (obj.type === 'user' && hasContentType(obj.message, 'text')) {
+      if (seed) return;
       state.lastUserTextAt = ts;
       if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
+      state.notifiedForTurn = false;
       return;
     }
 
-    if (obj.type === 'assistant' && hasContentType(obj.message, 'text')) {
+    if (obj.type === 'assistant') {
       if (seed) return;
+
+      if (state.lastUserTextAt == null) {
+        state.lastUserTextAt = ts || Date.now();
+        state.notifiedForTurn = false;
+      }
 
       state.lastAssistantAt = ts || Date.now();
       if (state.pendingTimer) clearTimeout(state.pendingTimer);
+
+      // 混合方案：根据是否有工具调用调整去抖时间
+      const hasToolUse = hasContentType(obj.message, 'tool_use');
+      const adaptiveQuietMs = hasToolUse ? quietMs : Math.min(15000, quietMs);
+
       state.pendingTimer = setTimeout(() => {
         void maybeNotify(state.lastAssistantAt);
-      }, quietMs);
+      }, adaptiveQuietMs);
     }
   }
 
@@ -212,6 +227,12 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log }) {
       if (!latest) return;
       if (latest.path !== state.currentFile) {
         state.currentFile = latest.path;
+        state.lastUserTextAt = null;
+        state.lastAssistantAt = null;
+        state.lastNotifiedAt = null;
+        state.notifiedForTurn = false;
+        if (state.pendingTimer) clearTimeout(state.pendingTimer);
+        state.pendingTimer = null;
         follower.attach(latest.path, (obj, meta) => {
           void processObject(obj, meta);
         });
@@ -459,12 +480,12 @@ function normalizeSources(input) {
   return [...new Set(parts)];
 }
 
-function startWatch({ sources, intervalMs, geminiQuietMs, log }) {
+function startWatch({ sources, intervalMs, geminiQuietMs, claudeQuietMs, log }) {
   const normalizedSources = normalizeSources(sources);
   const stops = [];
 
   if (normalizedSources.includes('claude')) {
-    stops.push(startClaudeWatch({ intervalMs, quietPeriodMs: geminiQuietMs, log }));
+    stops.push(startClaudeWatch({ intervalMs, quietPeriodMs: geminiQuietMs, claudeQuietMs, log }));
   }
   if (normalizedSources.includes('codex')) {
     stops.push(startCodexWatch({ intervalMs, log }));

@@ -9,6 +9,7 @@
 ![桌面端预览](docs/images/exe预览.png)
 
 </div>
+
 ---
 
 ### 📖 简介
@@ -175,10 +176,6 @@ TELEGRAM_CHAT_ID=your_chat_id
 - **macOS / Linux**: `~/.ai-cli-complete-notify/settings.json`
 
 此文件由桌面应用自动管理，包含来源启用状态、阈值等设置。
-
-### 安全提示
-
-⚠️ `.env` 文件已在 `.gitignore` 中，请勿将包含敏感信息的配置文件提交到代码仓库。
 
 ## 🔧 开发与构建
 

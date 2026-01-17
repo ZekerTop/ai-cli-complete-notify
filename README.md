@@ -47,9 +47,9 @@ Benefits:
 
 ### Windows Users
 
-1. Download the latest `ai-cli-complete-notify-x.x.x.exe` from [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases)
-2. Place the program in any directory (e.g., `C:\Tools\`)
-3. Copy `.env.example` to `.env` and fill in your notification configuration
+1. Download the latest `ai-cli-complete-notify-x.x.x.zip` from [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases)
+2. Extract the archive and place it in any directory (e.g., `D:\Tools\`)
+3. Copy `.env.example` to `.env` and fill in your notification configuration according to the requirements inside
 4. Double-click to run the desktop application
 
 ### macOS / Linux Users
@@ -176,9 +176,6 @@ Configuration file location:
 
 This file is automatically managed by the desktop application and contains source enable status, thresholds, and other settings.
 
-### Security Notice
-
-⚠️ The `.env` file is in `.gitignore`. Do not commit configuration files containing sensitive information to the code repository.
 
 ## 🔧 Development & Build
 

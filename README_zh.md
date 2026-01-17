@@ -1,6 +1,6 @@
 # 🔔 AI CLI Complete Notify
 
-版本：1.0.8
+版本：1.1.0
 
 [English](README.md) | 中文
 

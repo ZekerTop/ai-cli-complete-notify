@@ -1,6 +1,6 @@
 # 🔔 AI CLI Complete Notify
 
-Version: 1.0.8
+Version: 1.1.0
 
 English | [中文](README_zh.md)
 

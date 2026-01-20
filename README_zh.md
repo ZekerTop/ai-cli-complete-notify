@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # 🔔 AI CLI Complete Notify
 
@@ -95,6 +95,8 @@ npm run dev
 
 ## 💻 命令行使用
 
+> WSL 说明：命令行提醒可用（Webhook/Telegram/邮件）。桌面/声音/托盘仅 Windows 支持。日志监听仅在 AI CLI 运行于 WSL（日志位于 `~/.claude`、`~/.codex`、`~/.gemini`）时生效。
+
 ### 直接通知
 
 ```bash
@@ -106,8 +108,14 @@ node ai-reminder.js notify --source claude --task "任务完成"
 
 ```bash
 # 自动包裹命令并计时
-ai-cli-complete-notify.exe run --source codex -- codex <参数...>
+# Windows（EXE）
+ai-cli-complete-notify-<版本号>.exe run --source codex -- codex <参数...>
+
+# macOS / Linux / WSL（Node）
+node ai-reminder.js run --source codex -- codex <参数...>
 ```
+
+说明：`--` 用来分隔本工具参数与“被执行的真实命令”。`codex <参数...>` 代表你要执行的 AI CLI（这里只是示例，也可以换成 `claude` 或 `gemini`）以及它自己的参数。
 
 ### 手动计时模式
 
@@ -125,7 +133,11 @@ node ai-reminder.js stop --source gemini --task "构建项目"
 
 ```bash
 # 自动监听所有 AI 工具的日志
-ai-cli-complete-notify.exe watch --sources all --gemini-quiet-ms 3000
+# Windows（EXE）
+ai-cli-complete-notify-<版本号>.exe watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
+
+# macOS / Linux / WSL（Node）
+node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
 ```
 
 ### 常用参数

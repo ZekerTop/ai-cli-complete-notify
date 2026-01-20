@@ -19,7 +19,7 @@ function printHelp() {
   ${PRODUCT_NAME}.exe stop   --source claude  --task "..." [--force]
   ${PRODUCT_NAME}.exe notify --source claude  --task "..." [--duration-minutes 12] [--force]
   ${PRODUCT_NAME}.exe run    --source claude  -- <command> [args...]
-  ${PRODUCT_NAME}.exe watch  [--sources all] [--interval-ms 1000] [--gemini-quiet-ms 3000] [--quiet]
+  ${PRODUCT_NAME}.exe watch  [--sources all] [--interval-ms 1000] [--gemini-quiet-ms 3000] [--claude-quiet-ms 60000] [--quiet]
   ${PRODUCT_NAME}.exe config
 
 说明:
@@ -30,7 +30,7 @@ function printHelp() {
 
 配置:
   - settings: ${getConfigPath()}
-  - env: FEISHU_WEBHOOK_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+  - env: WEBHOOK_URLS, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_HOST/EMAIL_USER/EMAIL_PASS/EMAIL_FROM/EMAIL_TO
 `);
 }
 
@@ -59,6 +59,7 @@ async function runCli(argv) {
     const sources = flags.sources || flags.source || flags.s || 'all';
     const intervalMs = toNumberOrNull(flags['interval-ms']) || 1000;
     const geminiQuietMs = toNumberOrNull(flags['gemini-quiet-ms']) || 3000;
+    const claudeQuietMs = toNumberOrNull(flags['claude-quiet-ms']);
     const quiet = Boolean(flags.quiet);
 
     const { startWatch } = require('./watch');
@@ -66,11 +67,13 @@ async function runCli(argv) {
       sources,
       intervalMs,
       geminiQuietMs,
+      claudeQuietMs,
       log: quiet ? () => {} : console.log
     });
 
     if (!quiet) {
-      console.log(`watching sources=${String(sources)} intervalMs=${intervalMs} geminiQuietMs=${geminiQuietMs}`);
+      const claudeLabel = claudeQuietMs == null ? 'default' : claudeQuietMs;
+      console.log(`watching sources=${String(sources)} intervalMs=${intervalMs} geminiQuietMs=${geminiQuietMs} claudeQuietMs=${claudeLabel}`);
       console.log('Press Ctrl+C to stop.');
     }
 

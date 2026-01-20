@@ -94,6 +94,8 @@ After selecting "Hide to tray", the application minimizes to the system tray. Th
 
 ## 💻 Command Line Usage
 
+> WSL note: CLI reminders work for webhook/Telegram/email. Desktop/sound/tray are Windows-only. Log monitoring works only when the AI CLI runs inside WSL (logs under `~/.claude`, `~/.codex`, `~/.gemini`).
+
 ### Direct Notification
 
 ```bash
@@ -104,9 +106,14 @@ node ai-reminder.js notify --source claude --task "Task completed"
 ### Auto Timer Mode
 
 ```bash
-# Automatically wrap command and time it
-ai-cli-complete-notify.exe run --source codex -- codex <args...>
+# Windows (EXE)
+ai-cli-complete-notify-<version>.exe run --source codex -- codex <args...>
+
+# macOS / Linux / WSL (Node)
+node ai-reminder.js run --source codex -- codex <args...>
 ```
+
+Note: `--` separates this tool's arguments from the real command to execute. `codex <args...>` is just the actual AI CLI invocation (you can replace it with `claude` or `gemini`).
 
 ### Manual Timer Mode
 
@@ -123,8 +130,11 @@ node ai-reminder.js stop --source gemini --task "Build project"
 ### Log Monitoring Mode
 
 ```bash
-# Automatically monitor logs from all AI tools
-ai-cli-complete-notify.exe watch --sources all --gemini-quiet-ms 3000
+# Windows (EXE)
+ai-cli-complete-notify-<version>.exe watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
+
+# macOS / Linux / WSL (Node)
+node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
 ```
 
 ### Common Parameters
@@ -172,7 +182,7 @@ TELEGRAM_CHAT_ID=your_chat_id
 
 Configuration file location:
 - **Windows**: `%APPDATA%\ai-cli-complete-notify\settings.json`
-- **macOS / Linux**: `~/.ai-cli-complete-notify\settings.json`
+- **macOS / Linux**: `~/.ai-cli-complete-notify/settings.json`
 
 This file is automatically managed by the desktop application and contains source enable status, thresholds, and other settings.
 

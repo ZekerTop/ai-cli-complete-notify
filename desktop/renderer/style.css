@@ -296,6 +296,32 @@ button.ghost {
     radial-gradient(400px 140px at 0% 0%, rgba(110,123,255,0.14), transparent 58%),
     rgba(255,255,255,0.06);
 }
+button.withHint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+button.withHint .hintIcon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.28);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+}
+button.withHint .hintIcon:hover {
+  background: rgba(255,255,255,0.16);
+}
 button.iconOnly {
   display: inline-flex;
   align-items: center;

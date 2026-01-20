@@ -30,6 +30,7 @@ let watchStop = null;
 let tray = null;
 let isQuitting = false;
 let closePromptOpen = false;
+let hasSingleInstanceLock = false;
 
 async function resolveTrayImage() {
   const iconIco = path.join(__dirname, 'assets', 'tray.ico');
@@ -446,6 +447,35 @@ function setupIpc(win) {
 }
 
 async function main() {
+  hasSingleInstanceLock = app.requestSingleInstanceLock();
+  if (!hasSingleInstanceLock) {
+    app.quit();
+    return;
+  }
+
+  app.on('second-instance', async (_event, argv) => {
+    const args = argv.slice(process.defaultApp ? 2 : 1);
+    if (args.length > 0 && isCliInvocation(args)) {
+      try {
+        await runCli(args);
+      } catch (error) {
+        console.error('CLI invocation failed:', error && error.message ? error.message : error);
+      }
+      return;
+    }
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      showMainWindow();
+      return;
+    }
+
+    await app.whenReady();
+    const win = createWindow();
+    mainWindow = win;
+    setupIpc(win);
+  });
+
   const argv = getArgv();
 
   if (argv.length > 0 && isCliInvocation(argv)) {

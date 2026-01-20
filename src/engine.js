@@ -11,7 +11,11 @@ function isChannelEnabled(config, channelName, sourceName) {
   const channelGlobal = config.channels[channelName] && config.channels[channelName].enabled;
   const source = config.sources[sourceName];
   const channelPerSource = source && source.channels && source.channels[channelName];
-  return Boolean(channelGlobal && channelPerSource);
+  if (!channelGlobal || !channelPerSource) return false;
+  if ((channelName === 'sound' || channelName === 'desktop') && process.platform !== 'win32') {
+    return false;
+  }
+  return true;
 }
 
 function shouldNotifyByDuration({ minDurationMinutes, durationMs, force }) {
@@ -29,7 +33,7 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const sourceConfig = config.sources[sourceName] || config.sources.claude;
 
   if (!sourceConfig || !sourceConfig.enabled) {
-    return { skipped: true, reason: `source ${sourceName} 未启用`, results: [] };
+    return { skipped: true, reason: `source ${sourceName} disabled`, results: [] };
   }
 
   const { should, reason } = shouldNotifyByDuration({
@@ -103,7 +107,15 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   }
 
   if (tasks.length === 0) {
-    return { skipped: true, reason: '未启用任何提醒方式', results: [] };
+    if (process.platform !== 'win32') {
+      const unsupported = [];
+      if (config.channels.sound && config.channels.sound.enabled && sourceConfig.channels.sound) unsupported.push('sound');
+      if (config.channels.desktop && config.channels.desktop.enabled && sourceConfig.channels.desktop) unsupported.push('desktop');
+      if (unsupported.length) {
+        return { skipped: true, reason: `Unsupported on this platform: ${unsupported.join('/')}`, results: [] };
+      }
+    }
+    return { skipped: true, reason: 'No notification channels enabled', results: [] };
   }
 
   const settled = await Promise.allSettled(tasks);

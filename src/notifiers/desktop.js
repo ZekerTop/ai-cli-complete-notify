@@ -3,6 +3,11 @@ const { spawn } = require('child_process');
 function notifyDesktopBalloon({ title, message, timeoutMs }) {
   return new Promise((resolve) => {
     try {
+      if (process.platform !== 'win32') {
+        resolve({ ok: false, error: 'desktop notifications not supported on this platform' });
+        return;
+      }
+
       const safeTitle = String(title).replace(/"/g, "'");
       const safeMessage = String(message).replace(/"/g, "'");
       const ms = Number.isFinite(timeoutMs) ? timeoutMs : 6000;
@@ -31,4 +36,3 @@ function notifyDesktopBalloon({ title, message, timeoutMs }) {
 module.exports = {
   notifyDesktopBalloon
 };
-

@@ -2,7 +2,7 @@
 
 # 🔔 AI CLI Complete Notify
 
-**Version: 1.1.0**
+**Version: 1.2.0**
 
 English | [中文](README_zh.md)
 
@@ -14,7 +14,6 @@ English | [中文](README_zh.md)
 ### 📖 Introduction
 
 An intelligent task completion notification tool for Claude Code / Codex / Gemini, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
-
 
 **Supported Notification Methods:**
 
@@ -42,6 +41,12 @@ Benefits:
 - ✅ Monitoring functions can accurately capture task completion status
 - ✅ More precise notification timing, avoiding false positives or missed notifications
 - ✅ AI can better manage project files and configurations
+
+## Important Notes
+
+- Claude Code often splits a request into sub-tasks. To avoid spam, this tool only notifies after the whole turn completes.
+- Log monitoring relies on a quiet period to confirm completion, so notifications are not instant (default 60s with tool calls, 15s without).
+- If you need faster alerts: use `notify` or `run` for Codex/Gemini; for Claude Code, keep `watch` to wait for full-turn completion.
 
 ## 🚀 Quick Start
 
@@ -96,11 +101,23 @@ After selecting "Hide to tray", the application minimizes to the system tray. Th
 
 > WSL note: CLI reminders work for webhook/Telegram/email. Desktop/sound/tray are Windows-only. Log monitoring works only when the AI CLI runs inside WSL (logs under `~/.claude`, `~/.codex`, `~/.gemini`).
 
+Note: For CLI usage from source (Node), run `npm install` first.
+
 ### Direct Notification
 
 ```bash
 # Send notification immediately (ignore threshold)
 node ai-reminder.js notify --source claude --task "Task completed"
+```
+
+### Log Monitoring Mode (Recommended)
+
+```bash
+# Windows (EXE)
+ai-cli-complete-notify-<version>.exe watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
+
+# macOS / Linux / WSL (Node)
+node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
 ```
 
 ### Auto Timer Mode
@@ -125,16 +142,6 @@ node ai-reminder.js start --source gemini --task "Build project"
 
 # Stop timer and send notification
 node ai-reminder.js stop --source gemini --task "Build project"
-```
-
-### Log Monitoring Mode
-
-```bash
-# Windows (EXE)
-ai-cli-complete-notify-<version>.exe watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
-
-# macOS / Linux / WSL (Node)
-node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
 ```
 
 ### Common Parameters

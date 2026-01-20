@@ -1,5 +1,3 @@
-const nodemailer = require('nodemailer');
-
 function readEnv(name, fallback) {
   const val = process.env[name];
   if (typeof val === 'string' && val.trim()) return val.trim();
@@ -17,6 +15,13 @@ function parseBool(value, fallback = true) {
 }
 
 async function notifyEmail({ config, title, contentText }) {
+  let nodemailer;
+  try {
+    nodemailer = require('nodemailer');
+  } catch (error) {
+    return { ok: false, error: 'nodemailer not installed; run npm install' };
+  }
+
   const channel = config.channels.email || {};
 
   const host = readEnv(channel.hostEnv || 'EMAIL_HOST', channel.host);
@@ -58,4 +63,3 @@ async function notifyEmail({ config, title, contentText }) {
 module.exports = {
   notifyEmail
 };
-

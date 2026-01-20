@@ -25,8 +25,10 @@ const I18N = {
     'ui.language': '语言',
     'ui.watchToggle': '监听',
 
+    'btn.projectLink': '项目地址',
     'btn.openDataDir': '打开数据目录',
     'btn.openSettings': '打开 settings.json',
+    'hint.openDataDir': '数据目录用于保存 settings.json、state.json 和 .env（可选）',
     'btn.save': '保存',
     'btn.reload': '刷新界面/配置',
     'btn.watchStart': '开始监听',
@@ -103,8 +105,10 @@ const I18N = {
     'ui.language': 'Language',
     'ui.watchToggle': 'Watch',
 
+    'btn.projectLink': 'Project repo',
     'btn.openDataDir': 'Open data folder',
     'btn.openSettings': 'Open settings.json',
+    'hint.openDataDir': 'Stores settings.json, state.json, and optional .env',
     'btn.save': 'Save',
     'btn.reload': 'Reload UI / config',
     'btn.watchStart': 'Start watching',
@@ -230,6 +234,13 @@ function applyLanguageToDom(config, opts = {}) {
     const key = el.getAttribute('data-i18n');
     if (!key) continue;
     el.textContent = t(key);
+  }
+  for (const el of document.querySelectorAll('[data-i18n-title]')) {
+    const key = el.getAttribute('data-i18n-title');
+    if (!key) continue;
+    const text = t(key);
+    el.setAttribute('title', text);
+    el.setAttribute('aria-label', text);
   }
 
   updateDefaultInputValue('testTask', {

@@ -61,6 +61,7 @@ const I18N = {
     'test.fallbackTask': '测试提醒',
 
     'advanced.titlePrefix': '标题包含来源前缀（例如 [Codex]）',
+    'advanced.useFeishuCard': 'Webhook 使用飞书卡片格式',
     'advanced.closeBehavior': '关闭按钮行为',
     'advanced.closeHint': '选择“隐藏到托盘”后，点击右上角关闭不会退出，会在右下角托盘保留图标，点击即可重新打开。',
     'advanced.autostart': '开机自启动（登录后自动在后台运行）',
@@ -141,6 +142,7 @@ const I18N = {
     'test.fallbackTask': 'Test notification',
 
     'advanced.titlePrefix': 'Include source prefix in title (e.g., [Codex])',
+    'advanced.useFeishuCard': 'Use Feishu card format for Webhook',
     'advanced.closeBehavior': 'Close button behavior',
     'advanced.closeHint': 'If set to “Minimize to tray”, closing the window keeps the app running in the system tray.',
     'advanced.autostart': 'Launch at login (run in background after login)',
@@ -485,6 +487,13 @@ async function main() {
   $('includeSourcePrefixInTitle').checked = Boolean(config.format?.includeSourcePrefixInTitle);
   $('includeSourcePrefixInTitle').addEventListener('change', () => {
     config.format.includeSourcePrefixInTitle = $('includeSourcePrefixInTitle').checked;
+    triggerAutoSave();
+  });
+
+  $('useFeishuCard').checked = Boolean(config.channels?.webhook?.useFeishuCard);
+  $('useFeishuCard').addEventListener('change', () => {
+    config.channels.webhook = config.channels.webhook || {};
+    config.channels.webhook.useFeishuCard = $('useFeishuCard').checked;
     triggerAutoSave();
   });
 

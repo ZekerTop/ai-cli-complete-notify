@@ -27,7 +27,7 @@ function shouldNotifyByDuration({ minDurationMinutes, durationMs, force }) {
   return { should: true, reason: null };
 }
 
-async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force }) {
+async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force, outputContent }) {
   const config = loadConfig();
   const sourceName = source || 'claude';
   const sourceConfig = config.sources[sourceName] || config.sources.claude;
@@ -78,7 +78,17 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
 
   if (isChannelEnabled(config, 'webhook', sourceName)) {
     tasks.push(
-      notifyWebhook({ config, title, contentText })
+      notifyWebhook({
+        config,
+        title,
+        contentText,
+        projectName,
+        timestamp,
+        durationText,
+        sourceLabel,
+        taskInfo,
+        outputContent // 传递输出内容
+      })
         .then((r) => ({ channel: 'webhook', ...r }))
     );
   }

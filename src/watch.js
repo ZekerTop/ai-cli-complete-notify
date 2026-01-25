@@ -157,7 +157,8 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
     lastNotifiedAt: null,
     notifiedForTurn: false,
     lastCwd: null,
-    pendingTimer: null
+    pendingTimer: null,
+    lastAssistantContent: null // 捕获assistant的输出内容
   };
 
   const quietMs = Math.max(500, claudeQuietMs || quietPeriodMs || 60000);
@@ -177,7 +178,8 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
       source: 'claude',
       taskInfo: 'Claude 完成',
       durationMs,
-      cwd
+      cwd,
+      outputContent: state.lastAssistantContent // 传递输出内容
     });
     logger(`[watch][claude] ${summarizeResult(result)}`);
   }
@@ -206,6 +208,29 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
       }
 
       state.lastAssistantAt = ts || Date.now();
+
+      // 捕获assistant的文本内容 - 增强版
+      let content = '';
+
+      if (obj.message && Array.isArray(obj.message.content)) {
+        // 标准格式：content是数组
+        const textParts = obj.message.content
+          .filter(item => item && item.type === 'text')
+          .map(item => item.text || '')
+          .filter(Boolean);
+        content = textParts.join('\n\n');
+      } else if (obj.message && typeof obj.message.content === 'string') {
+        // 备选格式：content直接是字符串
+        content = obj.message.content;
+      } else if (obj.message && obj.message.text && typeof obj.message.text === 'string') {
+        // 备选格式：message.text
+        content = obj.message.text;
+      }
+
+      if (content && content.trim()) {
+        state.lastAssistantContent = content;
+      }
+
       if (state.pendingTimer) clearTimeout(state.pendingTimer);
 
       // 混合方案：根据是否有工具调用调整去抖时间
@@ -260,7 +285,8 @@ function startCodexWatch({ intervalMs, log }) {
     currentFile: null,
     tickRunning: false,
     lastUserAt: null,
-    lastCwd: null
+    lastCwd: null,
+    lastAgentContent: null // 捕获agent的输出内容
   };
 
   async function processObject(obj, { seed }) {
@@ -287,13 +313,37 @@ function startCodexWatch({ intervalMs, log }) {
       if (kind === 'agent_message') {
         if (seed) return;
 
+        // 捕获agent消息的内容 - 尝试多个可能的字段
+        let content = null;
+
+        // 尝试不同的字段路径
+        if (obj.payload && typeof obj.payload.content === 'string') {
+          content = obj.payload.content;
+        } else if (obj.payload && obj.payload.message && typeof obj.payload.message === 'string') {
+          content = obj.payload.message;
+        } else if (obj.payload && obj.payload.text && typeof obj.payload.text === 'string') {
+          content = obj.payload.text;
+        } else if (obj.payload && obj.payload.data && typeof obj.payload.data === 'string') {
+          content = obj.payload.data;
+        } else if (obj.message && typeof obj.message === 'string') {
+          content = obj.message;
+        }
+
+        // 如果找到内容，保存到状态中
+        if (content && content.trim()) {
+          state.lastAgentContent = content;
+        } else {
+          console.log('[watch][codex] 未捕获到输出内容');
+        }
+
         const durationMs = ts != null && state.lastUserAt != null && ts >= state.lastUserAt ? ts - state.lastUserAt : null;
         const cwd = state.lastCwd || process.cwd();
         const result = await sendNotifications({
           source: 'codex',
           taskInfo: 'Codex 完成',
           durationMs,
-          cwd
+          cwd,
+          outputContent: state.lastAgentContent // 传递输出内容
         });
         logger(`[watch][codex] ${summarizeResult(result)}`);
       }
@@ -339,7 +389,8 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
     lastGeminiAt: null,
     lastNotifiedGeminiAt: null,
     tickRunning: false,
-    pendingTimer: null
+    pendingTimer: null,
+    lastGeminiContent: null // 捕获gemini的输出内容
   };
 
   async function notifyIfReady(reason) {
@@ -355,7 +406,8 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
       taskInfo: 'Gemini 完成',
       durationMs,
       cwd: process.cwd(),
-      projectNameOverride: 'Gemini'
+      projectNameOverride: 'Gemini',
+      outputContent: state.lastGeminiContent // 传递输出内容
     });
     logger(`[watch][gemini] ${reason} ${summarizeResult(result)}`.trim());
   }
@@ -450,6 +502,35 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
 
         if (m.type === 'gemini') {
           state.lastGeminiAt = ts;
+
+          // 捕获gemini消息的内容 - 增强版
+          let content = '';
+
+          if (m.content && Array.isArray(m.content)) {
+            // 格式1：content是字符串数组
+            const textParts = m.content
+              .filter(item => item && typeof item === 'string')
+              .filter(Boolean);
+            content = textParts.join('\n\n');
+          } else if (m.content && typeof m.content === 'string') {
+            // 格式2：content直接是字符串
+            content = m.content;
+          } else if (m.parts && Array.isArray(m.parts)) {
+            // 格式3：使用parts字段
+            const textParts = m.parts
+              .filter(part => part && part.text && typeof part.text === 'string')
+              .map(part => part.text)
+              .filter(Boolean);
+            content = textParts.join('\n\n');
+          } else if (m.text && typeof m.text === 'string') {
+            // 格式4：直接使用text字段
+            content = m.text;
+          }
+
+          if (content && content.trim()) {
+            state.lastGeminiContent = content;
+          }
+
           scheduleDebouncedNotify();
         }
       }

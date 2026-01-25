@@ -16,7 +16,9 @@ const DEFAULT_CONFIG = {
     webhook: {
       enabled: true,
       urls: [],
-      urlsEnv: 'WEBHOOK_URLS' // 逗号分隔，可配置多个
+      urlsEnv: 'WEBHOOK_URLS', // 逗号分隔，可配置多个
+      useFeishuCard: false, // 是否使用飞书卡片格式
+      cardTemplatePath: '' // 自定义卡片模板路径(可选)
     },
     telegram: {
       enabled: true,

@@ -6,6 +6,7 @@ const { notifyTelegram } = require('./notifiers/telegram');
 const { notifySound } = require('./notifiers/sound');
 const { notifyDesktopBalloon } = require('./notifiers/desktop');
 const { notifyEmail } = require('./notifiers/email');
+const { summarizeTask } = require('./summary');
 
 function isChannelEnabled(config, channelName, sourceName) {
   const channelGlobal = config.channels[channelName] && config.channels[channelName].enabled;
@@ -22,12 +23,12 @@ function shouldNotifyByDuration({ minDurationMinutes, durationMs, force }) {
   const thresholdMs = Math.max(0, Number(minDurationMinutes || 0)) * 60 * 1000;
   if (thresholdMs <= 0) return { should: true, reason: null };
   if (force) return { should: true, reason: null };
-  if (durationMs == null) return { should: false, reason: `未获取到耗时，阈值为 ${minDurationMinutes} 分钟` };
-  if (durationMs < thresholdMs) return { should: false, reason: `耗时 ${formatDurationMs(durationMs)} 未达到阈值 ${minDurationMinutes} 分钟` };
+  if (durationMs == null) return { should: false, reason: `No duration recorded (threshold ${minDurationMinutes} min)` };
+  if (durationMs < thresholdMs) return { should: false, reason: `Duration ${formatDurationMs(durationMs)} below threshold ${minDurationMinutes} min` };
   return { should: true, reason: null };
 }
 
-async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force, outputContent }) {
+async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force, summaryContext, outputContent }) {
   const config = loadConfig();
   const sourceName = source || 'claude';
   const sourceConfig = config.sources[sourceName] || config.sources.claude;
@@ -50,21 +51,25 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const projectName = projectNameOverride || getProjectName(cwdToUse);
   const sourceLabel = getSourceLabel(sourceName);
 
-  const title = buildTitle({
-    projectName,
-    taskInfo,
-    sourceLabel,
-    includeSourcePrefixInTitle: Boolean(config.format.includeSourcePrefixInTitle)
-  });
-
   const durationText = formatDurationMs(durationMs);
   const timestamp = new Date().toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
   const lines = [
-    `完成时间：${timestamp}`,
-    durationText ? `耗时：${durationText}` : null,
-    `来源：${sourceLabel}`
+    `Completed at: ${timestamp}`,
+    durationText ? `Duration: ${durationText}` : null,
+    `Source: ${sourceLabel}`
   ].filter(Boolean);
   const contentText = lines.join('\n');
+
+  const summary = await summarizeTask({ config, taskInfo, contentText, summaryContext });
+  const summaryUsed = Boolean(summary);
+  const effectiveTaskInfo = summary || taskInfo;
+
+  const title = buildTitle({
+    projectName,
+    taskInfo: effectiveTaskInfo,
+    sourceLabel,
+    includeSourcePrefixInTitle: Boolean(config.format.includeSourcePrefixInTitle)
+  });
 
   const tasks = [];
   const results = [];
@@ -86,8 +91,9 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
         timestamp,
         durationText,
         sourceLabel,
-        taskInfo,
-        outputContent // 传递输出内容
+        taskInfo: effectiveTaskInfo,
+        outputContent,
+        summaryUsed
       })
         .then((r) => ({ channel: 'webhook', ...r }))
     );
@@ -97,7 +103,7 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     tasks.push(
       notifyDesktopBalloon({
         title,
-        message: durationText ? `${taskInfo}\n耗时：${durationText}` : String(taskInfo),
+        message: durationText ? `${effectiveTaskInfo}\n耗时：${durationText}` : String(effectiveTaskInfo),
         timeoutMs: config.channels.desktop.balloonMs
       }).then((r) => ({ channel: 'desktop', ...r }))
     );

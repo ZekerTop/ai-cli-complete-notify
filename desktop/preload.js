@@ -10,14 +10,23 @@ contextBridge.exposeInMainWorld('completeNotify', {
   getAutostart: () => ipcRenderer.invoke('completeNotify:getAutostart'),
   openExternal: (url) => ipcRenderer.invoke('completeNotify:openExternal', url),
   testNotify: (payload) => ipcRenderer.invoke('completeNotify:testNotify', payload),
+  testSummary: (payload) => ipcRenderer.invoke('completeNotify:testSummary', payload),
   openPath: (targetPath) => ipcRenderer.invoke('completeNotify:openPath', targetPath),
+  openWatchLog: () => ipcRenderer.invoke('completeNotify:openWatchLog'),
   watchStatus: () => ipcRenderer.invoke('completeNotify:watchStatus'),
   watchStart: (payload) => ipcRenderer.invoke('completeNotify:watchStart', payload),
   watchStop: () => ipcRenderer.invoke('completeNotify:watchStop'),
+  respondClosePrompt: (payload) => ipcRenderer.send('completeNotify:closePromptResponse', payload),
   onWatchLog: (handler) => {
     if (typeof handler !== 'function') return () => {};
     const listener = (_event, line) => handler(line);
     ipcRenderer.on('completeNotify:watchLog', listener);
     return () => ipcRenderer.removeListener('completeNotify:watchLog', listener);
+  },
+  onClosePrompt: (handler) => {
+    if (typeof handler !== 'function') return () => {};
+    const listener = (_event, payload) => handler(payload);
+    ipcRenderer.on('completeNotify:closePrompt', listener);
+    return () => ipcRenderer.removeListener('completeNotify:closePrompt', listener);
   }
 });

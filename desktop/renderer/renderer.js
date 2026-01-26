@@ -21,13 +21,17 @@ const I18N = {
     'nav.sources': '来源',
     'nav.watch': '监听',
     'nav.test': '测试',
+    'nav.summary': 'AI 摘要',
     'nav.advanced': '高级',
     'ui.language': '语言',
     'ui.watchToggle': '监听',
+    'ui.stepUp': '增加',
+    'ui.stepDown': '减少',
 
     'btn.projectLink': '项目地址',
     'btn.openDataDir': '打开数据目录',
     'btn.openSettings': '打开 settings.json',
+    'btn.openWatchLog': '打开日志',
     'hint.openDataDir': '数据目录用于保存 settings.json、state.json 和 .env（可选）',
     'btn.save': '保存',
     'btn.reload': '刷新界面/配置',
@@ -43,16 +47,22 @@ const I18N = {
     'section.watch.sub': '适用于交互式不退出 / VSCode 插件：自动监听日志，在每次回复完成后提醒',
     'section.test.title': '测试提醒',
     'section.test.sub': '用于验证通道是否可用（强制发送，不受阈值影响）',
+    'section.summary.title': 'AI 摘要',
+    'section.summary.sub': '用于生成通知中的简短摘要，未在超时内返回则使用原始任务描述。',
     'section.advanced.title': '高级',
     'section.advanced.sub': '格式化与展示相关配置',
 
     'watch.polling': '轮询(ms)',
     'watch.claudeDebounce': 'Claude 去抖(ms)',
     'watch.debounce': 'Gemini 去抖(ms)',
+    'watch.logRetention': '日志保留(天)',
+    'watch.logRetentionHint': '只保留最近 N 天的本地监听日志',
     'watch.hint': '建议把监听常驻开启（比如开机自启/放在后台终端），这样无论你在终端还是 VSCode 里用 Claude/Codex/Gemini，都能自动提醒。',
     'watch.logs': '监听日志',
     'watch.status.running': '运行中',
     'watch.status.stopped': '未运行',
+    'watch.logNotReady': '尚未定位到日志文件',
+    'watch.logOpenFailed': '打开日志文件失败',
 
     'test.source': '来源',
     'test.duration': '耗时(分钟)',
@@ -60,12 +70,54 @@ const I18N = {
     'test.defaultTask': '测试提醒（强制发送）',
     'test.fallbackTask': '测试提醒',
 
+    'summary.enabled': '启用 AI 摘要',
+    'summary.provider': '模型平台',
+    'summary.provider.openai': 'OpenAI',
+    'summary.provider.anthropic': 'Anthropic',
+    'summary.provider.google': 'Google / Gemini',
+    'summary.provider.qwen': '通义千问',
+    'summary.provider.deepseek': 'DeepSeek',
+    'summary.apiUrl': 'API URL',
+    'summary.apiUrlExample': '示例',
+    'summary.apiKey': 'API Key',
+    'summary.apiKeyToggle.show': '显示 API Key',
+    'summary.apiKeyToggle.hide': '隐藏 API Key',
+    'summary.test': '摘要测试',
+    'summary.testBtn': '开始测试',
+    'summary.test.running': '测试中...',
+    'summary.test.success': '测试成功',
+    'summary.test.fail': '测试失败',
+    'summary.test.missingApiUrl': '请填写 API URL',
+    'summary.test.missingApiKey': '请填写 API Key',
+    'summary.test.missingModel': '请填写模型',
+    'summary.test.emptySummary': '未返回摘要，请检查 API URL/Key/模型',
+    'summary.test.httpError': 'HTTP 请求失败',
+    'summary.test.timeout': '请求超时',
+    'summary.test.networkError': '网络错误',
+    'summary.test.invalidJson': '响应不是合法 JSON',
+    'summary.test.emptyContent': '摘要上下文为空',
+    'summary.test.disabled': '摘要未启用',
+    'summary.test.invalidRequest': '请求参数无效',
+    'summary.test.unexpected': '未知错误',
+    'summary.test.unsupported': '当前版本暂不支持摘要测试',
+    'summary.model': '模型',
+    'summary.timeout': '超时(ms)',
+    'summary.timeoutHint': '超过时限会自动回退到默认任务描述',
+    'summary.hint': '填写 API 信息后即可生效，未返回摘要时会自动回退。',
+
     'advanced.titlePrefix': '标题包含来源前缀（例如 [Codex]）',
     'advanced.useFeishuCard': 'Webhook 使用飞书卡片格式',
     'advanced.closeBehavior': '关闭按钮行为',
     'advanced.closeHint': '选择“隐藏到托盘”后，点击右上角关闭不会退出，会在右下角托盘保留图标，点击即可重新打开。',
     'advanced.autostart': '开机自启动（登录后自动在后台运行）',
     'advanced.autostartHint': 'Windows / macOS 支持开机自启动；Linux 需自行配置。',
+
+    'close.message': '关闭应用？',
+    'close.detail': '可选择隐藏到托盘继续运行，或直接退出并停止监听。',
+    'close.hide': '隐藏到托盘',
+    'close.quit': '退出',
+    'close.cancel': '取消',
+    'close.remember': '记住我的选择（可在“高级”里修改）',
 
     'close.ask': '每次询问',
     'close.tray': '隐藏到托盘',
@@ -102,13 +154,17 @@ const I18N = {
     'nav.sources': 'Sources',
     'nav.watch': 'Watch',
     'nav.test': 'Test',
+    'nav.summary': 'Summary',
     'nav.advanced': 'Advanced',
     'ui.language': 'Language',
     'ui.watchToggle': 'Watch',
+    'ui.stepUp': 'Increase',
+    'ui.stepDown': 'Decrease',
 
     'btn.projectLink': 'Project repo',
     'btn.openDataDir': 'Open data folder',
     'btn.openSettings': 'Open settings.json',
+    'btn.openWatchLog': 'Open log file',
     'hint.openDataDir': 'Stores settings.json, state.json, and optional .env',
     'btn.save': 'Save',
     'btn.reload': 'Reload UI / config',
@@ -124,16 +180,22 @@ const I18N = {
     'section.watch.sub': 'For interactive mode / VSCode extensions: watch local logs and notify after each reply',
     'section.test.title': 'Test notification',
     'section.test.sub': 'Validate channels (forced send; ignores thresholds)',
+    'section.summary.title': 'AI Summary',
+    'section.summary.sub': 'Used to generate a short summary; if it times out, the original task is used.',
     'section.advanced.title': 'Advanced',
     'section.advanced.sub': 'Formatting and UI preferences',
 
     'watch.polling': 'Polling (ms)',
     'watch.claudeDebounce': 'Claude debounce (ms)',
     'watch.debounce': 'Gemini debounce (ms)',
+    'watch.logRetention': 'Log retention (days)',
+    'watch.logRetentionHint': 'Keep only the last N days of local watch logs',
     'watch.hint': 'Keep watch running in the background so notifications work for both terminal and VSCode.',
     'watch.logs': 'Watch logs',
     'watch.status.running': 'Running',
     'watch.status.stopped': 'Stopped',
+    'watch.logNotReady': 'No log file yet',
+    'watch.logOpenFailed': 'Failed to open log file',
 
     'test.source': 'Source',
     'test.duration': 'Duration (min)',
@@ -141,12 +203,54 @@ const I18N = {
     'test.defaultTask': 'Test notification (forced)',
     'test.fallbackTask': 'Test notification',
 
+    'summary.enabled': 'Enable AI summary',
+    'summary.provider': 'Model platform',
+    'summary.provider.openai': 'OpenAI',
+    'summary.provider.anthropic': 'Anthropic',
+    'summary.provider.google': 'Google / Gemini',
+    'summary.provider.qwen': 'Qwen',
+    'summary.provider.deepseek': 'DeepSeek',
+    'summary.apiUrl': 'API URL',
+    'summary.apiUrlExample': 'Example',
+    'summary.apiKey': 'API Key',
+    'summary.apiKeyToggle.show': 'Show API key',
+    'summary.apiKeyToggle.hide': 'Hide API key',
+    'summary.test': 'Summary test',
+    'summary.testBtn': 'Run test',
+    'summary.test.running': 'Testing...',
+    'summary.test.success': 'Success',
+    'summary.test.fail': 'Failed',
+    'summary.test.missingApiUrl': 'Please enter the API URL',
+    'summary.test.missingApiKey': 'Please enter the API key',
+    'summary.test.missingModel': 'Please enter the model',
+    'summary.test.emptySummary': 'No summary returned. Check API URL/key/model.',
+    'summary.test.httpError': 'HTTP request failed',
+    'summary.test.timeout': 'Request timed out',
+    'summary.test.networkError': 'Network error',
+    'summary.test.invalidJson': 'Response is not valid JSON',
+    'summary.test.emptyContent': 'Summary context is empty',
+    'summary.test.disabled': 'Summary is disabled',
+    'summary.test.invalidRequest': 'Request parameters are invalid',
+    'summary.test.unexpected': 'Unexpected error',
+    'summary.test.unsupported': 'Summary test is unavailable in this build.',
+    'summary.model': 'Model',
+    'summary.timeout': 'Timeout (ms)',
+    'summary.timeoutHint': 'Falls back to the default task description if it times out',
+    'summary.hint': 'Fill in the API settings to enable summaries. It falls back automatically on timeout.',
+
     'advanced.titlePrefix': 'Include source prefix in title (e.g., [Codex])',
     'advanced.useFeishuCard': 'Use Feishu card format for Webhook',
     'advanced.closeBehavior': 'Close button behavior',
     'advanced.closeHint': 'If set to “Minimize to tray”, closing the window keeps the app running in the system tray.',
     'advanced.autostart': 'Launch at login (run in background after login)',
     'advanced.autostartHint': 'Supported on Windows/macOS; Linux requires manual setup.',
+
+    'close.message': 'Close the app?',
+    'close.detail': 'Minimize to tray to keep running, or quit to stop watchers.',
+    'close.hide': 'Minimize to tray',
+    'close.quit': 'Quit',
+    'close.cancel': 'Cancel',
+    'close.remember': 'Remember my choice (change later in Advanced)',
 
     'close.ask': 'Ask every time',
     'close.tray': 'Minimize to tray',
@@ -210,8 +314,22 @@ function setWatchLog(text) {
   $('watchLog').textContent = text || '';
 }
 
+function formatLogTimestamp(ts) {
+  const date = new Date(ts);
+  const pad = (n) => String(n).padStart(2, '0');
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+}
+
 function appendWatchLog(line) {
-  const next = ($('watchLog').textContent || '') + String(line || '') + '\n';
+  const rawLine = String(line || '');
+  const stamped = `[${formatLogTimestamp(Date.now())}] ${rawLine}`;
+  const next = ($('watchLog').textContent || '') + stamped + '\n';
   $('watchLog').textContent = next.length > 12000 ? next.slice(-12000) : next;
   $('watchLog').scrollTop = $('watchLog').scrollHeight;
 }
@@ -249,6 +367,10 @@ function applyLanguageToDom(config, opts = {}) {
     'zh-CN': I18N['zh-CN']['test.defaultTask'],
     en: I18N.en['test.defaultTask']
   });
+
+  const summaryProvider = config && config.summary ? normalizeSummaryProvider(config.summary.provider) : 'openai';
+  applySummaryProviderPlaceholders(summaryProvider);
+  syncSummaryApiKeyToggle();
 
   if (config) {
     renderGlobalChannels(config, onGlobalChange);
@@ -433,13 +555,354 @@ function renderSources(config, onChange) {
   }
 }
 
+const SUMMARY_PROVIDER_DEFAULTS = {
+  openai: {
+    apiUrl: 'https://api.openai.com/v1/chat/completions',
+    model: 'gpt-4o-mini'
+  },
+  anthropic: {
+    apiUrl: 'https://api.anthropic.com/v1/messages',
+    model: 'claude-3-haiku-20240307'
+  },
+  google: {
+    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+    model: 'gemini-1.5-flash'
+  },
+  qwen: {
+    apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    model: 'qwen-turbo'
+  },
+  deepseek: {
+    apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+    model: 'deepseek-chat'
+  }
+};
+const SUMMARY_LEGACY_DEFAULTS = {
+  apiUrls: [
+    'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+  ],
+  models: [
+    'glm-4-flash-250414'
+  ]
+};
+const SUMMARY_TEST_ERROR_KEYS = {
+  disabled: 'summary.test.disabled',
+  missing_api_url: 'summary.test.missingApiUrl',
+  missing_api_key: 'summary.test.missingApiKey',
+  missing_model: 'summary.test.missingModel',
+  empty_summary: 'summary.test.emptySummary',
+  empty_content: 'summary.test.emptyContent',
+  invalid_request: 'summary.test.invalidRequest',
+  http_error: 'summary.test.httpError',
+  timeout: 'summary.test.timeout',
+  network_error: 'summary.test.networkError',
+  invalid_json: 'summary.test.invalidJson',
+  unexpected_error: 'summary.test.unexpected'
+};
+
+function normalizeSummaryProvider(value) {
+  if (!value) return 'openai';
+  const raw = String(value).trim().toLowerCase();
+  if (raw === 'gemini') return 'google';
+  if (raw === 'google' || raw === 'openai' || raw === 'anthropic' || raw === 'qwen' || raw === 'deepseek') {
+    return raw;
+  }
+  return 'openai';
+}
+
+function getSummaryProviderDefaults(provider) {
+  const key = normalizeSummaryProvider(provider);
+  return SUMMARY_PROVIDER_DEFAULTS[key] || SUMMARY_PROVIDER_DEFAULTS.openai;
+}
+
+function normalizeUrlString(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function isSummaryDefaultUrl(value) {
+  if (!value) return true;
+  const raw = normalizeUrlString(value);
+  if (!raw) return true;
+  if (SUMMARY_LEGACY_DEFAULTS.apiUrls.map(normalizeUrlString).includes(raw)) return true;
+  return Object.values(SUMMARY_PROVIDER_DEFAULTS).some((item) => normalizeUrlString(item.apiUrl) === raw);
+}
+
+function isSummaryDefaultModel(value) {
+  if (!value) return true;
+  const raw = String(value).trim();
+  if (!raw) return true;
+  if (SUMMARY_LEGACY_DEFAULTS.models.includes(raw)) return true;
+  return Object.values(SUMMARY_PROVIDER_DEFAULTS).some((item) => item.model === raw);
+}
+
+function hasApiKeyInUrl(value) {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return Boolean(parsed.searchParams.get('key') || parsed.searchParams.get('api_key'));
+  } catch (_error) {
+    return false;
+  }
+}
+
+function applySummaryProviderPlaceholders(provider) {
+  const defaults = getSummaryProviderDefaults(provider);
+  if ($('summaryApiUrl')) $('summaryApiUrl').placeholder = defaults.apiUrl;
+  if ($('summaryModel')) $('summaryModel').placeholder = defaults.model;
+  if ($('summaryApiUrlExample')) {
+    $('summaryApiUrlExample').textContent = `${t('summary.apiUrlExample')}: ${defaults.apiUrl}`;
+  }
+}
+
+function normalizeSummaryTestDetail(detail) {
+  if (!detail) return '';
+  const trimmed = String(detail).replace(/\s+/g, ' ').trim();
+  if (!trimmed) return '';
+  return trimmed.length > 180 ? trimmed.slice(0, 177) + '...' : trimmed;
+}
+
+function setSummaryTestResult(statusKey, detail) {
+  const el = $('summaryTestResult');
+  if (!el) return;
+  if (!statusKey) {
+    el.textContent = '';
+    return;
+  }
+  const base = t(statusKey);
+  const cleaned = normalizeSummaryTestDetail(detail);
+  if (!cleaned) {
+    el.textContent = base;
+    return;
+  }
+  const sep = currentLanguage === 'en' ? ': ' : '：';
+  el.textContent = `${base}${sep}${cleaned}`;
+}
+
+function clearSummaryTestResult() {
+  const el = $('summaryTestResult');
+  if (el) el.textContent = '';
+}
+
+function formatSummaryTestFailure(result) {
+  if (!result || typeof result !== 'object') return '';
+  const pieces = [];
+  const errorKey = result.error ? SUMMARY_TEST_ERROR_KEYS[String(result.error)] : '';
+  if (errorKey) pieces.push(t(errorKey));
+  if (typeof result.status === 'number' && result.status > 0) pieces.push(`HTTP ${result.status}`);
+  if (result.detail) pieces.push(String(result.detail));
+  const sep = currentLanguage === 'en' ? ' - ' : ' - ';
+  return pieces.filter(Boolean).join(sep);
+}
+
+function setSummaryApiKeyVisibility(visible) {
+  const input = $('summaryApiKey');
+  const toggle = $('summaryApiKeyToggle');
+  if (!input || !toggle) return;
+  input.type = visible ? 'text' : 'password';
+  toggle.classList.toggle('isActive', visible);
+  const key = visible ? 'summary.apiKeyToggle.hide' : 'summary.apiKeyToggle.show';
+  const label = t(key);
+  toggle.setAttribute('title', label);
+  toggle.setAttribute('aria-label', label);
+}
+
+function syncSummaryApiKeyToggle() {
+  const input = $('summaryApiKey');
+  if (!input) return;
+  setSummaryApiKeyVisibility(input.type === 'text');
+}
+
+function updateSummaryProviderDefaults(summary, nextProvider) {
+  const nextDefaults = getSummaryProviderDefaults(nextProvider);
+  summary.provider = nextProvider;
+  if (isSummaryDefaultUrl(summary.apiUrl)) summary.apiUrl = nextDefaults.apiUrl;
+  if (isSummaryDefaultModel(summary.model)) summary.model = nextDefaults.model;
+}
+
+function ensureSummaryConfig(config) {
+  if (!config.summary || typeof config.summary !== 'object') config.summary = {};
+  if (!config.summary.provider) config.summary.provider = 'openai';
+  if (config.summary.timeoutMs == null || config.summary.timeoutMs === 1200) {
+    config.summary.timeoutMs = 15000;
+  }
+  return config.summary;
+}
+
+function applySummaryValues(config) {
+  if (!$('summaryEnabled')) return;
+  const summary = ensureSummaryConfig(config);
+  summary.provider = normalizeSummaryProvider(summary.provider);
+  $('summaryEnabled').checked = Boolean(summary.enabled);
+  if ($('summaryProvider')) $('summaryProvider').value = summary.provider;
+  $('summaryApiUrl').value = summary.apiUrl || '';
+  $('summaryApiKey').value = summary.apiKey || '';
+  $('summaryModel').value = summary.model || '';
+  $('summaryTimeoutMs').value = String(summary.timeoutMs ?? 15000);
+  applySummaryProviderPlaceholders(summary.provider);
+}
+
+function setSummaryVisibility(enabled) {
+  const fields = $('summaryFields');
+  if (!fields) return;
+  fields.classList.toggle('isCollapsed', !enabled);
+}
+
+function bindNumberSteppers() {
+  const fields = Array.from(document.querySelectorAll('.numberField'));
+  if (fields.length === 0) return;
+
+  const triggerEvents = (input) => {
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  const step = (input, direction) => {
+    if (!input || input.disabled) return;
+    try {
+      if (direction === 'up') input.stepUp();
+      else input.stepDown();
+      triggerEvents(input);
+    } catch (_error) {
+      // ignore
+    }
+  };
+
+  for (const field of fields) {
+    const input = field.querySelector('input[type="number"]');
+    const up = field.querySelector('[data-step="up"]');
+    const down = field.querySelector('[data-step="down"]');
+    if (!input || !up || !down) continue;
+
+    up.addEventListener('click', (event) => {
+      event.preventDefault();
+      step(input, 'up');
+    });
+    down.addEventListener('click', (event) => {
+      event.preventDefault();
+      step(input, 'down');
+    });
+  }
+}
+
+function applyWatchLogRetention(config) {
+  const input = $('watchLogRetentionDays');
+  if (!input) return;
+  const days = Number(config?.ui?.watchLogRetentionDays);
+  input.value = String(Number.isFinite(days) && days >= 1 ? days : 7);
+}
+
+function applyWebhookCardToggle(config) {
+  const input = $('useFeishuCard');
+  if (!input) return;
+  input.checked = Boolean(config?.channels?.webhook?.useFeishuCard);
+}
+
+function bindClosePrompt() {
+  const modal = $('closeModal');
+  if (!modal) return () => {};
+
+  let activeId = null;
+
+  const setOpen = (open) => {
+    modal.classList.toggle('isOpen', open);
+    modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) {
+      const remember = $('closeRemember');
+      if (remember) remember.checked = false;
+      const hideBtn = $('closeHideBtn');
+      if (hideBtn) hideBtn.focus();
+    }
+  };
+
+  const respond = (action) => {
+    if (!activeId) {
+      setOpen(false);
+      return;
+    }
+    const payload = {
+      id: activeId,
+      action,
+      remember: Boolean($('closeRemember')?.checked)
+    };
+    activeId = null;
+    if (window.completeNotify && typeof window.completeNotify.respondClosePrompt === 'function') {
+      window.completeNotify.respondClosePrompt(payload);
+    }
+    setOpen(false);
+  };
+
+  const onRequest = (payload) => {
+    const id = payload && payload.id ? String(payload.id) : '';
+    if (!id) return;
+    activeId = id;
+    setOpen(true);
+  };
+
+  const onMaskClick = (event) => {
+    if (event.target === modal) respond('cancel');
+  };
+
+  const onKeydown = (event) => {
+    if (event.key === 'Escape' && modal.classList.contains('isOpen')) {
+      respond('cancel');
+    }
+  };
+
+  const hideBtn = $('closeHideBtn');
+  const quitBtn = $('closeQuitBtn');
+  const cancelBtn = $('closeCancelBtn');
+
+  const onHideClick = () => respond('tray');
+  const onQuitClick = () => respond('exit');
+  const onCancelClick = () => respond('cancel');
+
+  if (hideBtn) hideBtn.addEventListener('click', onHideClick);
+  if (quitBtn) quitBtn.addEventListener('click', onQuitClick);
+  if (cancelBtn) cancelBtn.addEventListener('click', onCancelClick);
+  modal.addEventListener('click', onMaskClick);
+  window.addEventListener('keydown', onKeydown);
+
+  const unsubscribe = window.completeNotify && typeof window.completeNotify.onClosePrompt === 'function'
+    ? window.completeNotify.onClosePrompt(onRequest)
+    : () => {};
+
+  return () => {
+    if (hideBtn) hideBtn.removeEventListener('click', onHideClick);
+    if (quitBtn) quitBtn.removeEventListener('click', onQuitClick);
+    if (cancelBtn) cancelBtn.removeEventListener('click', onCancelClick);
+    modal.removeEventListener('click', onMaskClick);
+    window.removeEventListener('keydown', onKeydown);
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
 async function main() {
   const cleanupNav = setupNav();
+  const cleanupClosePrompt = bindClosePrompt();
+  bindNumberSteppers();
   const meta = await window.completeNotify.getMeta();
   $('productName').textContent = meta.productName;
 
   $('openDataDir').addEventListener('click', () => window.completeNotify.openPath(meta.dataDir));
   $('openConfigPath').addEventListener('click', () => window.completeNotify.openPath(meta.configPath));
+  if ($('openWatchLogBtn')) {
+    $('openWatchLogBtn').addEventListener('click', async () => {
+      try {
+        if (typeof window.completeNotify.openWatchLog !== 'function') {
+          setHint(t('watch.logOpenFailed'));
+          return;
+        }
+        const result = await window.completeNotify.openWatchLog();
+        if (!result || !result.ok) {
+          setHint(t('watch.logOpenFailed'));
+          return;
+        }
+        setHint('');
+      } catch (_error) {
+        setHint(t('watch.logOpenFailed'));
+      }
+    });
+  }
   if (meta.version && $('productVersion')) $('productVersion').textContent = `v${meta.version}`;
   if ($('githubBtn')) {
     $('githubBtn').addEventListener('click', () => {
@@ -490,12 +953,16 @@ async function main() {
     triggerAutoSave();
   });
 
-  $('useFeishuCard').checked = Boolean(config.channels?.webhook?.useFeishuCard);
-  $('useFeishuCard').addEventListener('change', () => {
-    config.channels.webhook = config.channels.webhook || {};
-    config.channels.webhook.useFeishuCard = $('useFeishuCard').checked;
-    triggerAutoSave();
-  });
+  const useFeishuCardEl = $('useFeishuCard');
+  if (useFeishuCardEl) {
+    useFeishuCardEl.checked = Boolean(config.channels?.webhook?.useFeishuCard);
+    useFeishuCardEl.addEventListener('change', () => {
+      config.channels = config.channels || {};
+      config.channels.webhook = config.channels.webhook || {};
+      config.channels.webhook.useFeishuCard = useFeishuCardEl.checked;
+      triggerAutoSave();
+    });
+  }
 
   const closeBehavior = ['ask', 'tray', 'exit'].includes(String(config.ui.closeBehavior)) ? String(config.ui.closeBehavior) : 'ask';
   $('closeBehavior').value = closeBehavior;
@@ -542,7 +1009,157 @@ async function main() {
     });
   }
 
+  let summaryBound = false;
+  const bindSummaryControls = () => {
+    if (summaryBound || !$('summaryEnabled')) return;
+    summaryBound = true;
+
+    $('summaryEnabled').addEventListener('change', () => {
+      const summary = ensureSummaryConfig(config);
+      summary.enabled = Boolean($('summaryEnabled').checked);
+      setSummaryVisibility(summary.enabled);
+      triggerAutoSave();
+      clearSummaryTestResult();
+    });
+    if ($('summaryProvider')) {
+      $('summaryProvider').addEventListener('change', () => {
+        const summary = ensureSummaryConfig(config);
+        const nextProvider = normalizeSummaryProvider($('summaryProvider').value);
+        if (nextProvider === normalizeSummaryProvider(summary.provider)) return;
+        updateSummaryProviderDefaults(summary, nextProvider);
+        applySummaryValues(config);
+        triggerAutoSave();
+        clearSummaryTestResult();
+      });
+    }
+    $('summaryApiUrl').addEventListener('input', () => {
+      const summary = ensureSummaryConfig(config);
+      summary.apiUrl = String($('summaryApiUrl').value || '').trim();
+      triggerAutoSave();
+      clearSummaryTestResult();
+    });
+    $('summaryApiKey').addEventListener('input', () => {
+      const summary = ensureSummaryConfig(config);
+      summary.apiKey = String($('summaryApiKey').value || '').trim();
+      triggerAutoSave();
+      clearSummaryTestResult();
+    });
+    $('summaryModel').addEventListener('input', () => {
+      const summary = ensureSummaryConfig(config);
+      summary.model = String($('summaryModel').value || '').trim();
+      triggerAutoSave();
+      clearSummaryTestResult();
+    });
+    $('summaryTimeoutMs').addEventListener('change', () => {
+      const summary = ensureSummaryConfig(config);
+      const n = Number($('summaryTimeoutMs').value);
+      summary.timeoutMs = Number.isFinite(n) && n >= 200 ? n : 15000;
+      triggerAutoSave();
+      clearSummaryTestResult();
+    });
+
+    if ($('summaryApiKeyToggle')) {
+      $('summaryApiKeyToggle').addEventListener('click', () => {
+        const input = $('summaryApiKey');
+        if (!input) return;
+        setSummaryApiKeyVisibility(input.type === 'password');
+      });
+      syncSummaryApiKeyToggle();
+    }
+
+    if ($('summaryTestBtn')) {
+      $('summaryTestBtn').addEventListener('click', async () => {
+        if (!window.completeNotify || typeof window.completeNotify.testSummary !== 'function') {
+          setSummaryTestResult('summary.test.fail', t('summary.test.unsupported'));
+          return;
+        }
+
+        const provider = normalizeSummaryProvider($('summaryProvider')?.value);
+        const apiUrl = String($('summaryApiUrl')?.value || '').trim();
+        const apiKey = String($('summaryApiKey')?.value || '').trim();
+        const model = String($('summaryModel')?.value || '').trim();
+        const timeoutRaw = Number($('summaryTimeoutMs')?.value || 15000);
+        const timeoutMs = Number.isFinite(timeoutRaw) && timeoutRaw >= 200 ? timeoutRaw : 15000;
+
+        if (!apiUrl) {
+          setSummaryTestResult('summary.test.fail', t('summary.test.missingApiUrl'));
+          return;
+        }
+        if (!model) {
+          setSummaryTestResult('summary.test.fail', t('summary.test.missingModel'));
+          return;
+        }
+        if (provider === 'google') {
+          if (!apiKey && !hasApiKeyInUrl(apiUrl)) {
+            setSummaryTestResult('summary.test.fail', t('summary.test.missingApiKey'));
+            return;
+          }
+        } else if (!apiKey) {
+          setSummaryTestResult('summary.test.fail', t('summary.test.missingApiKey'));
+          return;
+        }
+
+        const summary = ensureSummaryConfig(config);
+        summary.provider = provider;
+        summary.apiUrl = apiUrl;
+        summary.apiKey = apiKey;
+        summary.model = model;
+        summary.timeoutMs = timeoutMs;
+        triggerAutoSave();
+
+        const isEnglish = currentLanguage === 'en';
+        const payload = {
+          summary: {
+            provider,
+            apiUrl,
+            apiKey,
+            model,
+            timeoutMs
+          },
+          taskInfo: isEnglish ? 'Summary test: verify API connectivity.' : '摘要测试：验证 API 连通性。',
+          contentText: isEnglish
+            ? 'The task completed successfully and needs a short summary.'
+            : '任务已完成，需要生成简短摘要。',
+          summaryContext: isEnglish
+            ? { userMessage: 'Please summarize the task outcome.', assistantMessage: 'Completed successfully.' }
+            : { userMessage: '请总结任务结果。', assistantMessage: '任务已完成。' }
+        };
+
+        $('summaryTestBtn').disabled = true;
+        setSummaryTestResult('summary.test.running');
+        try {
+          const result = await window.completeNotify.testSummary(payload);
+          if (result && result.ok && result.summary) {
+            setSummaryTestResult('summary.test.success', result.summary);
+            return;
+          }
+          const detail = formatSummaryTestFailure(result);
+          setSummaryTestResult('summary.test.fail', detail);
+        } catch (error) {
+          setSummaryTestResult('summary.test.fail', String(error?.message || error));
+        } finally {
+          $('summaryTestBtn').disabled = false;
+        }
+      });
+    }
+  };
+
   applyLanguageToDom(config, { onGlobalChange: triggerAutoSave, onSourceChange: triggerAutoSave });
+  bindSummaryControls();
+  applySummaryValues(config);
+  setSummaryVisibility(Boolean(config?.summary?.enabled));
+  applyWatchLogRetention(config);
+  applyWebhookCardToggle(config);
+
+  if ($('watchLogRetentionDays')) {
+    $('watchLogRetentionDays').addEventListener('change', () => {
+      config.ui = config.ui || {};
+      const n = Number($('watchLogRetentionDays').value);
+      config.ui.watchLogRetentionDays = Number.isFinite(n) && n >= 1 ? n : 7;
+      applyWatchLogRetention(config);
+      triggerAutoSave();
+    });
+  }
 
   $('reloadBtn').addEventListener('click', async () => {
     $('reloadBtn').disabled = true;
@@ -557,6 +1174,10 @@ async function main() {
       $('languageSelect').value = currentLanguage;
 
       applyLanguageToDom(config, { onGlobalChange: triggerAutoSave, onSourceChange: triggerAutoSave });
+      applySummaryValues(config);
+      setSummaryVisibility(Boolean(config?.summary?.enabled));
+      applyWatchLogRetention(config);
+      applyWebhookCardToggle(config);
       await refreshWatchStatus();
     } catch (error) {
       setHint(String(error?.message || error));
@@ -673,6 +1294,7 @@ async function main() {
 
   window.addEventListener('beforeunload', () => {
     if (typeof unsubscribeWatchLog === 'function') unsubscribeWatchLog();
+    if (typeof cleanupClosePrompt === 'function') cleanupClosePrompt();
     if (typeof cleanupNav === 'function') cleanupNav();
   });
 }

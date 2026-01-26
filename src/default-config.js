@@ -7,10 +7,21 @@ const DEFAULT_CONFIG = {
   format: {
     includeSourcePrefixInTitle: true
   },
+  summary: {
+    enabled: false,
+    provider: 'openai',
+    apiUrl: '',
+    apiKey: '',
+    model: '',
+    timeoutMs: 15000,
+    maxTokens: 200,
+    prompt: ''
+  },
   ui: {
     language: 'zh-CN',
     closeBehavior: 'ask', // ask | tray | exit
-    autostart: false
+    autostart: false,
+    watchLogRetentionDays: 7
   },
   channels: {
     webhook: {

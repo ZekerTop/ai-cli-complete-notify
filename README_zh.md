@@ -2,7 +2,7 @@
 
 # 🔔 AI CLI Complete Notify
 
-**版本：1.2.0**
+**版本：1.3.0**
 
 [English](README.md) | 中文
 
@@ -23,13 +23,14 @@
 🖥️ 桌面通知 • 🔊 声音/TTS 提醒 • ⌚ 手环提醒
 
 
-## ✨ 核心特性
+## ✨ 核心特性（更多详细更新日志见文末）
 
 - 🎯 **智能去抖**：根据任务类型自动调整提醒时机，有工具调用时等待 60 秒，无工具调用时仅需 15 秒
 - 🔀 **分源控制**：Claude / Codex / Gemini 独立启用与阈值设置
 - 📡 **多通道推送**：同时支持多种通知方式，确保消息送达
 - ⏱️ **耗时阈值**：只在任务超过设定时长时提醒，避免频繁打扰
 - 👀 **双模式监听**：支持计时模式（`run`/`start-stop`）和日志监听模式（适合交互式 CLI / VSCode）
+- 🧠 **AI 摘要（可选）**：任务完成后快速生成简短摘要，超时自动回退
 - 🖥️ **桌面应用**：图形界面配置，支持中英文切换、托盘隐藏、开机自启
 - 🔐 **配置分离**：运行配置与敏感信息分离，安全可靠
 
@@ -85,6 +86,7 @@ npm run dev
 - **来源设置**：为 Claude / Codex / Gemini 分别设置启用状态和耗时阈值
 - **监听配置**：设置轮询间隔和去抖时间，支持智能调整
 - **测试功能**：测试各通知渠道是否正常工作
+- **AI 摘要**：配置 API URL / Key / 模型 与超时回退
 - **高级选项**：标题前缀、关闭行为、开机自启动
 
 ### 界面预览
@@ -93,6 +95,7 @@ npm run dev
 ![全局通道](docs/images/全局通道.png)
 ![各来源设置](docs/images/各cli来源.png)
 ![监听 / 测试 / 高级](docs/images/监听、测试、高级功能.png)
+![AI 摘要](docs/images/AI摘要.png)
 
 ### 托盘功能
 
@@ -183,6 +186,15 @@ TELEGRAM_CHAT_ID=your_chat_id
 # EMAIL_FROM=AI Notify <bot@example.com>
 # EMAIL_TO=you@example.com
 
+# AI 摘要（可选）
+# SUMMARY_ENABLED=false
+# SUMMARY_PROVIDER=openai    # 模型平台：openai | anthropic | google | qwen | deepseek
+# SUMMARY_API_URL=https://api.openai.com/v1/chat/completions
+# SUMMARY_API_KEY=your_api_key
+# SUMMARY_MODEL=gpt-4o-mini
+# SUMMARY_TIMEOUT_MS=15000
+# SUMMARY_PROMPT=你是一个技术助手，请输出一句简短中文摘要（100字以内）。
+
 # 自定义路径（可选）
 # AI_CLI_COMPLETE_NOTIFY_DATA_DIR=...
 # AI_CLI_COMPLETE_NOTIFY_ENV_PATH=...
@@ -220,10 +232,29 @@ npm run dist:portable
 ## 📝 使用提示
 
 - ⏱️ **阈值功能**需要有计时数据（通过 `run` / `start-stop` / `watch` 模式），`notify` 命令会忽略阈值直接发送
-- 🔗 **通用 Webhook** 默认使用飞书 JSON 格式，如需对接其他平台请自行调整格式
+- 🔗 **Webhook** 默认使用飞书 post 格式；如需飞书 JSON 卡片，可在“高级”中开启“Webhook 使用飞书卡片格式”（监听有输出内容时会附加到卡片中）
 - 🚀 **开机自启**功能在"高级"选项卡中配置（支持 Windows / macOS）
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
+
+## 版本更新
+
+- 1.3.0：
+  - 飞书卡片 webhook + LOGO 随系统深浅色切换
+  - AI 摘要多模型平台 + 测试 + 流式解析
+  - 启用摘要时仅发送摘要（失败回退为输出内容）
+  - UI 细节优化（退出弹窗/勾选框/数字步进）
+  - watch 日志持久化
+  - 摘要测试默认超时 15s
+- 1.2.0：
+  - 修复隐藏托盘多开问题
+  - 增加部分提示
+  - 修复中英文切换问题
+- 1.1.0：
+  - 修复 CC 整轮对话未完成但子任务优先提醒
+  - 针对 CC 提供自适应去抖时间，自动识别消息类型
+- 1.0.0：
+  - 初始版本
 
 ## 📄 许可证
 
@@ -236,3 +267,4 @@ ISC
 ---
 
 **享受智能提醒，让 AI 为您工作！** 🎉
+

@@ -29,7 +29,16 @@ async function notifyTaskCompletion(taskInfo = '任务已完成', webhookUrl = n
   const timestamp = new Date().toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
   const contentText = `完成时间：${timestamp}`;
 
-  const result = await notifyWebhook({ config, title, contentText });
+  const result = await notifyWebhook({
+    config,
+    title,
+    contentText,
+    projectName,
+    timestamp,
+    durationText: null,
+    sourceLabel: 'Webhook',
+    taskInfo
+  });
   return Boolean(result.ok);
 }
 

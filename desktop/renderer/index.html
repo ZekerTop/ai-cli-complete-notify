@@ -38,6 +38,7 @@
           <a class="navItem" href="#sources" data-i18n="nav.sources">来源</a>
           <a class="navItem" href="#watch" data-i18n="nav.watch">监听</a>
           <a class="navItem" href="#test" data-i18n="nav.test">测试</a>
+          <a class="navItem" href="#summary" data-i18n="nav.summary">摘要</a>
           <a class="navItem" href="#advanced" data-i18n="nav.advanced">高级</a>
         </nav>
 
@@ -96,27 +97,90 @@
           <div class="watchGrid">
             <div class="watchCard">
               <div class="watchRow">
-                <label class="chip"><input id="watchClaude" type="checkbox" checked />Claude</label>
-                <label class="chip"><input id="watchCodex" type="checkbox" checked />Codex</label>
-                <label class="chip"><input id="watchGemini" type="checkbox" checked />Gemini</label>
+              <label class="chip"><input id="watchClaude" class="prettyCheck" type="checkbox" checked />Claude</label>
+              <label class="chip"><input id="watchCodex" class="prettyCheck" type="checkbox" checked />Codex</label>
+              <label class="chip"><input id="watchGemini" class="prettyCheck" type="checkbox" checked />Gemini</label>
               </div>
               <div class="watchRow">
                 <label data-i18n="watch.polling">轮询(ms)</label>
-                <input id="watchIntervalMs" type="number" min="500" step="100" value="1000" />
+                <div class="numberField">
+                  <input id="watchIntervalMs" type="number" min="500" step="100" value="1000" />
+                  <div class="numberStepper">
+                    <button class="stepBtn" type="button" data-step="up" data-i18n-title="ui.stepUp" title="增加" aria-label="增加">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="stepBtn down" type="button" data-step="down" data-i18n-title="ui.stepDown" title="减少" aria-label="减少">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="watchRow">
                 <div class="labelWithHint">
                   <label data-i18n="watch.claudeDebounce">Claude 去抖(ms)</label>
                   <span class="hintIcon" title="等待多久没有新消息后才发送提醒，避免在 Claude 还在执行任务时就提醒">?</span>
                 </div>
-                <input id="watchClaudeQuietMs" type="number" min="1000" step="1000" value="60000" />
+                <div class="numberField">
+                  <input id="watchClaudeQuietMs" type="number" min="1000" step="1000" value="60000" />
+                  <div class="numberStepper">
+                    <button class="stepBtn" type="button" data-step="up" data-i18n-title="ui.stepUp" title="增加" aria-label="增加">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="stepBtn down" type="button" data-step="down" data-i18n-title="ui.stepDown" title="减少" aria-label="减少">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="watchRow">
                 <div class="labelWithHint">
                   <label data-i18n="watch.debounce">Gemini 去抖(ms)</label>
                   <span class="hintIcon" title="等待多久没有新消息后才发送提醒，避免在 Gemini 还在输出时就提醒">?</span>
                 </div>
-                <input id="watchGeminiQuietMs" type="number" min="500" step="100" value="3000" />
+                <div class="numberField">
+                  <input id="watchGeminiQuietMs" type="number" min="500" step="100" value="3000" />
+                  <div class="numberStepper">
+                    <button class="stepBtn" type="button" data-step="up" data-i18n-title="ui.stepUp" title="增加" aria-label="增加">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="stepBtn down" type="button" data-step="down" data-i18n-title="ui.stepDown" title="减少" aria-label="减少">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="watchRow">
+                <div class="labelWithHint">
+                  <label data-i18n="watch.logRetention">日志保留(天)</label>
+                  <span class="hintIcon" data-i18n-title="watch.logRetentionHint" title="保留最近 N 天的本地监听日志">?</span>
+                </div>
+                <div class="numberField">
+                  <input id="watchLogRetentionDays" type="number" min="1" step="1" value="7" />
+                  <div class="numberStepper">
+                    <button class="stepBtn" type="button" data-step="up" data-i18n-title="ui.stepUp" title="增加" aria-label="增加">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button class="stepBtn down" type="button" data-step="down" data-i18n-title="ui.stepDown" title="减少" aria-label="减少">
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="watchRow">
                 <button id="watchStartBtn" data-i18n="btn.watchStart">开始监听</button>
@@ -128,7 +192,10 @@
             </div>
 
             <div class="watchCard">
-              <div class="watchLogHead" data-i18n="watch.logs">监听日志</div>
+              <div class="watchLogHeadRow">
+                <div class="watchLogHead" data-i18n="watch.logs">监听日志</div>
+                <button id="openWatchLogBtn" class="ghost miniBtn" data-i18n="btn.openWatchLog">打开日志</button>
+              </div>
               <pre class="log" id="watchLog"></pre>
             </div>
           </div>
@@ -150,12 +217,107 @@
               <option value="gemini">Gemini</option>
             </select>
             <label data-i18n="test.duration">耗时(分钟)</label>
-            <input id="testDuration" type="number" min="0" step="1" value="10" />
+            <div class="numberField">
+              <input id="testDuration" type="number" min="0" step="1" value="10" />
+              <div class="numberStepper">
+                <button class="stepBtn" type="button" data-step="up" data-i18n-title="ui.stepUp" title="增加" aria-label="增加">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button class="stepBtn down" type="button" data-step="down" data-i18n-title="ui.stepDown" title="减少" aria-label="减少">
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
             <label data-i18n="test.message">内容</label>
             <input id="testTask" type="text" value="测试提醒（强制发送）" />
             <button id="testBtn" data-i18n="btn.send">发送</button>
           </div>
           <pre class="log" id="log"></pre>
+        </section>
+
+        <section class="panel" id="summary">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.summary.title">AI 摘要</h2>
+              <div class="sub" data-i18n="section.summary.sub">用于生成通知中的简短摘要，未在超时内返回则使用原始任务描述。</div>
+            </div>
+          </div>
+          <div class="row summaryHeadRow">
+            <div class="toggleRow">
+              <label for="summaryEnabled" data-i18n="summary.enabled">启用 AI 摘要</label>
+              <label class="switch" aria-label="summary toggle">
+              <input id="summaryEnabled" class="prettyCheck" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="summaryProvider">
+              <label for="summaryProvider" data-i18n="summary.provider">模型平台</label>
+              <select id="summaryProvider">
+                <option value="openai" data-i18n="summary.provider.openai">OpenAI</option>
+                <option value="anthropic" data-i18n="summary.provider.anthropic">Anthropic</option>
+                <option value="google" data-i18n="summary.provider.google">Google / Gemini</option>
+                <option value="qwen" data-i18n="summary.provider.qwen">Qwen</option>
+                <option value="deepseek" data-i18n="summary.provider.deepseek">DeepSeek</option>
+              </select>
+            </div>
+          </div>
+          <div id="summaryFields" class="summaryFields isCollapsed">
+            <div class="row">
+              <label data-i18n="summary.apiUrl">API URL</label>
+              <input id="summaryApiUrl" type="text" placeholder="https://open.bigmodel.cn/api/paas/v4/chat/completions" />
+            </div>
+            <div id="summaryApiUrlExample" class="hint"></div>
+            <div class="row">
+              <label data-i18n="summary.apiKey">API Key</label>
+              <div class="inputWithAction">
+                <input id="summaryApiKey" type="password" placeholder="your_api_key" />
+                <button id="summaryApiKeyToggle" class="ghost inputActionBtn" type="button" data-i18n-title="summary.apiKeyToggle.show" title="显示 API Key" aria-label="显示 API Key">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M2 12c2.6-4.2 5.8-6.3 10-6.3s7.4 2.1 10 6.3c-2.6 4.2-5.8 6.3-10 6.3S4.6 16.2 2 12Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+                    <path class="eyeSlash" d="M4 4L20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="row">
+              <label data-i18n="summary.model">Model</label>
+              <input id="summaryModel" type="text" placeholder="glm-4-flash-250414" />
+            </div>
+            <div class="row">
+              <div class="labelWithHint">
+                <label data-i18n="summary.timeout">超时(ms)</label>
+                <span class="hintIcon" data-i18n-title="summary.timeoutHint" title="超时后会自动回退到默认任务描述">?</span>
+              </div>
+              <div class="numberField">
+                <input id="summaryTimeoutMs" type="number" min="300" step="100" value="15000" />
+                <div class="numberStepper">
+                  <button class="stepBtn" type="button" data-step="up" data-i18n-title="ui.stepUp" title="增加" aria-label="增加">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button class="stepBtn down" type="button" data-step="down" data-i18n-title="ui.stepDown" title="减少" aria-label="减少">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M4.5 9.5 8 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <label data-i18n="summary.test">摘要测试</label>
+              <div class="summaryTestControls">
+                <button id="summaryTestBtn" class="ghost" type="button" data-i18n="summary.testBtn">开始测试</button>
+                <div id="summaryTestResult" class="hint"></div>
+              </div>
+            </div>
+            <div class="hint" data-i18n="summary.hint">填写 API 信息后即可生效，未返回摘要时会自动回退。</div>
+          </div>
         </section>
 
         <section class="panel" id="advanced">
@@ -167,13 +329,13 @@
           </div>
           <div class="row">
             <label class="toggleRow">
-              <input id="includeSourcePrefixInTitle" type="checkbox" />
+              <input id="includeSourcePrefixInTitle" class="prettyCheck" type="checkbox" />
               <span data-i18n="advanced.titlePrefix">标题包含来源前缀（例如 [Codex]）</span>
             </label>
           </div>
           <div class="row" style="margin-top: 10px;">
             <label class="toggleRow">
-              <input id="useFeishuCard" type="checkbox" />
+              <input id="useFeishuCard" class="prettyCheck" type="checkbox" />
               <span data-i18n="advanced.useFeishuCard">Webhook 使用飞书卡片格式</span>
             </label>
           </div>
@@ -187,7 +349,7 @@
           </div>
           <div class="row" style="margin-top: 10px;">
             <label class="toggleRow">
-              <input id="autostart" type="checkbox" />
+              <input id="autostart" class="prettyCheck" type="checkbox" />
               <span data-i18n="advanced.autostart">开机自启动（登录后自动在后台运行）</span>
             </label>
             <div class="hint" data-i18n="advanced.autostartHint">Windows/macOS 支持开机自启动；Linux 需自行配置。</div>
@@ -195,6 +357,22 @@
           <div class="hint" data-i18n="advanced.closeHint">选择“隐藏到托盘”后，点击右上角关闭不会退出，会在右下角托盘保留图标，点击即可重新打开。</div>
         </section>
       </main>
+    </div>
+
+    <div id="closeModal" class="modalMask" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="closeModalTitle">
+        <div class="modalTitle" id="closeModalTitle" data-i18n="close.message">关闭应用？</div>
+        <div class="modalSub" data-i18n="close.detail">可选择隐藏到托盘继续运行，或直接退出并停止监听。</div>
+        <div class="modalActions">
+          <button id="closeHideBtn" data-i18n="close.hide">隐藏到托盘</button>
+          <button id="closeQuitBtn" class="ghost" data-i18n="close.quit">退出</button>
+          <button id="closeCancelBtn" class="ghost" data-i18n="close.cancel">取消</button>
+        </div>
+        <label class="toggleRow modalRemember">
+          <input id="closeRemember" class="prettyCheck" type="checkbox" />
+          <span data-i18n="close.remember">记住我的选择（可在“高级”里修改）</span>
+        </label>
+      </div>
     </div>
 
     <script src="./renderer.js"></script>

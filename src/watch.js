@@ -17,6 +17,32 @@ function hasContentType(message, expectedType) {
   return message.content.some((item) => item && item.type === expectedType);
 }
 
+function extractTextFromAny(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value.map(extractTextFromAny).filter(Boolean).join('\n');
+  }
+  if (typeof value === 'object') {
+    if (typeof value.text === 'string') return value.text;
+    if (typeof value.content === 'string') return value.content;
+    if (typeof value.message === 'string') return value.message;
+    if (typeof value.value === 'string') return value.value;
+    if (typeof value.data === 'string') return value.data;
+    if (Array.isArray(value.content)) return extractTextFromAny(value.content);
+    if (Array.isArray(value.parts)) return extractTextFromAny(value.parts);
+    if (Array.isArray(value.messages)) return extractTextFromAny(value.messages);
+  }
+  return '';
+}
+
+function extractMessageText(message) {
+  if (!message) return '';
+  if (Array.isArray(message.content)) return extractTextFromAny(message.content);
+  if (typeof message.content === 'string') return message.content;
+  return extractTextFromAny(message);
+}
+
 function safeJsonParse(line) {
   try {
     const normalized = typeof line === 'string' ? line.replace(/^\uFEFF/, '') : '';
@@ -158,7 +184,9 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
     notifiedForTurn: false,
     lastCwd: null,
     pendingTimer: null,
-    lastAssistantContent: null // 捕获assistant的输出内容
+    lastAssistantContent: null, // 捕获assistant的输出内容
+    lastUserText: '',
+    lastAssistantText: ''
   };
 
   const quietMs = Math.max(500, claudeQuietMs || quietPeriodMs || 60000);
@@ -179,7 +207,11 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
       taskInfo: 'Claude 完成',
       durationMs,
       cwd,
-      outputContent: state.lastAssistantContent // 传递输出内容
+      outputContent: state.lastAssistantContent || state.lastAssistantText,
+      summaryContext: {
+        userMessage: state.lastUserText,
+        assistantMessage: state.lastAssistantText
+      }
     });
     logger(`[watch][claude] ${summarizeResult(result)}`);
   }
@@ -192,6 +224,9 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
     if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
 
     if (obj.type === 'user' && hasContentType(obj.message, 'text')) {
+      const userText = extractMessageText(obj.message);
+      state.lastUserText = userText;
+      state.lastAssistantText = '';
       if (seed) return;
       state.lastUserTextAt = ts;
       if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
@@ -201,6 +236,8 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
 
     if (obj.type === 'assistant') {
       if (seed) return;
+      const assistantText = extractMessageText(obj.message);
+      if (assistantText) state.lastAssistantText = assistantText;
 
       if (state.lastUserTextAt == null) {
         state.lastUserTextAt = ts || Date.now();
@@ -286,7 +323,9 @@ function startCodexWatch({ intervalMs, log }) {
     tickRunning: false,
     lastUserAt: null,
     lastCwd: null,
-    lastAgentContent: null // 捕获agent的输出内容
+    lastAgentContent: null, // 捕获agent的输出内容
+    lastUserText: '',
+    lastAssistantText: ''
   };
 
   async function processObject(obj, { seed }) {
@@ -300,6 +339,7 @@ function startCodexWatch({ intervalMs, log }) {
 
     if (obj.type === 'response_item' && obj.payload && obj.payload.type === 'message' && obj.payload.role === 'user') {
       state.lastUserAt = ts;
+      state.lastUserText = extractTextFromAny(obj.payload);
       return;
     }
 
@@ -307,11 +347,14 @@ function startCodexWatch({ intervalMs, log }) {
       const kind = obj.payload.type;
       if (kind === 'user_message') {
         state.lastUserAt = ts;
+        state.lastUserText = extractTextFromAny(obj.payload);
         return;
       }
 
       if (kind === 'agent_message') {
         if (seed) return;
+        const assistantText = extractTextFromAny(obj.payload);
+        if (assistantText) state.lastAssistantText = assistantText;
 
         // 捕获agent消息的内容 - 尝试多个可能的字段
         let content = null;
@@ -343,7 +386,11 @@ function startCodexWatch({ intervalMs, log }) {
           taskInfo: 'Codex 完成',
           durationMs,
           cwd,
-          outputContent: state.lastAgentContent // 传递输出内容
+          outputContent: state.lastAgentContent || state.lastAssistantText,
+          summaryContext: {
+            userMessage: state.lastUserText,
+            assistantMessage: state.lastAssistantText
+          }
         });
         logger(`[watch][codex] ${summarizeResult(result)}`);
       }
@@ -390,7 +437,9 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
     lastNotifiedGeminiAt: null,
     tickRunning: false,
     pendingTimer: null,
-    lastGeminiContent: null // 捕获gemini的输出内容
+    lastGeminiContent: null, // 捕获gemini的输出内容
+    lastUserText: '',
+    lastGeminiText: ''
   };
 
   async function notifyIfReady(reason) {
@@ -407,7 +456,11 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
       durationMs,
       cwd: process.cwd(),
       projectNameOverride: 'Gemini',
-      outputContent: state.lastGeminiContent // 传递输出内容
+      outputContent: state.lastGeminiContent || state.lastGeminiText,
+      summaryContext: {
+        userMessage: state.lastUserText,
+        assistantMessage: state.lastGeminiText
+      }
     });
     logger(`[watch][gemini] ${reason} ${summarizeResult(result)}`.trim());
   }
@@ -432,13 +485,22 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
 
     state.lastUserAt = null;
     state.lastGeminiAt = null;
+    state.lastUserText = '';
+    state.lastGeminiText = '';
 
     if (Array.isArray(messages)) {
       for (const m of messages) {
         if (!m || typeof m !== 'object') continue;
         const ts = parseTimestamp(m.timestamp);
-        if (m.type === 'user') state.lastUserAt = ts;
-        if (m.type === 'gemini') state.lastGeminiAt = ts;
+        if (m.type === 'user') {
+          state.lastUserAt = ts;
+          state.lastUserText = extractTextFromAny(m);
+        }
+        if (m.type === 'gemini') {
+          state.lastGeminiAt = ts;
+          const geminiText = extractTextFromAny(m);
+          if (geminiText) state.lastGeminiText = geminiText;
+        }
       }
     }
 
@@ -495,8 +557,10 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
           if (state.pendingTimer) clearTimeout(state.pendingTimer);
           state.pendingTimer = null;
           state.lastUserAt = ts;
+          state.lastUserText = extractTextFromAny(m);
           state.lastGeminiAt = null;
           state.lastNotifiedGeminiAt = null;
+          state.lastGeminiText = '';
           continue;
         }
 
@@ -531,6 +595,8 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
             state.lastGeminiContent = content;
           }
 
+          const geminiText = extractTextFromAny(m);
+          if (geminiText) state.lastGeminiText = geminiText;
           scheduleDebouncedNotify();
         }
       }

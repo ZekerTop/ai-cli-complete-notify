@@ -188,6 +188,9 @@ function loadCardTemplate(templatePath) {
 // 构建飞书卡片
 async function buildFeishuCard({ projectName, timestamp, durationText, sourceLabel, taskInfo, templatePath, outputContent }) {
   const template = loadCardTemplate(templatePath);
+  const hasTaskInfoPlaceholder = JSON.stringify(template).includes('${TASK_INFO}');
+  const trimmedOutput = String(outputContent || '').trim();
+  const shouldInjectSummary = Boolean(taskInfo) && !hasTaskInfoPlaceholder;
 
   // 检测系统主题并获取对应的logo key
   const theme = await detectSystemTheme();
@@ -233,13 +236,26 @@ async function buildFeishuCard({ projectName, timestamp, durationText, sourceLab
 
   const cardWithVars = replaceVariables(card);
 
+  if (taskInfo && cardWithVars.body && Array.isArray(cardWithVars.body.elements) && shouldInjectSummary && !trimmedOutput) {
+    cardWithVars.body.elements.push({
+      tag: 'markdown',
+      content: `**AI 摘要**：${taskInfo}`,
+      text_align: 'left',
+      text_size: 'normal_v2',
+      margin: '8px 0 0 0'
+    });
+  }
+
   // 如果有输出内容，在卡片中添加markdown元素
-  if (outputContent && outputContent.trim()) {
-    console.log('[webhook] 检测到输出内容，长度:', outputContent.length);
+  if (trimmedOutput) {
+    let content = trimmedOutput;
+    if (shouldInjectSummary) {
+      content = `AI 摘要：${taskInfo}\n\n${content}`;
+    }
+    console.log('[webhook] 检测到输出内容，长度:', content.length);
 
     // 限制输出内容长度，避免超过飞书卡片限制
     const maxLength = 3000;
-    let content = outputContent.trim();
     if (content.length > maxLength) {
       content = content.substring(0, maxLength) + '\n\n...(内容过长已截断)';
     }
@@ -306,13 +322,17 @@ function sendWebhook(url, payload) {
   });
 }
 
-async function notifyWebhook({ config, title, contentText, projectName, timestamp, durationText, sourceLabel, taskInfo, outputContent }) {
+async function notifyWebhook({ config, title, contentText, projectName, timestamp, durationText, sourceLabel, taskInfo, outputContent, summaryUsed }) {
   const channel = config.channels.webhook || {};
   const urls = readUrls(channel);
   if (!urls.length) return { ok: false, error: '未配置 WEBHOOK_URLS' };
 
   // 判断是否使用飞书卡片格式
   const useFeishuCard = Boolean(channel.useFeishuCard);
+  const summaryEnabled = Boolean(config.summary && config.summary.enabled);
+  const summarySucceeded = summaryEnabled && Boolean(summaryUsed);
+  const summaryText = summarySucceeded ? String(taskInfo || '').trim() : '';
+  const outputText = summarySucceeded ? '' : String(outputContent || '').trim();
 
   let payload;
 
@@ -323,9 +343,9 @@ async function notifyWebhook({ config, title, contentText, projectName, timestam
       timestamp,
       durationText,
       sourceLabel,
-      taskInfo,
+      taskInfo: summaryText,
       templatePath: channel.cardTemplatePath,
-      outputContent // 传递输出内容
+      outputContent: outputText // 传递输出内容
     });
 
     payload = {
@@ -334,13 +354,18 @@ async function notifyWebhook({ config, title, contentText, projectName, timestam
     };
   } else {
     // 默认飞书bot "post"格式
+    const blocks = [contentText];
+    if (summaryText) blocks.push(`AI 摘要：${summaryText}`);
+    if (outputText) blocks.push(`输出内容：
+${outputText}`);
+    const textBlock = blocks.filter(Boolean).join('\n');
     payload = {
       msg_type: 'post',
       content: {
         post: {
           zh_cn: {
             title,
-            content: [[{ tag: 'text', text: contentText }]]
+            content: [[{ tag: 'text', text: textBlock }]]
           }
         }
       }

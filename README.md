@@ -2,7 +2,7 @@
 
 # 🔔 AI CLI Complete Notify
 
-**Version: 1.2.0**
+**Version: 1.3.0**
 
 English | [中文](README_zh.md)
 
@@ -22,13 +22,14 @@ An intelligent task completion notification tool for Claude Code / Codex / Gemin
 🖥️ Desktop Notifications • 🔊 Sound/TTS Alerts • ⌚ Smart Band Alerts
 
 
-## ✨ Key Features
+## ✨ Key Features(For more detailed update logs, please refer to the end of the article)
 
 - 🎯 **Smart Debouncing**: Automatically adjusts notification timing based on task type - 60s for tool calls, only 15s without tool calls
 - 🔀 **Source Control**: Independent enable/disable and threshold settings for Claude / Codex / Gemini
 - 📡 **Multi-Channel Push**: Support multiple notification methods simultaneously to ensure message delivery
 - ⏱️ **Duration Threshold**: Only notify when tasks exceed the set duration to avoid frequent interruptions
 - 👀 **Dual Mode Monitoring**: Support timer mode (`run`/`start-stop`) and log monitoring mode (for interactive CLI / VSCode)
+- ?? **AI Summary (Optional)**: Generate a short summary quickly; fallback to the original task if it times out
 - 🖥️ **Desktop Application**: GUI configuration with language switching, tray hiding, and auto-start
 - 🔐 **Configuration Separation**: Runtime configuration separated from sensitive information for security
 
@@ -84,6 +85,7 @@ npm run dev
 - **Source Settings**: Set enable status and duration thresholds for Claude / Codex / Gemini separately
 - **Monitoring Configuration**: Set polling interval and debounce time with smart adjustment support
 - **Test Function**: Test whether each notification channel works properly
+- **AI Summary**: Configure API URL / Key / Model and timeout fallback
 - **Advanced Options**: Title prefix, close behavior, auto-start on boot
 
 ### Interface Preview
@@ -92,6 +94,7 @@ npm run dev
 ![Global Channels](docs/images/全局通道.png)
 ![Source Settings](docs/images/各cli来源.png)
 ![Monitor / Test / Advanced](docs/images/监听、测试、高级功能.png)
+![AI Summary](docs/images/AI摘要.png)
 
 ### Tray Function
 
@@ -180,6 +183,15 @@ TELEGRAM_CHAT_ID=your_chat_id
 # EMAIL_FROM=AI Notify <bot@example.com>
 # EMAIL_TO=you@example.com
 
+# AI summary (optional)
+# SUMMARY_ENABLED=false
+# SUMMARY_PROVIDER=openai    # model platform: openai | anthropic | google | qwen | deepseek
+# SUMMARY_API_URL=https://api.openai.com/v1/chat/completions
+# SUMMARY_API_KEY=your_api_key
+# SUMMARY_MODEL=gpt-4o-mini
+# SUMMARY_TIMEOUT_MS=15000
+# SUMMARY_PROMPT=You are a technical assistant. Output one short summary sentence.
+
 # Custom paths (optional)
 # AI_CLI_COMPLETE_NOTIFY_DATA_DIR=...
 # AI_CLI_COMPLETE_NOTIFY_ENV_PATH=...
@@ -218,10 +230,29 @@ npm run dist:portable
 ## 📝 Usage Tips
 
 - ⏱️ **Threshold function** requires timing data (via `run` / `start-stop` / `watch` mode), `notify` command ignores threshold and sends directly
-- 🔗 **Generic Webhook** uses Feishu JSON format by default, adjust format if integrating with other platforms
+- 🔗 **Webhook** uses Feishu post format by default; enable "Use Feishu card format for Webhook" in the Advanced tab if you want JSON cards (watch output will be included when available).
 - 🚀 **Auto-start on boot** is configured in the "Advanced" tab (supports Windows / macOS)
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
+
+## Changelog
+
+- 1.3.0:
+  - Feishu card webhook with theme-aware logos
+  - AI summary multi-provider + test + streaming parsing
+  - Summary-only webhook with fallback output
+  - UI refinements (close modal/checkbox/number steppers)
+  - Watch log persistence
+  - Default summary timeout 15s
+- 1.2.0:
+  - Fix tray-hide multi-instance issue
+  - Add hints
+  - Fix language switching
+- 1.1.0:
+  - Fix Claude Code full-turn completion detection to avoid subtask alerts
+  - Adaptive debounce based on message type
+- 1.0.0:
+  - Initial release
 
 ## 📄 License
 

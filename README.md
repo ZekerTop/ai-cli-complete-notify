@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🔔 AI CLI Complete Notify
+<img width="256" src="github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
+
+# AI CLI Complete Notify(v1.4.0)
 
 ![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
@@ -11,7 +13,6 @@ English | [中文](README_zh.md)
 ![桌面端预览](docs/images/exe预览.png)
 
 </div>
----
 
 ### 📖 Introduction
 
@@ -97,8 +98,9 @@ npm run dev
 ![Desktop Preview](docs/images/exe预览.png)
 ![Global Channels](docs/images/全局通道.png)
 ![Source Settings](docs/images/各cli来源.png)
-![Monitor / Test / Advanced](docs/images/监听、测试、高级功能.png)
+![Interactive monitoring](docs/images/交互式监听.png)
 ![AI Summary](docs/images/AI摘要.png)
+![Advanced Settings](docs/images/高级设置.png)
 
 ### Tray Function
 
@@ -276,10 +278,6 @@ npm run dist:portable
   - Adaptive debounce based on message type
 - 1.0.0:
   - Initial release
-
-## 📄 License
-
-ISC
 
 ## 🤝 Contributing
 

@@ -1,6 +1,8 @@
 ﻿<div align="center">
 
-# 🔔 AI CLI Complete Notify
+<img width="256" src="github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
+
+# AI CLI Complete Notify(v1.4.0)
 
 ![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
@@ -11,8 +13,6 @@
 ![桌面端预览](docs/images/exe预览.png)
 
 </div>
-
----
 
 ### 📖 简介
 
@@ -98,8 +98,9 @@ npm run dev
 ![桌面端预览](docs/images/exe预览.png)
 ![全局通道](docs/images/全局通道.png)
 ![各来源设置](docs/images/各cli来源.png)
-![监听 / 测试 / 高级](docs/images/监听、测试、高级功能.png)
+![交互式监听](docs/images/交互式监听.png)
 ![AI 摘要](docs/images/AI摘要.png)
+![高级设置](docs/images/高级设置.png)
 
 ### 托盘功能
 
@@ -279,9 +280,6 @@ npm run dist:portable
 - 1.0.0：
   - 初始版本
 
-## 📄 许可证
-
-ISC
 
 ## 🤝 贡献
 

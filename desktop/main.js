@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 
 const electron = require('electron');
@@ -24,6 +24,7 @@ const { runCli } = require('../src/cli');
 const { loadConfig, saveConfig, getConfigPath } = require('../src/config');
 const { getDataDir, PRODUCT_NAME } = require('../src/paths');
 const { sendNotifications } = require('../src/engine');
+const { notifySound } = require('../src/notifiers/sound');
 const { summarizeTask, summarizeTaskDetailed } = require('../src/summary');
 const { startWatch } = require('../src/watch');
 
@@ -257,10 +258,10 @@ async function runCliAndExit(argv) {
 
 function createWindow() {
   const workAreaSize = screen.getPrimaryDisplay().workAreaSize;
-  const width = Math.min(1200, workAreaSize.width);
-  const height = Math.min(860, workAreaSize.height); // taller to avoid sidebar scroll
-  const minWidth = Math.min(900, workAreaSize.width);
-  const minHeight = Math.min(700, workAreaSize.height);
+  const width = Math.min(1280, workAreaSize.width);
+  const height = Math.min(980, workAreaSize.height); // larger to avoid sidebar scroll
+  const minWidth = Math.min(1000, workAreaSize.width);
+  const minHeight = Math.min(820, workAreaSize.height);
   const windowIcon = path.join(__dirname, 'assets', process.platform === 'win32' ? 'tray.ico' : 'tray.png');
 
   const win = new BrowserWindow({
@@ -305,6 +306,25 @@ function saveCloseBehavior(behavior) {
   config.ui = config.ui || {};
   config.ui.closeBehavior = behavior;
   saveConfig(config);
+}
+
+function startDefaultWatch(win) {
+  if (watchStop) return;
+  try {
+    const cfg = loadConfig();
+    const confirmAlert = cfg && cfg.ui ? cfg.ui.confirmAlert : null;
+    watchStop = startWatch({
+      sources: 'all',
+      intervalMs: 1000,
+      geminiQuietMs: 3000,
+      claudeQuietMs: 60000,
+      confirmAlert,
+      log: (line) => emitWatchLog(win, line)
+    });
+    emitWatchLog(win, '[watch] started (auto)');
+  } catch (error) {
+    emitWatchLog(win, `[watch] auto-start failed: ${String(error && error.message ? error.message : error)}`);
+  }
 }
 
 function stopWatchIfRunning() {
@@ -529,18 +549,21 @@ function setupIpc(win) {
 
   ipcMain.handle('completeNotify:setAutostart', (_event, enabled) => {
     const value = Boolean(enabled);
+    let system = null;
     try {
       if (process.platform === 'win32' || process.platform === 'darwin') {
         app.setLoginItemSettings({ openAtLogin: value, openAsHidden: true });
+        const settings = app.getLoginItemSettings();
+        system = { openAtLogin: Boolean(settings.openAtLogin) };
       }
     } catch (error) {
-      return { ok: false, error: error && error.message ? error.message : String(error) };
+      return { ok: false, error: error && error.message ? error.message : String(error), platform: process.platform, system };
     }
     const cfg = loadConfig();
     cfg.ui = cfg.ui || {};
     cfg.ui.autostart = value;
     saveConfig(cfg);
-    return { ok: true, autostart: value };
+    return { ok: true, autostart: value, platform: process.platform, system };
   });
 
   ipcMain.handle('completeNotify:getAutostart', () => {
@@ -555,7 +578,27 @@ function setupIpc(win) {
     } catch (_error) {
       // ignore
     }
-    return { ok: true, autostart, system };
+    return { ok: true, autostart, platform: process.platform, system };
+  });
+
+  ipcMain.handle('completeNotify:openSoundFile', async () => {
+    if (!win || win.isDestroyed()) return { ok: false, error: 'window_unavailable' };
+    try {
+      const result = await dialog.showOpenDialog(win, {
+        title: '选择提示音文件',
+        properties: ['openFile'],
+        filters: [
+          { name: 'WAV', extensions: ['wav'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+      if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+        return { ok: false, canceled: true };
+      }
+      return { ok: true, path: result.filePaths[0] };
+    } catch (error) {
+      return { ok: false, error: error && error.message ? error.message : String(error) };
+    }
   });
 
   ipcMain.handle('completeNotify:openPath', async (_event, targetPath) => {
@@ -594,6 +637,18 @@ function setupIpc(win) {
     const durationMs = durationMinutes != null ? durationMinutes * 60 * 1000 : null;
     const result = await sendNotifications({ source, taskInfo, durationMs, cwd: process.cwd(), force: true });
     return result;
+  });
+  ipcMain.handle('completeNotify:testSound', async (_event, payload) => {
+    const config = loadConfig();
+    const soundPayload = payload && typeof payload.sound === 'object' ? payload.sound : null;
+    if (soundPayload) {
+      config.channels = config.channels || {};
+      config.channels.sound = { ...(config.channels.sound || {}), ...soundPayload };
+    }
+    const title = payload && typeof payload.title === 'string' && payload.title.trim()
+      ? payload.title.trim()
+      : '提示音测试';
+    return await notifySound({ config, title });
   });
 
   ipcMain.handle('completeNotify:testSummary', async (_event, payload) => {
@@ -640,12 +695,15 @@ function setupIpc(win) {
     const intervalMs = payload && Number.isFinite(Number(payload.intervalMs)) ? Number(payload.intervalMs) : 1000;
     const geminiQuietMs = payload && Number.isFinite(Number(payload.geminiQuietMs)) ? Number(payload.geminiQuietMs) : 3000;
     const claudeQuietMs = payload && Number.isFinite(Number(payload.claudeQuietMs)) ? Number(payload.claudeQuietMs) : 60000;
+    const cfg = loadConfig();
+    const confirmAlert = cfg && cfg.ui ? cfg.ui.confirmAlert : null;
 
     watchStop = startWatch({
       sources,
       intervalMs,
       geminiQuietMs,
       claudeQuietMs,
+      confirmAlert,
       log: (line) => emitWatchLog(win, line)
     });
 
@@ -693,6 +751,7 @@ async function main() {
     const win = createWindow();
     mainWindow = win;
     setupIpc(win);
+    startDefaultWatch(win);
   });
 
   const argv = getArgv();
@@ -726,9 +785,11 @@ async function main() {
   const win = createWindow();
   mainWindow = win;
   setupIpc(win);
+  startDefaultWatch(win);
 }
 
 main().catch((error) => {
   console.error('启动失败:', error && error.message ? error.message : error);
   app.exit(1);
 });
+

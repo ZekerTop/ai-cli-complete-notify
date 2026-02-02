@@ -2,7 +2,9 @@
 
 # 🔔 AI CLI Complete Notify
 
-**Version: 1.3.0**
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![License](https://img.shields.io/badge/license-ISC-green.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
 English | [中文](README_zh.md)
 
@@ -84,9 +86,11 @@ npm run dev
 - **Channel Configuration**: Configure Webhook, Telegram, Email, and other notification channels
 - **Source Settings**: Set enable status and duration thresholds for Claude / Codex / Gemini separately
 - **Monitoring Configuration**: Set polling interval and debounce time with smart adjustment support
+- **Confirm keywords (optional)**: Watch-only. Used to detect when the AI asks for confirmation/approval/continue. Leave empty to use built-in defaults; comma-separated custom keywords (e.g., confirm,approve,allow).
+- **Watch logs**: Persisted locally with one-click open and retention days.
 - **Test Function**: Test whether each notification channel works properly
 - **AI Summary**: Configure API URL / Key / Model and timeout fallback
-- **Advanced Options**: Title prefix, close behavior, auto-start on boot
+- **Advanced Options**: Title prefix, close behavior, auto-start on boot, click notification to return (best-effort; OS focus rules may block)
 
 ### Interface Preview
 
@@ -102,7 +106,7 @@ After selecting "Hide to tray", the application minimizes to the system tray. Th
 
 ## 💻 Command Line Usage
 
-> WSL note: CLI reminders work for webhook/Telegram/email. Desktop/sound/tray are Windows-only. Log monitoring works only when the AI CLI runs inside WSL (logs under `~/.claude`, `~/.codex`, `~/.gemini`).
+> WSL note: CLI reminders work for webhook/Telegram/email. Desktop/sound/tray are Windows-only. Log monitoring works only when the AI CLI runs inside WSL (logs under `~/.claude`, `~/.codex`, `~/.gemini`). For WSL/CLI config, use `.env` for AI summary and Feishu card; `.env` overrides `settings.json`.
 
 Note: For CLI usage from source (Node), run `npm install` first.
 
@@ -165,6 +169,8 @@ Copy from `.env.example` and fill in your configuration:
 ```env
 # Webhook configuration (supports Feishu/DingTalk/WeCom)
 WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
+# Feishu card format (true/false). .env overrides settings.json.
+# WEBHOOK_USE_FEISHU_CARD=false
 
 # Desktop notifications and sound
 NOTIFICATION_ENABLED=true
@@ -195,6 +201,14 @@ TELEGRAM_CHAT_ID=your_chat_id
 # Custom paths (optional)
 # AI_CLI_COMPLETE_NOTIFY_DATA_DIR=...
 # AI_CLI_COMPLETE_NOTIFY_ENV_PATH=...
+```
+
+WSL/CLI quick toggles:
+
+```env
+# .env (WSL/CLI)
+SUMMARY_ENABLED=true
+WEBHOOK_USE_FEISHU_CARD=true
 ```
 
 ### Runtime Configuration (settings.json)
@@ -234,9 +248,18 @@ npm run dist:portable
 - 🚀 **Auto-start on boot** is configured in the "Advanced" tab (supports Windows / macOS)
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
+- 💡 **EXE starts with Watch enabled by default**: toggle it in the top bar if you don?t need it.
+- 🧭 **Click to return** is more reliable but still best-effort due to OS focus rules; for VSCode extensions choose the VSCode target and ensure VSCode is not minimized
 
 ## Changelog
 
+- 1.4.0:
+  - Confirm prompt alerts in Watch mode (custom keywords supported)
+  - Watch logs persisted + open log + retention days
+  - Watch auto-start when EXE opens
+  - Desktop notifications upgraded: notification window UI optimization + click-to-return (focus target / force maximize)
+  - Sound enhancements: custom sound file, TTS toggle, WSL playback via Windows PowerShell
+  - Feishu card toggle via `.env` (WEBHOOK_USE_FEISHU_CARD) with `.env` priority
 - 1.3.0:
   - Feishu card webhook with theme-aware logos
   - AI summary multi-provider + test + streaming parsing

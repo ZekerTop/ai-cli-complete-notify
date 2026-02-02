@@ -21,7 +21,14 @@ const DEFAULT_CONFIG = {
     language: 'zh-CN',
     closeBehavior: 'ask', // ask | tray | exit
     autostart: false,
-    watchLogRetentionDays: 7
+    watchLogRetentionDays: 7,
+    autoFocusOnNotify: false,
+    forceMaximizeOnFocus: false,
+    focusTarget: 'auto', // auto | vscode | terminal
+    confirmAlert: {
+      enabled: false,
+      keywords: ''
+    }
   },
   channels: {
     webhook: {
@@ -29,6 +36,7 @@ const DEFAULT_CONFIG = {
       urls: [],
       urlsEnv: 'WEBHOOK_URLS', // 逗号分隔，可配置多个
       useFeishuCard: false, // 是否使用飞书卡片格式
+      useFeishuCardEnv: 'WEBHOOK_USE_FEISHU_CARD', // .env 优先开关
       cardTemplatePath: '' // 自定义卡片模板路径(可选)
     },
     telegram: {
@@ -43,7 +51,9 @@ const DEFAULT_CONFIG = {
     sound: {
       enabled: true,
       tts: true,
-      fallbackBeep: true
+      fallbackBeep: true,
+      useCustom: false,
+      customPath: ''
     },
     desktop: {
       enabled: true,

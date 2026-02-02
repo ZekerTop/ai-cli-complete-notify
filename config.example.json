@@ -30,7 +30,9 @@
     "sound": {
       "enabled": true,
       "tts": true,
-      "fallbackBeep": true
+      "fallbackBeep": true,
+      "useCustom": false,
+      "customPath": ""
     },
     "desktop": {
       "enabled": true,
@@ -70,4 +72,3 @@
     }
   }
 }
-

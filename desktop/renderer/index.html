@@ -35,10 +35,11 @@
 
         <nav class="nav">
           <a class="navItem" href="#channels" data-i18n="nav.channels">通道</a>
+          <a class="navItem" href="#sound" data-i18n="nav.sound">提示音</a>
           <a class="navItem" href="#sources" data-i18n="nav.sources">来源</a>
           <a class="navItem" href="#watch" data-i18n="nav.watch">监听</a>
           <a class="navItem" href="#test" data-i18n="nav.test">测试</a>
-          <a class="navItem" href="#summary" data-i18n="nav.summary">摘要</a>
+          <a class="navItem" href="#summary" data-i18n="nav.summary">AI 摘要</a>
           <a class="navItem" href="#advanced" data-i18n="nav.advanced">高级</a>
         </nav>
 
@@ -58,7 +59,7 @@
 
         <div class="sideFooter">
           <div class="row">
-            <button id="reloadBtn" class="ghost" data-i18n="btn.reload">重载</button>
+            <button id="reloadBtn" class="ghost" data-i18n="btn.reload">刷新界面/配置</button>
           </div>
           <div class="hint" id="hint"></div>
         </div>
@@ -73,6 +74,39 @@
             </div>
           </div>
           <div class="grid" id="globalChannels"></div>
+        </section>
+
+        <section class="panel" id="sound">
+          <div class="panelHead">
+            <div>
+              <h2 data-i18n="section.sound.title">提示音</h2>
+              <div class="sub" data-i18n="section.sound.sub">语音播报与提示音设置（支持自定义 .wav）</div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="toggleRow">
+              <input id="soundTtsEnabled" class="prettyCheck" type="checkbox" />
+              <span data-i18n="advanced.soundTts">语音播报（TTS）</span>
+            </label>
+            <div class="hint" data-i18n="advanced.soundTtsHint">关闭后仅播放提示音。</div>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            <label class="toggleRow">
+              <input id="soundCustomEnabled" class="prettyCheck" type="checkbox" />
+              <span data-i18n="advanced.soundCustom">使用自定义提示音</span>
+            </label>
+          </div>
+          <div class="row isHidden" id="soundCustomRow" style="margin-top: 6px;">
+            <label data-i18n="advanced.soundCustomPath">提示音文件路径</label>
+            <input id="soundCustomPath" type="text" data-i18n-placeholder="advanced.soundCustomPlaceholder" placeholder="C:\path\to\sound.wav 或 /mnt/c/..." />
+            <button id="soundOpenPathBtn" class="ghost" data-i18n="btn.soundOpenPath">打开文件</button>
+          </div>
+          <div class="hint isHidden" id="soundCustomHint" data-i18n="advanced.soundCustomHint">支持 .wav，可选择任意位置的文件 (WSL 请使用 Windows 路径或 /mnt/c/ 路径)。</div>
+          <div class="hint" id="soundResolvedPath"></div>
+          <div class="row" style="margin-top: 10px;">
+            <button id="soundTestBtn" data-i18n="btn.soundTest">播放测试</button>
+            <span id="soundTestStatus" class="inlineStatus" aria-live="polite"></span>
+          </div>
         </section>
 
         <section class="panel" id="sources">
@@ -95,7 +129,7 @@
           </div>
 
           <div class="watchGrid">
-            <div class="watchCard">
+            <div class="watchCard watchLogCard">
               <div class="watchRow">
               <label class="chip"><input id="watchClaude" class="prettyCheck" type="checkbox" checked />Claude</label>
               <label class="chip"><input id="watchCodex" class="prettyCheck" type="checkbox" checked />Codex</label>
@@ -164,7 +198,7 @@
               <div class="watchRow">
                 <div class="labelWithHint">
                   <label data-i18n="watch.logRetention">日志保留(天)</label>
-                  <span class="hintIcon" data-i18n-title="watch.logRetentionHint" title="保留最近 N 天的本地监听日志">?</span>
+                  <span class="hintIcon" data-i18n-title="watch.logRetentionHint" title="只保留最近 N 天的本地监听日志">?</span>
                 </div>
                 <div class="numberField">
                   <input id="watchLogRetentionDays" type="number" min="1" step="1" value="7" />
@@ -183,12 +217,26 @@
                 </div>
               </div>
               <div class="watchRow">
+                <label class="toggleRow">
+                  <input id="watchConfirmEnabled" class="prettyCheck" type="checkbox" />
+                  <span data-i18n="watch.confirmEnabled">确认提醒</span>
+                </label>
+              </div>
+              <div class="watchRow" id="watchConfirmKeywordsRow">
+                <label data-i18n="watch.confirmKeywords">确认关键词（可选）</label>
+                <span class="hintIcon" data-i18n-title="watch.confirmKeywordsHint" title="">?</span>
+                <input
+                  id="watchConfirmKeywords"
+                  type="text"
+                  data-i18n-placeholder="watch.confirmKeywordsPlaceholder"
+                  placeholder="是否,确认,allow,approve"
+                />
+              </div>
+              <div class="watchRow">
                 <button id="watchStartBtn" data-i18n="btn.watchStart">开始监听</button>
                 <button id="watchStopBtn" class="ghost" data-i18n="btn.watchStop">停止</button>
               </div>
-              <div class="hint" data-i18n="watch.hint">
-                建议把监听常驻开启（比如开机自启/放在后台终端），这样无论你在终端还是 VSCode 里用 Claude/Codex/Gemini，都能自动提醒。
-              </div>
+              <div class="hint" data-i18n="watch.hint">建议把监听常驻开启（比如开机自启/放在后台终端），这样无论你在终端还是 VSCode 里用 Claude/Codex/Gemini，都能自动提醒。</div>
             </div>
 
             <div class="watchCard">
@@ -260,7 +308,7 @@
                 <option value="openai" data-i18n="summary.provider.openai">OpenAI</option>
                 <option value="anthropic" data-i18n="summary.provider.anthropic">Anthropic</option>
                 <option value="google" data-i18n="summary.provider.google">Google / Gemini</option>
-                <option value="qwen" data-i18n="summary.provider.qwen">Qwen</option>
+                <option value="qwen" data-i18n="summary.provider.qwen">通义千问</option>
                 <option value="deepseek" data-i18n="summary.provider.deepseek">DeepSeek</option>
               </select>
             </div>
@@ -285,13 +333,13 @@
               </div>
             </div>
             <div class="row">
-              <label data-i18n="summary.model">Model</label>
+              <label data-i18n="summary.model">模型</label>
               <input id="summaryModel" type="text" placeholder="glm-4-flash-250414" />
             </div>
             <div class="row">
               <div class="labelWithHint">
                 <label data-i18n="summary.timeout">超时(ms)</label>
-                <span class="hintIcon" data-i18n-title="summary.timeoutHint" title="超时后会自动回退到默认任务描述">?</span>
+                <span class="hintIcon" data-i18n-title="summary.timeoutHint" title="超过时限会自动回退到默认任务描述">?</span>
               </div>
               <div class="numberField">
                 <input id="summaryTimeoutMs" type="number" min="300" step="100" value="15000" />
@@ -327,12 +375,6 @@
               <div class="sub" data-i18n="section.advanced.sub">格式化与展示相关配置</div>
             </div>
           </div>
-          <div class="row">
-            <label class="toggleRow">
-              <input id="includeSourcePrefixInTitle" class="prettyCheck" type="checkbox" />
-              <span data-i18n="advanced.titlePrefix">标题包含来源前缀（例如 [Codex]）</span>
-            </label>
-          </div>
           <div class="row" style="margin-top: 10px;">
             <label class="toggleRow">
               <input id="useFeishuCard" class="prettyCheck" type="checkbox" />
@@ -349,10 +391,33 @@
           </div>
           <div class="row" style="margin-top: 10px;">
             <label class="toggleRow">
+              <input id="autoFocusOnNotify" class="prettyCheck" type="checkbox" />
+              <span data-i18n="advanced.autoFocus">点击通知切回工作界面</span>
+            </label>
+          </div>
+          <div class="row isHidden" id="focusTargetRow" style="margin-top: 10px;">
+            <label data-i18n="advanced.focusTarget">切回目标</label>
+            <select id="focusTarget">
+              <option value="auto" data-i18n="focus.auto">自动判断</option>
+              <option value="vscode" data-i18n="focus.vscode">VSCode</option>
+              <option value="terminal" data-i18n="focus.terminal">命令行/终端</option>
+            </select>
+          </div>
+          <div class="hint isHidden" id="focusHint" data-i18n="advanced.focusHint">点击桌面通知后尝试切回（更可靠）。系统焦点限制可能仍阻止抢占前台；VSCode 插件场景建议选 VSCode 目标。</div>
+          <div class="row isHidden" id="forceMaximizeRow" style="margin-top: 10px;">
+            <label class="toggleRow">
+              <input id="forceMaximizeOnFocus" class="prettyCheck" type="checkbox" />
+              <span data-i18n="advanced.forceMaximize">切回时强制最大化（WSL / 终端也生效）</span>
+            </label>
+            <div class="hint" data-i18n="advanced.forceMaximizeHint">任务执行中最小化后，点击通知会恢复为最大化窗口。</div>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            <label class="toggleRow">
               <input id="autostart" class="prettyCheck" type="checkbox" />
               <span data-i18n="advanced.autostart">开机自启动（登录后自动在后台运行）</span>
             </label>
-            <div class="hint" data-i18n="advanced.autostartHint">Windows/macOS 支持开机自启动；Linux 需自行配置。</div>
+            <div class="hint" data-i18n="advanced.autostartHint">Windows / macOS 支持开机自启动；Linux 需自行配置。</div>
+            <div class="hint" id="autostartStatus" data-i18n="advanced.autostartStatusUnknown">系统自启动：未知</div>
           </div>
           <div class="hint" data-i18n="advanced.closeHint">选择“隐藏到托盘”后，点击右上角关闭不会退出，会在右下角托盘保留图标，点击即可重新打开。</div>
         </section>

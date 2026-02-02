@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Notify</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        font-family: "MiSans", "HarmonyOS Sans", "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: transparent;
+      }
+      .toast {
+        --bg: linear-gradient(155deg, rgba(18, 22, 34, 0.96), rgba(10, 12, 18, 0.92));
+        --border: rgba(255, 255, 255, 0.08);
+        --title: #f8fafc;
+        --body: rgba(235, 240, 248, 0.78);
+        --muted: rgba(235, 240, 248, 0.52);
+        --accent-1: #6fb7ff;
+        --accent-2: #6ee7b7;
+        --accent: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+        height: 100%;
+        border-radius: 16px;
+        padding: 18px 18px 16px;
+        background: var(--bg);
+        color: var(--title);
+        border: 1px solid var(--border);
+        box-shadow:
+          0 18px 38px rgba(0, 0, 0, 0.35),
+          0 4px 16px rgba(0, 0, 0, 0.22);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(16px) saturate(1.15);
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 200ms ease;
+        animation: toastIn 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+      .toast:hover {
+        transform: translateY(-1px);
+        box-shadow:
+          0 22px 44px rgba(0, 0, 0, 0.38),
+          0 6px 18px rgba(0, 0, 0, 0.24);
+      }
+      .toast::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(120px 80px at 12% 0%, rgba(255, 255, 255, 0.08), transparent 70%),
+          radial-gradient(140px 120px at 100% 0%, rgba(111, 183, 255, 0.12), transparent 65%);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+      .toast::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+        pointer-events: none;
+      }
+      .timer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 3px;
+        border-radius: 0 0 999px 999px;
+        background: var(--accent);
+        transform-origin: left center;
+        animation: timerShrink var(--countdown, 6000ms) var(--easing, cubic-bezier(0.4, 0, 1, 1)) forwards;
+        animation-delay: calc(var(--elapsed, 0ms) * -1);
+        pointer-events: none;
+      }
+      .toast[data-kind="confirm"] {
+        --accent-1: #f6c65e;
+        --accent-2: #ff9b5a;
+      }
+      .meta {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+      }
+      .project {
+        font-size: 11px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .title {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        position: relative;
+        z-index: 1;
+      }
+      .body {
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: var(--body);
+        white-space: pre-line;
+        position: relative;
+        z-index: 1;
+      }
+      .action {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--title);
+        align-self: flex-end;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+        letter-spacing: 0.2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
+        margin-top: 10px;
+      }
+      @media (prefers-color-scheme: light) {
+        .toast {
+          --bg: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 250, 0.95));
+          --border: rgba(15, 23, 42, 0.1);
+          --title: #111827;
+          --body: rgba(17, 24, 39, 0.72);
+          --muted: rgba(17, 24, 39, 0.5);
+          box-shadow:
+            0 18px 30px rgba(15, 23, 42, 0.16),
+            0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+        .toast::before {
+          background:
+            radial-gradient(120px 80px at 12% 0%, rgba(59, 130, 246, 0.08), transparent 70%),
+            radial-gradient(140px 120px at 100% 0%, rgba(16, 185, 129, 0.08), transparent 65%);
+        }
+        .action {
+          background: rgba(15, 23, 42, 0.06);
+          border: 1px solid rgba(15, 23, 42, 0.14);
+          color: #0f172a;
+        }
+      }
+      @keyframes timerShrink {
+        from { transform: scaleX(1); }
+        to { transform: scaleX(0); }
+      }
+      @keyframes toastIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toast" id="toast">
+      <div class="timer" id="timer"></div>
+      <div class="meta" id="meta">
+        <div class="project" id="project"></div>
+      </div>
+      <div class="title" id="title"></div>
+      <div class="body" id="body"></div>
+      <div class="action" id="hint"></div>
+    </div>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const project = params.get('project') || '';
+      const title = params.get('title') || '';
+      const body = params.get('message') || '';
+      const hint = params.get('hint') || '';
+      const id = params.get('id') || '';
+      const timeoutRaw = Number(params.get('timeoutMs'));
+      const createdAtRaw = Number(params.get('createdAt'));
+      const kind = params.get('kind') || 'complete';
+      const toastEl = document.getElementById('toast');
+      toastEl.dataset.kind = kind === 'confirm' ? 'confirm' : 'complete';
+      const timeoutMs = Number.isFinite(timeoutRaw) && timeoutRaw > 500 ? timeoutRaw : 6000;
+      const now = Date.now();
+      const elapsedMs = Number.isFinite(createdAtRaw) ? Math.max(0, now - createdAtRaw) : 0;
+      const clampedElapsed = Math.min(elapsedMs, timeoutMs);
+      toastEl.style.setProperty('--countdown', `${timeoutMs}ms`);
+      toastEl.style.setProperty('--elapsed', `${clampedElapsed}ms`);
+
+      const projectEl = document.getElementById('project');
+      if (project) {
+        projectEl.textContent = project;
+      } else {
+        projectEl.style.display = 'none';
+      }
+
+      const titleEl = document.getElementById('title');
+      if (title) {
+        titleEl.textContent = title;
+      } else {
+        titleEl.style.display = 'none';
+      }
+
+      const bodyEl = document.getElementById('body');
+      if (body) {
+        bodyEl.textContent = body;
+      } else {
+        bodyEl.style.display = 'none';
+      }
+
+      const hintEl = document.getElementById('hint');
+      if (hint) {
+        hintEl.textContent = hint;
+      } else {
+        hintEl.style.display = 'none';
+      }
+
+      if (!project) {
+        const metaEl = document.getElementById('meta');
+        if (metaEl) metaEl.style.display = 'none';
+      }
+
+      const { ipcRenderer } = require('electron');
+      toastEl.addEventListener('click', () => {
+        if (id) ipcRenderer.send('completeNotify:toastClick', { id });
+        window.close();
+      });
+    </script>
+  </body>
+</html>

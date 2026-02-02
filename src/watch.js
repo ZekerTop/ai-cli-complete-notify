@@ -1,13 +1,22 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
 const { sendNotifications } = require('./engine');
 
 function parseTimestamp(value) {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value < 1e12 ? value * 1000 : value;
+  }
   if (typeof value !== 'string') return null;
-  const parsed = Date.parse(value);
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    const num = Number(trimmed);
+    if (!Number.isFinite(num)) return null;
+    return num < 1e12 ? num * 1000 : num;
+  }
+  const parsed = Date.parse(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
@@ -41,6 +50,108 @@ function extractMessageText(message) {
   if (Array.isArray(message.content)) return extractTextFromAny(message.content);
   if (typeof message.content === 'string') return message.content;
   return extractTextFromAny(message);
+}
+
+const DEFAULT_CONFIRM_KEYWORDS = [
+  '是否',
+  '要不要',
+  '能否',
+  '可否',
+  '可以吗',
+  '可以么',
+  '请确认',
+  '确认一下',
+  '是否确认',
+  '是否继续',
+  '同意',
+  '允许',
+  '授权',
+  '批准',
+  'confirm',
+  'confirmation',
+  'approve',
+  'approval',
+  'okay to',
+  'is it ok',
+  'is it okay',
+  'shall i',
+  'should i',
+  'would you like',
+  'do you want me',
+  'may i',
+  'permission',
+  'allow',
+  'authorize',
+  'await your',
+  'waiting for your'
+];
+const DEFAULT_CONFIRM_ACTION_WORDS = [
+  '执行',
+  '删除',
+  '覆盖',
+  '写入',
+  '提交',
+  '安装',
+  '运行',
+  '修改',
+  '变更',
+  'apply',
+  'run',
+  'delete',
+  'overwrite',
+  'write',
+  'install',
+  'execute',
+  'change',
+  'modify'
+];
+const CONFIRM_DEDUPE_MS = 15000;
+
+function normalizeConfirmText(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+function truncateText(text, maxLength) {
+  const value = String(text || '').trim();
+  if (!value) return '';
+  if (value.length <= maxLength) return value;
+  return value.slice(0, Math.max(0, maxLength - 1)) + '...';
+}
+
+function buildConfirmTaskInfo(_text) {
+  return '确认提醒';
+}
+
+function parseConfirmKeywords(raw) {
+  if (!raw) return [];
+  return String(raw)
+    .split(/[,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function createConfirmDetector(confirmAlert) {
+  const enabled =
+    confirmAlert && Object.prototype.hasOwnProperty.call(confirmAlert, 'enabled')
+      ? Boolean(confirmAlert.enabled)
+      : true;
+  if (!enabled) return () => '';
+
+  const custom = parseConfirmKeywords(confirmAlert && confirmAlert.keywords);
+  const keywordPool = [...DEFAULT_CONFIRM_KEYWORDS, ...custom].map((k) => String(k).toLowerCase());
+  const actionPool = [...DEFAULT_CONFIRM_ACTION_WORDS, ...custom].map((k) => String(k).toLowerCase());
+
+  return (text) => {
+    const raw = normalizeConfirmText(text);
+    if (!raw) return '';
+    const lower = raw.toLowerCase();
+    const hasKeyword = keywordPool.some((k) => k && lower.includes(k));
+    if (hasKeyword) return raw;
+
+    if (!/[?？]/.test(raw)) return '';
+    const hasAction = actionPool.some((k) => k && lower.includes(k));
+    return hasAction ? raw : '';
+  };
 }
 
 function safeJsonParse(line) {
@@ -170,7 +281,36 @@ function summarizeResult(result) {
   return `sent: ${ok}/${total}`;
 }
 
-function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
+async function maybeNotifyConfirm({ source, text, cwd, logger, state, confirmDetector }) {
+  if (typeof confirmDetector !== 'function') return;
+  if (state && state.confirmNotifiedForTurn) return;
+  const prompt = confirmDetector(text);
+  if (!prompt) return;
+  const normalized = normalizeConfirmText(prompt);
+  if (!normalized) return;
+
+  const key = normalized.slice(0, 200);
+  const now = Date.now();
+  if (state.lastConfirmKey === key && now - (state.lastConfirmAt || 0) < CONFIRM_DEDUPE_MS) return;
+  state.lastConfirmKey = key;
+  state.lastConfirmAt = now;
+  if (state) state.confirmNotifiedForTurn = true;
+
+  const taskInfo = buildConfirmTaskInfo(normalized);
+  const result = await sendNotifications({
+    source,
+    taskInfo,
+    durationMs: null,
+    cwd,
+    force: true,
+    notifyKind: 'confirm',
+    skipSummary: true,
+    summaryContext: { assistantMessage: normalized }
+  });
+  logger(`[watch][confirm:${source}] ${summarizeResult(result)}`);
+}
+
+function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confirmDetector }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.claude', 'projects');
   const follower = new JsonlFollower({ seedBytes: 256 * 1024 });
@@ -182,11 +322,15 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
     lastAssistantAt: null,
     lastNotifiedAt: null,
     notifiedForTurn: false,
+    confirmNotifiedForTurn: false,
     lastCwd: null,
     pendingTimer: null,
-    lastAssistantContent: null, // 捕获assistant的输出内容
+    lastAssistantContent: null,
+    lastAssistantHadToolUse: false,
     lastUserText: '',
-    lastAssistantText: ''
+    lastAssistantText: '',
+    lastConfirmKey: '',
+    lastConfirmAt: 0
   };
 
   const quietMs = Math.max(500, claudeQuietMs || quietPeriodMs || 60000);
@@ -195,6 +339,7 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
     if (state.lastAssistantAt == null || state.lastUserTextAt == null) return;
     if (state.lastNotifiedAt === state.lastAssistantAt) return;
     if (state.notifiedForTurn) return;
+    if (state.confirmNotifiedForTurn) return;
     if (ts != null && ts !== state.lastAssistantAt) return;
 
     state.lastNotifiedAt = state.lastAssistantAt;
@@ -213,7 +358,24 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
         assistantMessage: state.lastAssistantText
       }
     });
+    state.confirmNotifiedForTurn = true;
     logger(`[watch][claude] ${summarizeResult(result)}`);
+  }
+
+  function scheduleSeedNotifyIfNeeded() {
+    if (state.lastAssistantAt == null || state.lastUserTextAt == null) return;
+    if (state.lastAssistantAt < state.lastUserTextAt) return;
+    if (state.notifiedForTurn || state.confirmNotifiedForTurn) return;
+
+    const now = Date.now();
+    const windowMs = Math.max(quietMs * 2, 15000);
+    if (now - state.lastAssistantAt > windowMs) return;
+
+    const adaptiveQuietMs = state.lastAssistantHadToolUse ? quietMs : Math.min(15000, quietMs);
+    if (state.pendingTimer) clearTimeout(state.pendingTimer);
+    state.pendingTimer = setTimeout(() => {
+      void maybeNotify(state.lastAssistantAt);
+    }, adaptiveQuietMs);
   }
 
   async function processObject(obj, { seed }) {
@@ -223,44 +385,42 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
     const ts = parseTimestamp(obj.timestamp);
     if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
 
-    if (obj.type === 'user' && hasContentType(obj.message, 'text')) {
+    if (obj.type === 'user') {
       const userText = extractMessageText(obj.message);
       state.lastUserText = userText;
       state.lastAssistantText = '';
-      if (seed) return;
-      state.lastUserTextAt = ts;
+      state.lastAssistantContent = null;
+      state.lastAssistantHadToolUse = false;
+      state.lastConfirmKey = '';
+      state.confirmNotifiedForTurn = false;
       if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
+      if (seed) {
+        if (ts != null) state.lastUserTextAt = ts;
+        state.notifiedForTurn = false;
+        return;
+      }
+      state.lastUserTextAt = ts;
       state.notifiedForTurn = false;
       return;
     }
 
     if (obj.type === 'assistant') {
-      if (seed) return;
       const assistantText = extractMessageText(obj.message);
       if (assistantText) state.lastAssistantText = assistantText;
+      const hasToolUse = hasContentType(obj.message, 'tool_use');
+      state.lastAssistantHadToolUse = hasToolUse;
 
-      if (state.lastUserTextAt == null) {
-        state.lastUserTextAt = ts || Date.now();
-        state.notifiedForTurn = false;
-      }
-
-      state.lastAssistantAt = ts || Date.now();
-
-      // 捕获assistant的文本内容 - 增强版
       let content = '';
 
       if (obj.message && Array.isArray(obj.message.content)) {
-        // 标准格式：content是数组
         const textParts = obj.message.content
           .filter(item => item && item.type === 'text')
           .map(item => item.text || '')
           .filter(Boolean);
         content = textParts.join('\n\n');
       } else if (obj.message && typeof obj.message.content === 'string') {
-        // 备选格式：content直接是字符串
         content = obj.message.content;
       } else if (obj.message && obj.message.text && typeof obj.message.text === 'string') {
-        // 备选格式：message.text
         content = obj.message.text;
       }
 
@@ -268,15 +428,38 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
         state.lastAssistantContent = content;
       }
 
-      if (state.pendingTimer) clearTimeout(state.pendingTimer);
+      if (ts != null || !seed) {
+        state.lastAssistantAt = ts || Date.now();
+      }
 
-      // 混合方案：根据是否有工具调用调整去抖时间
-      const hasToolUse = hasContentType(obj.message, 'tool_use');
-      const adaptiveQuietMs = hasToolUse ? quietMs : Math.min(15000, quietMs);
+      if (seed) return;
 
-      state.pendingTimer = setTimeout(() => {
-        void maybeNotify(state.lastAssistantAt);
-      }, adaptiveQuietMs);
+      await maybeNotifyConfirm({
+        source: 'claude',
+        text: assistantText || content,
+        cwd: state.lastCwd || process.cwd(),
+        logger,
+        state,
+        confirmDetector
+      });
+
+      if (state.lastUserTextAt == null) {
+        state.lastUserTextAt = ts || Date.now();
+        state.notifiedForTurn = false;
+      }
+
+      if (state.confirmNotifiedForTurn) {
+        if (state.pendingTimer) clearTimeout(state.pendingTimer);
+        state.pendingTimer = null;
+      } else {
+        if (state.pendingTimer) clearTimeout(state.pendingTimer);
+
+        const adaptiveQuietMs = hasToolUse ? quietMs : Math.min(15000, quietMs);
+
+        state.pendingTimer = setTimeout(() => {
+          void maybeNotify(state.lastAssistantAt);
+        }, adaptiveQuietMs);
+      }
     }
   }
 
@@ -293,12 +476,19 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
         state.lastAssistantAt = null;
         state.lastNotifiedAt = null;
         state.notifiedForTurn = false;
+        state.lastConfirmKey = '';
+        state.confirmNotifiedForTurn = false;
+        state.lastUserText = '';
+        state.lastAssistantText = '';
+        state.lastAssistantContent = null;
+        state.lastAssistantHadToolUse = false;
         if (state.pendingTimer) clearTimeout(state.pendingTimer);
         state.pendingTimer = null;
         follower.attach(latest.path, (obj, meta) => {
           void processObject(obj, meta);
         });
         logger(`[watch][claude] following ${latest.path}`);
+        scheduleSeedNotifyIfNeeded();
       }
       follower.poll((obj, meta) => {
         void processObject(obj, meta);
@@ -313,7 +503,7 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs }) {
   return () => clearInterval(timer);
 }
 
-function startCodexWatch({ intervalMs, log }) {
+function startCodexWatch({ intervalMs, log, confirmDetector }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.codex', 'sessions');
   const follower = new JsonlFollower({ seedBytes: 256 * 1024 });
@@ -323,9 +513,11 @@ function startCodexWatch({ intervalMs, log }) {
     tickRunning: false,
     lastUserAt: null,
     lastCwd: null,
-    lastAgentContent: null, // 捕获agent的输出内容
-    lastUserText: '',
-    lastAssistantText: ''
+    lastAgentContent: null, // 鎹曡幏agent鐨勮緭鍑哄唴瀹?    lastUserText: '',
+    lastAssistantText: '',
+    lastConfirmKey: '',
+    lastConfirmAt: 0,
+    confirmNotifiedForTurn: false
   };
 
   async function processObject(obj, { seed }) {
@@ -340,6 +532,8 @@ function startCodexWatch({ intervalMs, log }) {
     if (obj.type === 'response_item' && obj.payload && obj.payload.type === 'message' && obj.payload.role === 'user') {
       state.lastUserAt = ts;
       state.lastUserText = extractTextFromAny(obj.payload);
+      state.lastConfirmKey = '';
+      state.confirmNotifiedForTurn = false;
       return;
     }
 
@@ -348,6 +542,8 @@ function startCodexWatch({ intervalMs, log }) {
       if (kind === 'user_message') {
         state.lastUserAt = ts;
         state.lastUserText = extractTextFromAny(obj.payload);
+        state.lastConfirmKey = '';
+        state.confirmNotifiedForTurn = false;
         return;
       }
 
@@ -356,10 +552,10 @@ function startCodexWatch({ intervalMs, log }) {
         const assistantText = extractTextFromAny(obj.payload);
         if (assistantText) state.lastAssistantText = assistantText;
 
-        // 捕获agent消息的内容 - 尝试多个可能的字段
+        // 鎹曡幏agent娑堟伅鐨勫唴瀹?- 灏濊瘯澶氫釜鍙兘鐨勫瓧娈?
         let content = null;
 
-        // 尝试不同的字段路径
+        // 灏濊瘯涓嶅悓鐨勫瓧娈佃矾寰?
         if (obj.payload && typeof obj.payload.content === 'string') {
           content = obj.payload.content;
         } else if (obj.payload && obj.payload.message && typeof obj.payload.message === 'string') {
@@ -372,11 +568,25 @@ function startCodexWatch({ intervalMs, log }) {
           content = obj.message;
         }
 
-        // 如果找到内容，保存到状态中
+        // 濡傛灉鎵惧埌鍐呭锛屼繚瀛樺埌鐘舵€佷腑
         if (content && content.trim()) {
           state.lastAgentContent = content;
         } else {
-          console.log('[watch][codex] 未捕获到输出内容');
+          console.log('[watch][codex] 鏈崟鑾峰埌杈撳嚭鍐呭');
+        }
+
+        await maybeNotifyConfirm({
+          source: 'codex',
+          text: assistantText || content,
+          cwd: state.lastCwd || process.cwd(),
+          logger,
+          state,
+          confirmDetector
+        });
+
+        if (state.confirmNotifiedForTurn) {
+          logger('[watch][codex] skipped completion (confirm alert sent)');
+          return;
         }
 
         const durationMs = ts != null && state.lastUserAt != null && ts >= state.lastUserAt ? ts - state.lastUserAt : null;
@@ -392,6 +602,7 @@ function startCodexWatch({ intervalMs, log }) {
             assistantMessage: state.lastAssistantText
           }
         });
+        state.confirmNotifiedForTurn = true;
         logger(`[watch][codex] ${summarizeResult(result)}`);
       }
     }
@@ -406,6 +617,8 @@ function startCodexWatch({ intervalMs, log }) {
       if (!latest) return;
       if (latest.path !== state.currentFile) {
         state.currentFile = latest.path;
+        state.lastConfirmKey = '';
+        state.confirmNotifiedForTurn = false;
         follower.attach(latest.path, (obj, meta) => {
           void processObject(obj, meta);
         });
@@ -424,7 +637,7 @@ function startCodexWatch({ intervalMs, log }) {
   return () => clearInterval(timer);
 }
 
-function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
+function startGeminiWatch({ intervalMs, quietPeriodMs, log, confirmDetector }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.gemini', 'tmp');
 
@@ -437,9 +650,11 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
     lastNotifiedGeminiAt: null,
     tickRunning: false,
     pendingTimer: null,
-    lastGeminiContent: null, // 捕获gemini的输出内容
-    lastUserText: '',
-    lastGeminiText: ''
+    lastGeminiContent: null, // 鎹曡幏gemini鐨勮緭鍑哄唴瀹?    lastUserText: '',
+    lastGeminiText: '',
+    lastConfirmKey: '',
+    lastConfirmAt: 0,
+    confirmNotifiedForTurn: false
   };
 
   async function notifyIfReady(reason) {
@@ -447,6 +662,11 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
     const startAt = state.lastUserAt;
     if (endAt == null || startAt == null) return;
     if (state.lastNotifiedGeminiAt === endAt) return;
+    if (state.confirmNotifiedForTurn) {
+      state.lastNotifiedGeminiAt = endAt;
+      logger('[watch][gemini] skipped completion (confirm alert sent)');
+      return;
+    }
 
     state.lastNotifiedGeminiAt = endAt;
     const durationMs = endAt >= startAt ? endAt - startAt : null;
@@ -462,6 +682,7 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
         assistantMessage: state.lastGeminiText
       }
     });
+    state.confirmNotifiedForTurn = true;
     logger(`[watch][gemini] ${reason} ${summarizeResult(result)}`.trim());
   }
 
@@ -487,6 +708,8 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
     state.lastGeminiAt = null;
     state.lastUserText = '';
     state.lastGeminiText = '';
+    state.lastConfirmKey = '';
+    state.confirmNotifiedForTurn = false;
 
     if (Array.isArray(messages)) {
       for (const m of messages) {
@@ -561,33 +784,34 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
           state.lastGeminiAt = null;
           state.lastNotifiedGeminiAt = null;
           state.lastGeminiText = '';
+          state.lastConfirmKey = '';
+          state.confirmNotifiedForTurn = false;
           continue;
         }
 
         if (m.type === 'gemini') {
           state.lastGeminiAt = ts;
 
-          // 捕获gemini消息的内容 - 增强版
-          let content = '';
+          // 鎹曡幏gemini娑堟伅鐨勫唴瀹?- 澧炲己鐗?          let content = '';
 
           if (m.content && Array.isArray(m.content)) {
-            // 格式1：content是字符串数组
+            // 鏍煎紡1锛歝ontent鏄瓧绗︿覆鏁扮粍
             const textParts = m.content
               .filter(item => item && typeof item === 'string')
               .filter(Boolean);
             content = textParts.join('\n\n');
           } else if (m.content && typeof m.content === 'string') {
-            // 格式2：content直接是字符串
+            // 鏍煎紡2锛歝ontent鐩存帴鏄瓧绗︿覆
             content = m.content;
           } else if (m.parts && Array.isArray(m.parts)) {
-            // 格式3：使用parts字段
+            // 鏍煎紡3锛氫娇鐢╬arts瀛楁
             const textParts = m.parts
               .filter(part => part && part.text && typeof part.text === 'string')
               .map(part => part.text)
               .filter(Boolean);
             content = textParts.join('\n\n');
           } else if (m.text && typeof m.text === 'string') {
-            // 格式4：直接使用text字段
+            // 鏍煎紡4锛氱洿鎺ヤ娇鐢╰ext瀛楁
             content = m.text;
           }
 
@@ -597,6 +821,22 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log }) {
 
           const geminiText = extractTextFromAny(m);
           if (geminiText) state.lastGeminiText = geminiText;
+
+          await maybeNotifyConfirm({
+            source: 'gemini',
+            text: geminiText || content,
+            cwd: process.cwd(),
+            logger,
+            state,
+            confirmDetector
+          });
+
+          if (state.confirmNotifiedForTurn) {
+            if (state.pendingTimer) clearTimeout(state.pendingTimer);
+            state.pendingTimer = null;
+            continue;
+          }
+
           scheduleDebouncedNotify();
         }
       }
@@ -627,18 +867,19 @@ function normalizeSources(input) {
   return [...new Set(parts)];
 }
 
-function startWatch({ sources, intervalMs, geminiQuietMs, claudeQuietMs, log }) {
+function startWatch({ sources, intervalMs, geminiQuietMs, claudeQuietMs, log, confirmAlert }) {
   const normalizedSources = normalizeSources(sources);
   const stops = [];
+  const confirmDetector = createConfirmDetector(confirmAlert || {});
 
   if (normalizedSources.includes('claude')) {
-    stops.push(startClaudeWatch({ intervalMs, quietPeriodMs: geminiQuietMs, claudeQuietMs, log }));
+    stops.push(startClaudeWatch({ intervalMs, quietPeriodMs: geminiQuietMs, claudeQuietMs, log, confirmDetector }));
   }
   if (normalizedSources.includes('codex')) {
-    stops.push(startCodexWatch({ intervalMs, log }));
+    stops.push(startCodexWatch({ intervalMs, log, confirmDetector }));
   }
   if (normalizedSources.includes('gemini')) {
-    stops.push(startGeminiWatch({ intervalMs, quietPeriodMs: geminiQuietMs, log }));
+    stops.push(startGeminiWatch({ intervalMs, quietPeriodMs: geminiQuietMs, log, confirmDetector }));
   }
 
   return () => {
@@ -649,3 +890,5 @@ function startWatch({ sources, intervalMs, geminiQuietMs, claudeQuietMs, log }) 
 module.exports = {
   startWatch
 };
+
+

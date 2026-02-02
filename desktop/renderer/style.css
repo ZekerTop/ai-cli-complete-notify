@@ -269,6 +269,7 @@ h2 { margin: 0; font-size: 15px; letter-spacing: 0.2px; }
   gap: 10px;
 }
 .summaryFields.isCollapsed { display: none; }
+.isHidden { display: none; }
 .summaryFields .row {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
@@ -694,6 +695,15 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     rgba(0,0,0,0.18);
   min-width: 0;
 }
+.watchLogCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+.watchLogCard .log {
+  flex: 1;
+  max-height: none;
+}
 .watchRow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .watchRow + .watchRow { margin-top: 10px; }
 .watchLogHeadRow {
@@ -764,6 +774,17 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.inlineStatus {
+  font-size: 12px;
+  color: var(--muted);
+}
+.inlineStatus.success {
+  color: rgba(139, 219, 166, 0.92);
+}
+.inlineStatus.error {
+  color: rgba(255, 153, 153, 0.9);
 }
 
 .modalMask {

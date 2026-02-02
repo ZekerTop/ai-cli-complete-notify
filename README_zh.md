@@ -2,7 +2,9 @@
 
 # 🔔 AI CLI Complete Notify
 
-**版本：1.3.0**
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![License](https://img.shields.io/badge/license-ISC-green.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
 [English](README.md) | 中文
 
@@ -85,9 +87,11 @@ npm run dev
 - **通道配置**：配置 Webhook、Telegram、邮件等通知渠道
 - **来源设置**：为 Claude / Codex / Gemini 分别设置启用状态和耗时阈值
 - **监听配置**：设置轮询间隔和去抖时间，支持智能调整
+- **确认关键词（可选）**：仅在 Watch 监听生效，用于识别 AI 是否在向你请求确认/授权/继续执行。留空则使用内置关键词库；可用逗号分隔自定义（如：是否,确认,allow,approve）。
+- **监听日志**：本地持久化，可一键打开，并支持保留天数设置。
 - **测试功能**：测试各通知渠道是否正常工作
 - **AI 摘要**：配置 API URL / Key / 模型 与超时回退
-- **高级选项**：标题前缀、关闭行为、开机自启动
+- **高级选项**：标题前缀、关闭行为、开机自启动、点击通知切回编辑器/终端（受系统焦点限制）
 
 ### 界面预览
 
@@ -103,7 +107,7 @@ npm run dev
 
 ## 💻 命令行使用
 
-> WSL 说明：命令行提醒可用（Webhook/Telegram/邮件）。桌面/声音/托盘仅 Windows 支持。日志监听仅在 AI CLI 运行于 WSL（日志位于 `~/.claude`、`~/.codex`、`~/.gemini`）时生效。
+> WSL 说明：命令行提醒可用（Webhook/Telegram/邮件）。桌面/声音/托盘仅 Windows 支持。日志监听仅在 AI CLI 运行于 WSL（日志位于 `~/.claude`、`~/.codex`、`~/.gemini`）时生效。WSL/CLI 下，AI 摘要与飞书卡片都建议用 `.env` 控制，且 `.env` 优先于 `settings.json`（见下方示例）。
 
 命令行（源码方式）使用前请先执行 `npm install`。
 
@@ -168,6 +172,8 @@ node ai-reminder.js stop --source gemini --task "构建项目"
 ```env
 # Webhook 配置（支持飞书/钉钉/企业微信）
 WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
+# 飞书卡片格式（true/false），.env 优先于 settings.json
+# WEBHOOK_USE_FEISHU_CARD=false
 
 # 桌面通知和声音
 NOTIFICATION_ENABLED=true
@@ -198,6 +204,14 @@ TELEGRAM_CHAT_ID=your_chat_id
 # 自定义路径（可选）
 # AI_CLI_COMPLETE_NOTIFY_DATA_DIR=...
 # AI_CLI_COMPLETE_NOTIFY_ENV_PATH=...
+```
+
+WSL/CLI 快速设置示例：
+
+```env
+# .env（WSL/CLI）
+SUMMARY_ENABLED=true
+WEBHOOK_USE_FEISHU_CARD=true
 ```
 
 ### 运行时配置（settings.json）
@@ -236,9 +250,18 @@ npm run dist:portable
 - 🚀 **开机自启**功能在"高级"选项卡中配置（支持 Windows / macOS）
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
+- 💡 **EXE 启动默认开启 Watch 监听**：如不需要可在顶部开关关闭。
+- 🧭 **点击切回**更可靠，但仍受系统焦点限制；若是 VSCode 插件场景，建议选择 VSCode 目标，并确保 VSCode 未最小化/未被专注助手拦截
 
 ## 版本更新
 
+- 1.4.0：
+  - Watch 模式确认提醒（支持自定义关键词）
+  - 监听日志持久化 + 一键打开 + 保留天数设置
+  - EXE 启动自动开启 Watch 监听
+  - 桌面通知升级：通知窗UI优化 + 点击切回（可设置目标/强制最大化）
+  - 声音提醒增强：自定义声音、TTS 开关、WSL 用 PowerShell 播放
+  - 飞书卡片支持 `.env` 开关（WEBHOOK_USE_FEISHU_CARD），且 `.env` 优先
 - 1.3.0：
   - 飞书卡片 webhook + LOGO 随系统深浅色切换
   - AI 摘要多模型平台 + 测试 + 流式解析
@@ -267,4 +290,3 @@ ISC
 ---
 
 **享受智能提醒，让 AI 为您工作！** 🎉
-

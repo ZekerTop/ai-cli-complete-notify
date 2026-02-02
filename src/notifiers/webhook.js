@@ -172,6 +172,23 @@ function readUrls(channel) {
   return urlsFromEnv.length ? urlsFromEnv : urlsFromConfig;
 }
 
+function parseEnvCardToggle(value) {
+  if (value === undefined || value === null || value === '') return undefined;
+  const normalized = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'y', 'on', 'card'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'n', 'off', 'post'].includes(normalized)) return false;
+  return undefined;
+}
+
+function readUseFeishuCard(channel) {
+  const envName = channel.useFeishuCardEnv || 'WEBHOOK_USE_FEISHU_CARD';
+  const raw = process.env[envName];
+  const fallbackFormat = process.env.WEBHOOK_FORMAT;
+  const parsed = parseEnvCardToggle(raw != null && raw !== '' ? raw : fallbackFormat);
+  if (parsed !== undefined) return parsed;
+  return Boolean(channel.useFeishuCard);
+}
+
 // 加载自定义卡片模板
 function loadCardTemplate(templatePath) {
   try {
@@ -328,9 +345,8 @@ async function notifyWebhook({ config, title, contentText, projectName, timestam
   if (!urls.length) return { ok: false, error: '未配置 WEBHOOK_URLS' };
 
   // 判断是否使用飞书卡片格式
-  const useFeishuCard = Boolean(channel.useFeishuCard);
-  const summaryEnabled = Boolean(config.summary && config.summary.enabled);
-  const summarySucceeded = summaryEnabled && Boolean(summaryUsed);
+  const useFeishuCard = readUseFeishuCard(channel);
+  const summarySucceeded = Boolean(summaryUsed);
   const summaryText = summarySucceeded ? String(taskInfo || '').trim() : '';
   const outputText = summarySucceeded ? '' : String(outputContent || '').trim();
 

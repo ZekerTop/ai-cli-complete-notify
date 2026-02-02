@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="256" src="github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
+<img width="256" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
 # AI CLI Complete Notify(v1.4.0)
 

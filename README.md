@@ -2,7 +2,7 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify(v1.4.0)
+# AI CLI Complete Notify (v1.4.0)
 
 ![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
@@ -91,7 +91,7 @@ npm run dev
 - **Watch logs**: Persisted locally with one-click open and retention days.
 - **Test Function**: Test whether each notification channel works properly
 - **AI Summary**: Configure API URL / Key / Model and timeout fallback
-- **Advanced Options**: Title prefix, close behavior, auto-start on boot, click notification to return (best-effort; OS focus rules may block)
+- **Advanced Options**: Title prefix, close behavior, auto-start on boot, silent start (hide to tray on launch), click notification to return (best-effort; OS focus rules may block)
 
 ### Interface Preview
 
@@ -105,6 +105,7 @@ npm run dev
 ### Tray Function
 
 After selecting "Hide to tray", the application minimizes to the system tray. The icon may be in the ^ collapsed area of the taskbar.
+With silent start enabled, the app launches hidden in the tray without a balloon.
 
 ## 💻 Command Line Usage
 

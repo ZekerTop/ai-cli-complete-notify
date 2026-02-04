@@ -256,7 +256,8 @@ async function runCliAndExit(argv) {
   app.exit(result.ok ? 0 : 1);
 }
 
-function createWindow() {
+function createWindow(options = {}) {
+  const startHidden = Boolean(options.startHidden);
   const workAreaSize = screen.getPrimaryDisplay().workAreaSize;
   const width = Math.min(1280, workAreaSize.width);
   const height = Math.min(980, workAreaSize.height); // larger to avoid sidebar scroll
@@ -270,6 +271,7 @@ function createWindow() {
     minWidth,
     minHeight,
     center: true,
+    show: !startHidden,
     icon: windowIcon,
     autoHideMenuBar: true,
     title: `${PRODUCT_NAME} v${app.getVersion()}`,
@@ -292,6 +294,9 @@ function createWindow() {
     event.preventDefault();
     void handleCloseRequest(win);
   });
+  if (startHidden) {
+    hideToTray(win, { silent: true });
+  }
   return win;
 }
 
@@ -299,6 +304,11 @@ function getCloseBehavior() {
   const config = loadConfig();
   const behavior = config && config.ui && typeof config.ui.closeBehavior === 'string' ? config.ui.closeBehavior : 'ask';
   return behavior === 'tray' || behavior === 'exit' ? behavior : 'ask';
+}
+
+function isSilentStartEnabled() {
+  const config = loadConfig();
+  return Boolean(config && config.ui && config.ui.silentStart);
 }
 
 function saveCloseBehavior(behavior) {
@@ -395,13 +405,14 @@ function ensureTray() {
   return tray;
 }
 
-function hideToTray(win) {
+function hideToTray(win, options = {}) {
+  const silent = Boolean(options && options.silent);
   ensureTray();
   win.hide();
   win.setSkipTaskbar(true);
 
   try {
-    if (tray && typeof tray.displayBalloon === 'function') {
+    if (!silent && tray && typeof tray.displayBalloon === 'function') {
       const lang = getUiLanguage();
       tray.displayBalloon({
         title: PRODUCT_NAME,
@@ -748,7 +759,7 @@ async function main() {
     }
 
     await app.whenReady();
-    const win = createWindow();
+    const win = createWindow({ startHidden: isSilentStartEnabled() });
     mainWindow = win;
     setupIpc(win);
     startDefaultWatch(win);
@@ -782,7 +793,7 @@ async function main() {
     }
   });
 
-  const win = createWindow();
+  const win = createWindow({ startHidden: isSilentStartEnabled() });
   mainWindow = win;
   setupIpc(win);
   startDefaultWatch(win);

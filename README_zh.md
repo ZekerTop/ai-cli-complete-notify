@@ -2,7 +2,7 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify(v1.4.0)
+# AI CLI Complete Notify (v1.4.0)
 
 ![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
@@ -91,7 +91,7 @@ npm run dev
 - **监听日志**：本地持久化，可一键打开，并支持保留天数设置。
 - **测试功能**：测试各通知渠道是否正常工作
 - **AI 摘要**：配置 API URL / Key / 模型 与超时回退
-- **高级选项**：标题前缀、关闭行为、开机自启动、点击通知切回编辑器/终端（受系统焦点限制）
+- **高级选项**：标题前缀、关闭行为、开机自启动、无感启动、点击通知切回编辑器/终端（受系统焦点限制）
 
 ### 界面预览
 
@@ -105,6 +105,7 @@ npm run dev
 ### 托盘功能
 
 选择"隐藏到托盘"后，应用会最小化到系统托盘。图标可能在任务栏的 ^ 折叠区域中。
+开启“无感启动”后，启动即隐藏到托盘且不弹出提示。
 
 ## 💻 命令行使用
 

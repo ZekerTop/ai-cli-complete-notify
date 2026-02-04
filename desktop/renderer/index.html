@@ -419,6 +419,13 @@
             <div class="hint" data-i18n="advanced.autostartHint">Windows / macOS 支持开机自启动；Linux 需自行配置。</div>
             <div class="hint" id="autostartStatus" data-i18n="advanced.autostartStatusUnknown">系统自启动：未知</div>
           </div>
+          <div class="row" style="margin-top: 10px;">
+            <label class="toggleRow">
+              <input id="silentStart" class="prettyCheck" type="checkbox" />
+              <span data-i18n="advanced.silentStart">Silent start (hide to tray on launch)</span>
+            </label>
+          </div>
+          <div class="hint" data-i18n="advanced.silentStartHint">Takes effect next launch and skips the tray balloon.</div>
           <div class="hint" data-i18n="advanced.closeHint">选择“隐藏到托盘”后，点击右上角关闭不会退出，会在右下角托盘保留图标，点击即可重新打开。</div>
         </section>
       </main>

@@ -21,6 +21,7 @@ const DEFAULT_CONFIG = {
     language: 'zh-CN',
     closeBehavior: 'ask', // ask | tray | exit
     autostart: false,
+    silentStart: false,
     watchLogRetentionDays: 7,
     autoFocusOnNotify: false,
     forceMaximizeOnFocus: false,

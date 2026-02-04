@@ -105,6 +105,8 @@ const I18N = {
     'advanced.closeHint': "\u9009\u62e9\u201c\u9690\u85cf\u5230\u6258\u76d8\u201d\u540e\uff0c\u70b9\u51fb\u53f3\u4e0a\u89d2\u5173\u95ed\u4e0d\u4f1a\u9000\u51fa\uff0c\u4f1a\u5728\u53f3\u4e0b\u89d2\u6258\u76d8\u4fdd\u7559\u56fe\u6807\uff0c\u70b9\u51fb\u5373\u53ef\u91cd\u65b0\u6253\u5f00\u3002",
     'advanced.autostart': "\u5f00\u673a\u81ea\u542f\u52a8\uff08\u767b\u5f55\u540e\u81ea\u52a8\u5728\u540e\u53f0\u8fd0\u884c\uff09",
     'advanced.autostartHint': "Windows / macOS \u652f\u6301\u5f00\u673a\u81ea\u542f\u52a8\uff1bLinux \u9700\u81ea\u884c\u914d\u7f6e\u3002",
+    'advanced.silentStart': "\u65e0\u611f\u542f\u52a8\uff08\u542f\u52a8\u540e\u81ea\u52a8\u9690\u85cf\u5230\u6258\u76d8\uff09",
+    'advanced.silentStartHint': "\u5f00\u542f\u540e\u4e0b\u6b21\u542f\u52a8\u4f1a\u76f4\u63a5\u9690\u85cf\u5230\u6258\u76d8\u4e14\u4e0d\u5f39\u51fa\u63d0\u793a\u3002",
     'close.message': "\u5173\u95ed\u5e94\u7528\uff1f",
     'close.detail': "\u53ef\u9009\u62e9\u9690\u85cf\u5230\u6258\u76d8\u7ee7\u7eed\u8fd0\u884c\uff0c\u6216\u76f4\u63a5\u9000\u51fa\u5e76\u505c\u6b62\u76d1\u542c\u3002",
     'close.hide': "\u9690\u85cf\u5230\u6258\u76d8",
@@ -260,6 +262,8 @@ const I18N = {
     'advanced.closeHint': "If set to \u201cMinimize to tray\u201d, closing the window keeps the app running in the system tray.",
     'advanced.autostart': "Launch at login (run in background after login)",
     'advanced.autostartHint': "Supported on Windows/macOS; Linux requires manual setup.",
+    'advanced.silentStart': "Silent start (hide to tray on launch)",
+    'advanced.silentStartHint': "Takes effect next launch and skips the tray balloon.",
     'close.message': "Close the app?",
     'close.detail': "Minimize to tray to keep running, or quit to stop watchers.",
     'close.hide': "Minimize to tray",
@@ -1191,6 +1195,16 @@ async function main() {
       } finally {
         $('autostart').disabled = false;
       }
+    });
+  }
+
+  const silentStartToggle = $('silentStart');
+  if (silentStartToggle) {
+    if (typeof config.ui.silentStart !== 'boolean') config.ui.silentStart = false;
+    silentStartToggle.checked = Boolean(config.ui.silentStart);
+    silentStartToggle.addEventListener('change', () => {
+      config.ui.silentStart = Boolean(silentStartToggle.checked);
+      triggerAutoSave();
     });
   }
 

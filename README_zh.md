@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.4.0)
+# AI CLI Complete Notify (v1.4.2)
 
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -257,7 +257,7 @@ npm run dist:portable
 
 ## 版本更新
 
-- 1.4.0：
+- 1.4.2：
   - Watch 模式确认提醒（支持自定义关键词）
   - 监听日志持久化 + 一键打开 + 保留天数设置
   - EXE 启动自动开启 Watch 监听

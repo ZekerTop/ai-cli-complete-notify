@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.4.0)
+# AI CLI Complete Notify (v1.4.2)
 
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -256,7 +256,7 @@ npm run dist:portable
 
 ## Changelog
 
-- 1.4.0:
+- 1.4.2:
   - Confirm prompt alerts in Watch mode (custom keywords supported)
   - Watch logs persisted + open log + retention days
   - Watch auto-start when EXE opens

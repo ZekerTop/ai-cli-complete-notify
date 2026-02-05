@@ -5,7 +5,7 @@
   "main": "desktop/main.js",
   "scripts": {
     "dev": "electron .",
-    "dist": "electron-packager . ai-cli-complete-notify-%npm_package_version% --platform=win32 --arch=x64 --out dist --overwrite --prune=true --icon=desktop/assets/tray.ico --ignore=\"\\.env$|\\.env\\.example$|package-zip\\.ps1$\" && node tools/postdist.js",
+    "dist": "node tools/pack.js",
     "dist:portable": "electron-builder --win portable",
     "pack": "electron-builder --dir",
     "wizard": "node setup-wizard.js",

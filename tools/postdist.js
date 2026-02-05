@@ -30,10 +30,46 @@ function removeDeepEnv(targetDir) {
 
 function main() {
   const name = `ai-cli-complete-notify-${pkg.version}-win32-x64`;
-  const distDir = path.join(process.cwd(), 'dist', name);
+  const distRoot = path.join(process.cwd(), 'dist');
+  let distDir = path.join(distRoot, name);
   if (!fs.existsSync(distDir)) {
-    console.warn(`[postdist] target dir not found: ${distDir}`);
-    return;
+    const placeholder = path.join(distRoot, 'ai-cli-complete-notify-%npm_package_version%-win32-x64');
+    if (fs.existsSync(placeholder)) {
+      distDir = placeholder;
+      console.warn(`[postdist] target dir fallback: ${distDir}`);
+    } else {
+      let fallback = '';
+      try {
+        const entries = fs.readdirSync(distRoot, { withFileTypes: true });
+        const candidates = entries
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name)
+          .filter((name) => name.startsWith('ai-cli-complete-notify-') && name.endsWith('-win32-x64'))
+          .map((name) => ({ name, full: path.join(distRoot, name) }));
+
+        let latest = null;
+        for (const item of candidates) {
+          try {
+            const stat = fs.statSync(item.full);
+            if (!latest || stat.mtimeMs > latest.mtimeMs) {
+              latest = { ...item, mtimeMs: stat.mtimeMs };
+            }
+          } catch (_error) {
+            // ignore
+          }
+        }
+        if (latest) fallback = latest.full;
+      } catch (_error) {
+        // ignore
+      }
+
+      if (!fallback) {
+        console.warn(`[postdist] target dir not found: ${distDir}`);
+        return;
+      }
+      distDir = fallback;
+      console.warn(`[postdist] target dir fallback: ${distDir}`);
+    }
   }
 
   copyEnvExample(distDir);

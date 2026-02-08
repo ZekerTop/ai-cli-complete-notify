@@ -512,6 +512,8 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
     currentFile: null,
     tickRunning: false,
     lastUserAt: null,
+    lastAssistantAt: null,
+    lastNotifiedAssistantAt: null,
     lastCwd: null,
     lastAgentContent: null, // 鎹曡幏agent鐨勮緭鍑哄唴瀹?    lastUserText: '',
     lastAssistantText: '',
@@ -534,6 +536,56 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
       state.lastUserText = extractTextFromAny(obj.payload);
       state.lastConfirmKey = '';
       state.confirmNotifiedForTurn = false;
+      return;
+    }
+
+    if (obj.type === 'response_item' && obj.payload && obj.payload.type === 'message' && obj.payload.role === 'assistant') {
+      if (seed) return;
+
+      const phase = typeof obj.payload.phase === 'string' ? obj.payload.phase : '';
+      if (phase && phase !== 'final_answer') return;
+
+      const assistantText = extractTextFromAny(obj.payload);
+      if (assistantText) {
+        state.lastAssistantText = assistantText;
+        state.lastAgentContent = assistantText;
+      }
+
+      await maybeNotifyConfirm({
+        source: 'codex',
+        text: assistantText,
+        cwd: state.lastCwd || process.cwd(),
+        logger,
+        state,
+        confirmDetector
+      });
+
+      if (state.confirmNotifiedForTurn) {
+        logger('[watch][codex] skipped completion (confirm alert sent)');
+        return;
+      }
+
+      state.lastAssistantAt = ts;
+      if (state.lastAssistantAt != null && state.lastNotifiedAssistantAt === state.lastAssistantAt) {
+        return;
+      }
+
+      const durationMs = ts != null && state.lastUserAt != null && ts >= state.lastUserAt ? ts - state.lastUserAt : null;
+      const cwd = state.lastCwd || process.cwd();
+      const result = await sendNotifications({
+        source: 'codex',
+        taskInfo: 'Codex 完成',
+        durationMs,
+        cwd,
+        outputContent: state.lastAgentContent || state.lastAssistantText,
+        summaryContext: {
+          userMessage: state.lastUserText,
+          assistantMessage: state.lastAssistantText
+        }
+      });
+      state.lastNotifiedAssistantAt = state.lastAssistantAt;
+      state.confirmNotifiedForTurn = true;
+      logger(`[watch][codex] ${summarizeResult(result)}`);
       return;
     }
 
@@ -583,27 +635,6 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
           state,
           confirmDetector
         });
-
-        if (state.confirmNotifiedForTurn) {
-          logger('[watch][codex] skipped completion (confirm alert sent)');
-          return;
-        }
-
-        const durationMs = ts != null && state.lastUserAt != null && ts >= state.lastUserAt ? ts - state.lastUserAt : null;
-        const cwd = state.lastCwd || process.cwd();
-        const result = await sendNotifications({
-          source: 'codex',
-          taskInfo: 'Codex 完成',
-          durationMs,
-          cwd,
-          outputContent: state.lastAgentContent || state.lastAssistantText,
-          summaryContext: {
-            userMessage: state.lastUserText,
-            assistantMessage: state.lastAssistantText
-          }
-        });
-        state.confirmNotifiedForTurn = true;
-        logger(`[watch][codex] ${summarizeResult(result)}`);
       }
     }
   }

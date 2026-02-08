@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.4.2)
+# AI CLI Complete Notify (v1.4.3)
 
-![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -256,10 +256,11 @@ npm run dist:portable
 
 ## Changelog
 
-- 1.4.2:
+- 1.4.3:
   - Confirm prompt alerts in Watch mode (custom keywords supported)
   - Watch logs persisted + open log + retention days
   - Watch auto-start when EXE opens
+  - Fix premature completion alerts for `gpt-5.3-codex` (now only notifies after task is truly finished)
   - Desktop notifications upgraded: notification window UI optimization + click-to-return (focus target / force maximize)
   - Sound enhancements: custom sound file, TTS toggle, WSL playback via Windows PowerShell
   - Feishu card toggle via `.env` (WEBHOOK_USE_FEISHU_CARD) with `.env` priority

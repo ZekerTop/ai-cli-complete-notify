@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.4.2)
+# AI CLI Complete Notify (v1.4.3)
 
-![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -257,10 +257,11 @@ npm run dist:portable
 
 ## 版本更新
 
-- 1.4.2：
+- 1.4.3：
   - Watch 模式确认提醒（支持自定义关键词）
   - 监听日志持久化 + 一键打开 + 保留天数设置
   - EXE 启动自动开启 Watch 监听
+  - 修复 `gpt-5.3-codex` 任务未完成就提前提醒的问题（改为仅在任务真正完成后提醒）
   - 桌面通知升级：通知窗UI优化 + 点击切回（可设置目标/强制最大化）
   - 声音提醒增强：自定义声音、TTS 开关、WSL 用 PowerShell 播放
   - 飞书卡片支持 `.env` 开关（WEBHOOK_USE_FEISHU_CARD），且 `.env` 优先

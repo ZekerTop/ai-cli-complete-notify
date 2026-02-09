@@ -17,6 +17,14 @@ if (process.platform === 'win32') {
   }
 }
 
+try {
+  app.commandLine.appendSwitch('disable-renderer-backgrounding');
+  app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+  app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+} catch (_error) {
+  // ignore
+}
+
 const { bootstrapEnv } = require('../src/bootstrap');
 bootstrapEnv();
 
@@ -28,12 +36,15 @@ const { notifySound } = require('../src/notifiers/sound');
 const { summarizeTask, summarizeTaskDetailed } = require('../src/summary');
 const { startWatch } = require('../src/watch');
 
+const MAIN_WINDOW_BG = '#0b1022';
+
 let mainWindow = null;
 let watchStop = null;
 let tray = null;
 let isQuitting = false;
 let closePromptOpen = false;
 let closePromptSeq = 0;
+let closePromptEpoch = 0;
 const pendingClosePrompts = new Map();
 let hasSingleInstanceLock = false;
 let watchLogCleanupTimer = null;
@@ -271,19 +282,33 @@ function createWindow(options = {}) {
     minWidth,
     minHeight,
     center: true,
-    show: !startHidden,
+    show: false,
     icon: windowIcon,
     autoHideMenuBar: true,
     title: `${PRODUCT_NAME} v${app.getVersion()}`,
-    backgroundColor: '#0b1022',
+    backgroundColor: MAIN_WINDOW_BG,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      backgroundThrottling: false,
       preload: path.join(__dirname, 'preload.js')
     }
   });
 
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  // Load a lightweight splash first to avoid any white flash while Chromium
+  // initializes the main renderer.
+  win.loadFile(path.join(__dirname, 'renderer', 'splash.html'));
+  win.webContents.once('did-finish-load', () => {
+    if (win.isDestroyed()) return;
+    win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  });
+  if (!startHidden) {
+    win.once('ready-to-show', () => {
+      if (win.isDestroyed()) return;
+      win.show();
+      win.focus();
+    });
+  }
   try {
     win.setMenuBarVisibility(false);
   } catch (_error) {
@@ -348,11 +373,68 @@ function stopWatchIfRunning() {
   }
 }
 
+function dismissClosePrompt(win, options = {}) {
+  const resolvePending = Boolean(options && options.resolvePending);
+  closePromptEpoch += 1;
+  const epoch = closePromptEpoch;
+
+  try {
+    if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+      win.webContents.send('completeNotify:dismissClosePrompt', { epoch });
+    }
+  } catch (_error) {
+    // ignore
+  }
+
+  if (!resolvePending) return;
+
+  const resolvers = Array.from(pendingClosePrompts.values());
+  pendingClosePrompts.clear();
+  for (const resolve of resolvers) {
+    try {
+      resolve({ action: 'cancel', remember: false });
+    } catch (_error) {
+      // ignore
+    }
+  }
+  closePromptOpen = false;
+}
+
 function showMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+  dismissClosePrompt(mainWindow, { resolvePending: true });
+  const wasMinimized = mainWindow.isMinimized();
+  try {
+    mainWindow.setBackgroundColor(MAIN_WINDOW_BG);
+    if (mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.invalidate();
+    }
+    if (wasMinimized) {
+      mainWindow.setOpacity(0);
+    }
+  } catch (_error) {
+    // ignore
+  }
+
+  if (wasMinimized) mainWindow.restore();
   mainWindow.show();
   mainWindow.setSkipTaskbar(false);
   mainWindow.focus();
+
+  if (wasMinimized) {
+    setTimeout(() => {
+      try {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.setOpacity(1);
+          if (mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+            mainWindow.webContents.invalidate();
+          }
+        }
+      } catch (_error) {
+        // ignore
+      }
+    }, 80);
+  }
 }
 
 function refreshTrayMenu() {
@@ -407,21 +489,35 @@ function ensureTray() {
 
 function hideToTray(win, options = {}) {
   const silent = Boolean(options && options.silent);
-  ensureTray();
-  win.hide();
-  win.setSkipTaskbar(true);
+  const fromClosePrompt = Boolean(options && options.fromClosePrompt);
 
-  try {
-    if (!silent && tray && typeof tray.displayBalloon === 'function') {
-      const lang = getUiLanguage();
-      tray.displayBalloon({
-        title: PRODUCT_NAME,
-        content: tr(lang, 'tray.hidden')
-      });
+  const doHide = () => {
+    if (!win || win.isDestroyed()) return;
+    ensureTray();
+    win.hide();
+    win.setSkipTaskbar(true);
+
+    try {
+      if (!silent && tray && typeof tray.displayBalloon === 'function') {
+        const lang = getUiLanguage();
+        tray.displayBalloon({
+          title: PRODUCT_NAME,
+          content: tr(lang, 'tray.hidden')
+        });
+      }
+    } catch (_error) {
+      // ignore
     }
-  } catch (_error) {
-    // ignore
+  };
+
+  dismissClosePrompt(win, { resolvePending: false });
+
+  if (fromClosePrompt) {
+    setTimeout(doHide, 40);
+    return;
   }
+
+  doHide();
 }
 
 function normalizeClosePromptAction(action) {
@@ -456,10 +552,11 @@ function showRendererClosePrompt(win) {
     }
 
     const id = String(++closePromptSeq);
+    const epoch = closePromptEpoch;
     pendingClosePrompts.set(id, (payload) => resolve(payload || { action: 'cancel', remember: false }));
 
     try {
-      win.webContents.send('completeNotify:closePrompt', { id });
+      win.webContents.send('completeNotify:closePrompt', { id, epoch });
     } catch (_error) {
       pendingClosePrompts.delete(id);
       resolve({ action: 'cancel', remember: false });
@@ -500,7 +597,7 @@ async function handleCloseRequest(win) {
 
     if (action === 'tray') {
       if (remember) saveCloseBehavior('tray');
-      hideToTray(win);
+      hideToTray(win, { fromClosePrompt: true });
       return;
     }
 

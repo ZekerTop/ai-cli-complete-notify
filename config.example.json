@@ -8,7 +8,11 @@
     "includeSourcePrefixInTitle": true
   },
   "ui": {
-    "silentStart": false
+    "silentStart": false,
+    "confirmAlert": {
+      "enabled": false,
+      "keywords": ""
+    }
   },
   "channels": {
     "feishu": {

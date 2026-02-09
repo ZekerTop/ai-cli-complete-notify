@@ -4,6 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ai-cli-complete-notify</title>
+    <meta name="color-scheme" content="dark" />
+    <style>
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #0b1022;
+        color: #eaf0ff;
+      }
+      body {
+        overflow: hidden;
+      }
+    </style>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -221,6 +234,9 @@
                   <input id="watchConfirmEnabled" class="prettyCheck" type="checkbox" />
                   <span data-i18n="watch.confirmEnabled">确认提醒</span>
                 </label>
+              </div>
+              <div class="hint" data-i18n="watch.confirmUsageHint">
+                开启建议：AI 经常会向你请求“确认/授权/是否继续”时。关闭建议：只想收到“任务完成提醒”，不想被中间输出打断。
               </div>
               <div class="watchRow" id="watchConfirmKeywordsRow">
                 <label data-i18n="watch.confirmKeywords">确认关键词（可选）</label>

@@ -30,5 +30,11 @@ contextBridge.exposeInMainWorld('completeNotify', {
     const listener = (_event, payload) => handler(payload);
     ipcRenderer.on('completeNotify:closePrompt', listener);
     return () => ipcRenderer.removeListener('completeNotify:closePrompt', listener);
+  },
+  onDismissClosePrompt: (handler) => {
+    if (typeof handler !== 'function') return () => {};
+    const listener = () => handler();
+    ipcRenderer.on('completeNotify:dismissClosePrompt', listener);
+    return () => ipcRenderer.removeListener('completeNotify:dismissClosePrompt', listener);
   }
 });

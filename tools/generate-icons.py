@@ -138,10 +138,25 @@ def make_icon(size: int = 512) -> Image.Image:
     gd.line((a_left + int(size * 0.06), bar_y, a_right - int(size * 0.06), bar_y), fill=255, width=max(1, int(stroke * 0.70)), joint="curve")
 
     i_left = int(size * 0.63)
-    i_top = int(size * 0.30)
     i_bottom = int(size * 0.72)
     i_w = int(size * 0.11)
+
+    # i dot: larger, aligned with A top, same width as stem.
+    dot_d = i_w
+    dot_top = a_top
+    dot_left = i_left
+    dot_right = dot_left + dot_d
+    dot_bottom = dot_top + dot_d
+    gd.ellipse((dot_left, dot_top, dot_right, dot_bottom), fill=255)
+
+    # Keep a clear gap between dot and stem.
+    stem_gap = max(2, int(size * 0.028))
+    i_top = dot_bottom + stem_gap
     gd.rounded_rectangle((i_left, i_top, i_left + i_w, i_bottom), radius=i_w // 2, fill=255)
+
+    # Edge finish: smooth + crisp for the dot/stem contour.
+    glyph_mask = glyph_mask.filter(ImageFilter.GaussianBlur(radius=max(1, int(size * 0.0025))))
+    glyph_mask = glyph_mask.filter(ImageFilter.UnsharpMask(radius=max(1, int(size * 0.006)), percent=165, threshold=2))
 
     glyph_fill = color_gradient(size, (255, 255, 255), (178, 206, 255))
     glyph = Image.new("RGBA", (size, size), (0, 0, 0, 0))

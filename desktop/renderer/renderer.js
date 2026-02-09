@@ -144,6 +144,7 @@ const I18N = {
     'section.sound.title': "\u63d0\u793a\u97f3",
     'section.sound.sub': "\u8bed\u97f3\u64ad\u62a5\u4e0e\u63d0\u793a\u97f3\u8bbe\u7f6e\uff08\u652f\u6301\u81ea\u5b9a\u4e49 .wav\uff09",
     'watch.confirmEnabled': "\u786e\u8ba4\u63d0\u9192",
+    'watch.confirmUsageHint': "\u5f00\u542f\u5efa\u8bae\uff1aAI \u7ecf\u5e38\u4f1a\u5411\u4f60\u8bf7\u6c42\u201c\u786e\u8ba4/\u6388\u6743/\u662f\u5426\u7ee7\u7eed\u201d\u65f6\u3002\u5173\u95ed\u5efa\u8bae\uff1a\u53ea\u60f3\u6536\u5230\u201c\u4efb\u52a1\u5b8c\u6210\u63d0\u9192\u201d\uff0c\u4e0d\u60f3\u88ab\u4e2d\u95f4\u8f93\u51fa\u6253\u65ad\u3002",
     'watch.confirmKeywords': "\u786e\u8ba4\u5173\u952e\u8bcd\uff08\u53ef\u9009\uff09",
     'watch.confirmKeywordsPlaceholder': "\u662f\u5426,\u786e\u8ba4,allow,approve",
     'watch.confirmKeywordsHint': "\u7528\u4e8e\u8bc6\u522b AI \u662f\u5426\u5728\u5411\u4f60\u8bf7\u6c42\u786e\u8ba4/\u6388\u6743/\u7ee7\u7eed\u6267\u884c\u3002\u7559\u7a7a\u4f7f\u7528\u5185\u7f6e\u5173\u952e\u8bcd\u5e93\uff1b\u53ef\u7528\u9017\u53f7\u5206\u9694\u81ea\u5b9a\u4e49\u3002",
@@ -301,6 +302,7 @@ const I18N = {
     'section.sound.title': "Sound",
     'section.sound.sub': "TTS and custom sound settings (WAV supported)",
     'watch.confirmEnabled': "Confirm prompt alert",
+    'watch.confirmUsageHint': "Turn on when AI often asks for confirmation/approval. Turn off when you only want final completion alerts without intermediate interruptions.",
     'watch.confirmKeywords': "Confirm keywords (optional)",
     'watch.confirmKeywordsPlaceholder': "confirm,approve,allow,proceed",
     'watch.confirmKeywordsHint': "Used to detect confirmation/approval prompts. Leave empty to use defaults; comma-separated custom keywords.",
@@ -947,6 +949,8 @@ function bindClosePrompt() {
   if (!modal) return () => {};
 
   let activeId = null;
+  let promptEpoch = 0;
+  let suppressUntil = 0;
 
   const setOpen = (open) => {
     modal.classList.toggle('isOpen', open);
@@ -957,6 +961,20 @@ function bindClosePrompt() {
       const hideBtn = $('closeHideBtn');
       if (hideBtn) hideBtn.focus();
     }
+  };
+
+  const dismiss = (payload) => {
+    const nextEpoch = payload && Number.isFinite(Number(payload.epoch))
+      ? Number(payload.epoch)
+      : promptEpoch + 1;
+    promptEpoch = Math.max(promptEpoch, nextEpoch);
+    activeId = null;
+    suppressUntil = Date.now() + 600;
+    modal.classList.add('isForceHidden');
+    setOpen(false);
+    setTimeout(() => {
+      if (!modal.classList.contains('isOpen')) modal.classList.remove('isForceHidden');
+    }, 160);
   };
 
   const respond = (action) => {
@@ -977,6 +995,12 @@ function bindClosePrompt() {
   };
 
   const onRequest = (payload) => {
+    if (Date.now() < suppressUntil) return;
+    const incomingEpoch = payload && Number.isFinite(Number(payload.epoch))
+      ? Number(payload.epoch)
+      : promptEpoch;
+    if (incomingEpoch < promptEpoch) return;
+    promptEpoch = incomingEpoch;
     const id = payload && payload.id ? String(payload.id) : '';
     if (!id) return;
     activeId = id;
@@ -1010,6 +1034,9 @@ function bindClosePrompt() {
   const unsubscribe = window.completeNotify && typeof window.completeNotify.onClosePrompt === 'function'
     ? window.completeNotify.onClosePrompt(onRequest)
     : () => {};
+  const unsubscribeDismiss = window.completeNotify && typeof window.completeNotify.onDismissClosePrompt === 'function'
+    ? window.completeNotify.onDismissClosePrompt(dismiss)
+    : () => {};
 
   return () => {
     if (hideBtn) hideBtn.removeEventListener('click', onHideClick);
@@ -1018,6 +1045,7 @@ function bindClosePrompt() {
     modal.removeEventListener('click', onMaskClick);
     window.removeEventListener('keydown', onKeydown);
     if (typeof unsubscribe === 'function') unsubscribe();
+    if (typeof unsubscribeDismiss === 'function') unsubscribeDismiss();
   };
 }
 

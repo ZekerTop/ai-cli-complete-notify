@@ -801,6 +801,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
   transition: opacity 140ms ease;
   z-index: 200;
 }
+.modalMask.isForceHidden,
+.modalMask.isForceHidden.isOpen {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  transition: none !important;
+}
 .modalMask.isOpen {
   opacity: 1;
   pointer-events: auto;

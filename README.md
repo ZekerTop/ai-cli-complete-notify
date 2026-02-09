@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.4.3)
+# AI CLI Complete Notify (v1.5.0)
 
-![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -112,6 +112,63 @@ With silent start enabled, the app launches hidden in the tray without a balloon
 > WSL note: CLI reminders work for webhook/Telegram/email. Desktop/sound/tray are Windows-only. Log monitoring works only when the AI CLI runs inside WSL (logs under `~/.claude`, `~/.codex`, `~/.gemini`). For WSL/CLI config, use `.env` for AI summary and Feishu card; `.env` overrides `settings.json`.
 
 Note: For CLI usage from source (Node), run `npm install` first.
+
+### WSL Quick Command Guide (Copy & Run)
+
+```bash
+# 0) Windows PowerShell: verify WSL is installed
+wsl -l -v
+
+# 1) Enter your distro (Ubuntu example)
+wsl -d Ubuntu
+```
+
+```bash
+# 2) Install Node.js / npm inside WSL (Ubuntu example)
+sudo apt update
+sudo apt install -y nodejs npm
+node -v
+npm -v
+```
+
+```bash
+# 3) Enter project and install deps (adjust path to your machine)
+cd "/mnt/d/path/to/ai-cli-complete-notify"
+npm install
+cp .env.example .env
+```
+
+```bash
+# 4) Start log watch mode (recommended for long-running use)
+node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
+
+# 5) Wrap an AI command with automatic timing
+node ai-reminder.js run --source codex -- codex <args...>
+```
+
+```bash
+# 6) Keep watcher running in background (nohup option)
+nohup node ai-reminder.js watch --sources all > ~/ai-cli-notify.watch.log 2>&1 &
+tail -f ~/ai-cli-notify.watch.log
+```
+
+```bash
+# 7) Optional: keep it in tmux (more stable)
+sudo apt install -y tmux
+tmux new -s ai-notify
+# Run watch command inside tmux, then press Ctrl+b, d to detach
+tmux attach -t ai-notify
+```
+
+```bash
+# 8) Useful WSL <-> Windows path helpers
+explorer.exe .
+wslpath -w ~/.codex
+```
+
+Notes:
+- In WSL, prefer webhook/Telegram/email channels; tray is a Windows GUI feature.
+- For WSL CLI behavior, configure `.env` first (`.env` overrides `settings.json`).
 
 ### Direct Notification
 
@@ -252,10 +309,22 @@ npm run dist:portable
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
 - 💡 **EXE starts with Watch enabled by default**: toggle it in the top bar if you don?t need it.
+- ✅ **Confirm prompt toggle guidance (default: OFF)**: turn it on if AI often asks “confirm/approve/continue”; keep it off if you only want final completion alerts without intermediate interruptions.
 - 🧭 **Click to return** is more reliable but still best-effort due to OS focus rules; for VSCode extensions choose the VSCode target and ensure VSCode is not minimized
 
 ## Changelog
 
+- 1.5.0:
+  - Codex completion detection hardened with pending-state + token_count grace to reduce premature alerts
+  - Added strict mode for Codex completion (`CODEX_STRICT_FINAL_ANSWER=1` by default): only `final_answer` triggers completion alerts
+  - Added fallback flush before next user turn to reduce missed completion notifications
+  - Added Codex session locking + idle switching guard to avoid cross-session reminder misfires
+  - Added Codex completion-only mode (`CODEX_COMPLETION_ONLY=1` by default) to avoid confirm-alert interference
+  - Added quiet-window fallback for phase-empty Codex outputs (`CODEX_EMPTY_PHASE_QUIET_MS`) to reduce missed end-of-task reminders
+  - Confirm alert is now default OFF (`confirmAlert.enabled=false`), aligned in sample config and UI guidance
+  - Tray restore UX improved: suppress close-modal flicker and smooth window restore behavior
+  - Startup flash mitigation via splash screen and dark prepaint background
+  - Refined tray icon geometry and edge sharpness
 - 1.4.3:
   - Confirm prompt alerts in Watch mode (custom keywords supported)
   - Watch logs persisted + open log + retention days

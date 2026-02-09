@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.4.3)
+# AI CLI Complete Notify (v1.5.0)
 
-![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -112,6 +112,63 @@ npm run dev
 > WSL 说明：命令行提醒可用（Webhook/Telegram/邮件）。桌面/声音/托盘仅 Windows 支持。日志监听仅在 AI CLI 运行于 WSL（日志位于 `~/.claude`、`~/.codex`、`~/.gemini`）时生效。WSL/CLI 下，AI 摘要与飞书卡片都建议用 `.env` 控制，且 `.env` 优先于 `settings.json`（见下方示例）。
 
 命令行（源码方式）使用前请先执行 `npm install`。
+
+### WSL 快速命令操作（可直接复制）
+
+```bash
+# 0) Windows PowerShell：确认 WSL 已安装
+wsl -l -v
+
+# 1) 进入你的发行版（示例 Ubuntu）
+wsl -d Ubuntu
+```
+
+```bash
+# 2) 在 WSL 内安装 Node.js / npm（Ubuntu 示例）
+sudo apt update
+sudo apt install -y nodejs npm
+node -v
+npm -v
+```
+
+```bash
+# 3) 进入项目并安装依赖（按你的实际路径调整）
+cd "/mnt/d/PycharmProjects/AI项目/ai提醒"
+npm install
+cp .env.example .env
+```
+
+```bash
+# 4) 启动日志监听（推荐常驻）
+node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
+
+# 5) 包裹运行 AI 命令并自动计时
+node ai-reminder.js run --source codex -- codex <参数...>
+```
+
+```bash
+# 6) 后台常驻（nohup 方案）
+nohup node ai-reminder.js watch --sources all > ~/ai-cli-notify.watch.log 2>&1 &
+tail -f ~/ai-cli-notify.watch.log
+```
+
+```bash
+# 7) 可选：tmux 常驻（更稳定）
+sudo apt install -y tmux
+tmux new -s ai-notify
+# 在 tmux 内运行 watch 命令，按 Ctrl+b 再按 d 退出会话
+tmux attach -t ai-notify
+```
+
+```bash
+# 8) WSL 与 Windows 路径互通常用命令
+explorer.exe .
+wslpath -w ~/.codex
+```
+
+提示：
+- WSL 场景建议优先使用 Webhook / Telegram / 邮件；托盘属于 Windows GUI 功能。
+- 若你在 WSL 里跑 CLI，但想让配置生效，优先写 `.env`（会覆盖 `settings.json`）。
 
 ### 直接通知
 
@@ -253,10 +310,22 @@ npm run dist:portable
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
 - 💡 **EXE 启动默认开启 Watch 监听**：如不需要可在顶部开关关闭。
+- ✅ **确认提醒开关建议（默认关闭）**：当 AI 经常问你“是否继续/是否授权/请确认”时建议开启；如果你只想收到“任务完成提醒”，建议保持关闭，避免中间输出触发提醒。
 - 🧭 **点击切回**更可靠，但仍受系统焦点限制；若是 VSCode 插件场景，建议选择 VSCode 目标，并确保 VSCode 未最小化/未被专注助手拦截
 
 ## 版本更新
 
+- 1.5.0：
+  - 强化 Codex 完成判定（挂起状态 + token_count 缓冲），降低未完成提前提醒
+  - 增加 Codex 严格完成模式（默认 `CODEX_STRICT_FINAL_ANSWER=1`）：仅 `final_answer` 触发完成提醒
+  - 增加下一轮用户消息前兜底补发，降低漏提醒
+  - 新增 Codex 会话锁定 + 空闲切换机制，避免在历史 session 间来回切换导致误提醒
+  - 新增 Codex 仅完成提醒模式（默认 `CODEX_COMPLETION_ONLY=1`），避免确认提醒干扰完成提醒
+  - 新增 phase 为空时的安静窗口兜底（`CODEX_EMPTY_PHASE_QUIET_MS`），降低“已完成却未提醒”
+  - 确认提醒默认关闭（`confirmAlert.enabled=false`），并同步到示例配置与界面提示
+  - 托盘恢复体验优化：抑制退出选项框闪现，窗口恢复更平滑
+  - 启动白屏优化：增加启动页与深色预绘制背景
+  - 托盘图标几何与边缘质感优化
 - 1.4.3：
   - Watch 模式确认提醒（支持自定义关键词）
   - 监听日志持久化 + 一键打开 + 保留天数设置

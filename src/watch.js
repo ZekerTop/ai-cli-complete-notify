@@ -507,31 +507,235 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.codex', 'sessions');
   const follower = new JsonlFollower({ seedBytes: 256 * 1024 });
+  const completionGraceMs = 1500;
+  const strictFinalAnswerOnly = String(process.env.CODEX_STRICT_FINAL_ANSWER || '1').trim() !== '0';
+  const codexCompletionOnly = String(process.env.CODEX_COMPLETION_ONLY || '1').trim() !== '0';
+  const emptyPhaseQuietMs = Math.max(30000, Number(process.env.CODEX_EMPTY_PHASE_QUIET_MS || 120000));
+  const switchIdleMs = 120000;
+  const sessionMetaCwdCache = new Map();
+
+  function normalizePathForCompare(value) {
+    if (!value || typeof value !== 'string') return '';
+    try {
+      return path.resolve(value).replace(/[\\/]+/g, '/').toLowerCase();
+    } catch (_error) {
+      return String(value).replace(/[\\/]+/g, '/').toLowerCase();
+    }
+  }
+
+  function isPathRelated(a, b) {
+    if (!a || !b) return false;
+    return a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
+  }
+
+  function readSessionMetaCwd(filePath) {
+    if (!filePath) return '';
+    if (sessionMetaCwdCache.has(filePath)) return sessionMetaCwdCache.get(filePath);
+
+    let cwd = '';
+    try {
+      const stat = safeStat(filePath);
+      if (stat && stat.size > 0) {
+        const size = Math.min(64 * 1024, stat.size);
+        const text = readFileSliceUtf8(filePath, 0, size);
+        const lines = text.split(/\r?\n/);
+        for (const line of lines) {
+          if (!line) continue;
+          const obj = safeJsonParse(line);
+          if (!obj || obj.type !== 'session_meta') continue;
+          const payload = obj.payload;
+          if (payload && typeof payload.cwd === 'string') {
+            cwd = normalizePathForCompare(payload.cwd);
+          }
+          break;
+        }
+      }
+    } catch (_error) {
+      cwd = '';
+    }
+
+    sessionMetaCwdCache.set(filePath, cwd);
+    return cwd;
+  }
+
+  function findPreferredSessionFile(preferredCwd) {
+    let latestAny = null;
+    let latestPreferred = null;
+    const preferred = normalizePathForCompare(preferredCwd);
+
+    function walk(dir) {
+      let entries;
+      try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+      } catch (_error) {
+        return;
+      }
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          walk(fullPath);
+          continue;
+        }
+        if (!entry.isFile()) continue;
+        if (!entry.name.toLowerCase().endsWith('.jsonl')) continue;
+
+        const stat = safeStat(fullPath);
+        if (!stat) continue;
+
+        if (!latestAny || stat.mtimeMs > latestAny.mtimeMs) {
+          latestAny = { path: fullPath, mtimeMs: stat.mtimeMs, size: stat.size };
+        }
+
+        if (!preferred) continue;
+        const sessionCwd = readSessionMetaCwd(fullPath);
+        if (!sessionCwd || !isPathRelated(sessionCwd, preferred)) continue;
+        if (!latestPreferred || stat.mtimeMs > latestPreferred.mtimeMs) {
+          latestPreferred = { path: fullPath, mtimeMs: stat.mtimeMs, size: stat.size };
+        }
+      }
+    }
+
+    walk(root);
+    return latestPreferred || latestAny;
+  }
+
+  function isCodexWorkResponseType(type) {
+    return [
+      'reasoning',
+      'function_call',
+      'function_call_output',
+      'custom_tool_call',
+      'custom_tool_call_output',
+      'web_search_call',
+      'tool_use'
+    ].includes(type);
+  }
 
   const state = {
     currentFile: null,
     tickRunning: false,
+    lastEventAt: 0,
+    attachedAt: 0,
     lastUserAt: null,
     lastAssistantAt: null,
     lastNotifiedAssistantAt: null,
     lastCwd: null,
-    lastAgentContent: null, // 鎹曡幏agent鐨勮緭鍑哄唴瀹?    lastUserText: '',
+    lastAgentContent: null,
+    lastUserText: '',
     lastAssistantText: '',
     lastConfirmKey: '',
     lastConfirmAt: 0,
-    confirmNotifiedForTurn: false
+    confirmNotifiedForTurn: false,
+    pendingCompletion: null
   };
+
+  function clearPendingCompletion() {
+    const pending = state.pendingCompletion;
+    if (!pending) return;
+    if (pending.timer) {
+      clearTimeout(pending.timer);
+    }
+    state.pendingCompletion = null;
+  }
+
+  function stagePendingCompletion(ts, options = {}) {
+    clearPendingCompletion();
+    const assistantAt = ts != null ? ts : Date.now();
+    state.lastAssistantAt = assistantAt;
+    const tokenRequired = options && Object.prototype.hasOwnProperty.call(options, 'tokenRequired')
+      ? Boolean(options.tokenRequired)
+      : true;
+    const quietMs = options && Number.isFinite(Number(options.quietMs)) ? Number(options.quietMs) : 0;
+    state.pendingCompletion = {
+      assistantAt,
+      tokenRequired,
+      tokenSeen: false,
+      tokenAt: null,
+      timer: null
+    };
+
+    if (quietMs > 0) {
+      state.pendingCompletion.timer = setTimeout(() => {
+        void flushPendingCompletion('quiet_fallback', { allowWithoutToken: true });
+      }, quietMs);
+    }
+  }
+
+  function markPendingTokenSeen(ts) {
+    const pending = state.pendingCompletion;
+    if (!pending) return;
+    if (!pending.tokenRequired) return;
+    pending.tokenSeen = true;
+    pending.tokenAt = ts != null ? ts : Date.now();
+    if (pending.timer) clearTimeout(pending.timer);
+    pending.timer = setTimeout(() => {
+      void flushPendingCompletion('token_grace');
+    }, completionGraceMs);
+  }
+
+  async function flushPendingCompletion(reason, options = {}) {
+    const pending = state.pendingCompletion;
+    const allowWithoutToken = Boolean(options && options.allowWithoutToken);
+    if (!pending) return false;
+    if (pending.tokenRequired && !pending.tokenSeen && !allowWithoutToken) return false;
+
+    clearPendingCompletion();
+
+    if (state.confirmNotifiedForTurn) {
+      logger(`[watch][codex] skipped completion (${reason}: confirm alert sent)`);
+      return false;
+    }
+
+    const assistantAt = pending.assistantAt;
+    if (assistantAt != null && state.lastNotifiedAssistantAt === assistantAt) {
+      return false;
+    }
+
+    const durationMs =
+      assistantAt != null && state.lastUserAt != null && assistantAt >= state.lastUserAt
+        ? assistantAt - state.lastUserAt
+        : null;
+    const cwd = state.lastCwd || process.cwd();
+    const result = await sendNotifications({
+      source: 'codex',
+      taskInfo: 'Codex 完成',
+      durationMs,
+      cwd,
+      outputContent: state.lastAgentContent || state.lastAssistantText,
+      summaryContext: {
+        userMessage: state.lastUserText,
+        assistantMessage: state.lastAssistantText
+      }
+    });
+
+    state.lastNotifiedAssistantAt = assistantAt;
+    state.confirmNotifiedForTurn = true;
+    logger(`[watch][codex] ${summarizeResult(result)} (${reason})`);
+    return true;
+  }
 
   async function processObject(obj, { seed }) {
     if (!obj || typeof obj !== 'object') return;
     const ts = parseTimestamp(obj.timestamp);
 
-    if (obj.type === 'turn_context' && obj.payload && typeof obj.payload.cwd === 'string') {
-      state.lastCwd = obj.payload.cwd;
+    if (!seed) {
+      state.lastEventAt = Date.now();
+    }
+
+    if (obj.type === 'turn_context') {
+      clearPendingCompletion();
+      if (obj.payload && typeof obj.payload.cwd === 'string') {
+        state.lastCwd = obj.payload.cwd;
+      }
       return;
     }
 
     if (obj.type === 'response_item' && obj.payload && obj.payload.type === 'message' && obj.payload.role === 'user') {
+      if (!seed) {
+        await flushPendingCompletion('before_user_message', { allowWithoutToken: true });
+      }
+      clearPendingCompletion();
       state.lastUserAt = ts;
       state.lastUserText = extractTextFromAny(obj.payload);
       state.lastConfirmKey = '';
@@ -539,11 +743,17 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
       return;
     }
 
+    if (obj.type === 'response_item' && obj.payload && isCodexWorkResponseType(obj.payload.type)) {
+      clearPendingCompletion();
+      return;
+    }
+
     if (obj.type === 'response_item' && obj.payload && obj.payload.type === 'message' && obj.payload.role === 'assistant') {
       if (seed) return;
 
+      clearPendingCompletion();
+
       const phase = typeof obj.payload.phase === 'string' ? obj.payload.phase : '';
-      if (phase && phase !== 'final_answer') return;
 
       const assistantText = extractTextFromAny(obj.payload);
       if (assistantText) {
@@ -551,51 +761,61 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
         state.lastAgentContent = assistantText;
       }
 
-      await maybeNotifyConfirm({
-        source: 'codex',
-        text: assistantText,
-        cwd: state.lastCwd || process.cwd(),
-        logger,
-        state,
-        confirmDetector
-      });
+      if (!codexCompletionOnly) {
+        await maybeNotifyConfirm({
+          source: 'codex',
+          text: assistantText,
+          cwd: state.lastCwd || process.cwd(),
+          logger,
+          state,
+          confirmDetector
+        });
+      }
 
       if (state.confirmNotifiedForTurn) {
-        logger('[watch][codex] skipped completion (confirm alert sent)');
         return;
       }
 
-      state.lastAssistantAt = ts;
-      if (state.lastAssistantAt != null && state.lastNotifiedAssistantAt === state.lastAssistantAt) {
+      if (phase === 'commentary') {
         return;
       }
 
-      const durationMs = ts != null && state.lastUserAt != null && ts >= state.lastUserAt ? ts - state.lastUserAt : null;
-      const cwd = state.lastCwd || process.cwd();
-      const result = await sendNotifications({
-        source: 'codex',
-        taskInfo: 'Codex 完成',
-        durationMs,
-        cwd,
-        outputContent: state.lastAgentContent || state.lastAssistantText,
-        summaryContext: {
-          userMessage: state.lastUserText,
-          assistantMessage: state.lastAssistantText
-        }
-      });
-      state.lastNotifiedAssistantAt = state.lastAssistantAt;
-      state.confirmNotifiedForTurn = true;
-      logger(`[watch][codex] ${summarizeResult(result)}`);
+      if (!phase && strictFinalAnswerOnly) {
+        stagePendingCompletion(ts, { tokenRequired: false, quietMs: emptyPhaseQuietMs });
+        return;
+      }
+
+      if (phase && phase !== 'final_answer') {
+        return;
+      }
+
+      stagePendingCompletion(ts, { tokenRequired: true });
       return;
     }
 
     if (obj.type === 'event_msg' && obj.payload && typeof obj.payload.type === 'string') {
       const kind = obj.payload.type;
       if (kind === 'user_message') {
+        if (!seed) {
+          await flushPendingCompletion('before_user_event', { allowWithoutToken: true });
+        }
+        clearPendingCompletion();
         state.lastUserAt = ts;
         state.lastUserText = extractTextFromAny(obj.payload);
         state.lastConfirmKey = '';
         state.confirmNotifiedForTurn = false;
+        return;
+      }
+
+      if (kind === 'token_count') {
+        if (!seed) {
+          markPendingTokenSeen(ts);
+        }
+        return;
+      }
+
+      if (kind === 'agent_reasoning') {
+        clearPendingCompletion();
         return;
       }
 
@@ -604,10 +824,7 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
         const assistantText = extractTextFromAny(obj.payload);
         if (assistantText) state.lastAssistantText = assistantText;
 
-        // 鎹曡幏agent娑堟伅鐨勫唴瀹?- 灏濊瘯澶氫釜鍙兘鐨勫瓧娈?
         let content = null;
-
-        // 灏濊瘯涓嶅悓鐨勫瓧娈佃矾寰?
         if (obj.payload && typeof obj.payload.content === 'string') {
           content = obj.payload.content;
         } else if (obj.payload && obj.payload.message && typeof obj.payload.message === 'string') {
@@ -620,21 +837,20 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
           content = obj.message;
         }
 
-        // 濡傛灉鎵惧埌鍐呭锛屼繚瀛樺埌鐘舵€佷腑
         if (content && content.trim()) {
           state.lastAgentContent = content;
-        } else {
-          console.log('[watch][codex] 鏈崟鑾峰埌杈撳嚭鍐呭');
         }
 
-        await maybeNotifyConfirm({
-          source: 'codex',
-          text: assistantText || content,
-          cwd: state.lastCwd || process.cwd(),
-          logger,
-          state,
-          confirmDetector
-        });
+        if (!codexCompletionOnly) {
+          await maybeNotifyConfirm({
+            source: 'codex',
+            text: assistantText || content,
+            cwd: state.lastCwd || process.cwd(),
+            logger,
+            state,
+            confirmDetector
+          });
+        }
       }
     }
   }
@@ -644,12 +860,31 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
     state.tickRunning = true;
     try {
       if (!fs.existsSync(root)) return;
-      const latest = findLatestFile(root, (_full, name) => name.toLowerCase().endsWith('.jsonl'));
+      const preferredCwd = state.lastCwd || process.cwd();
+      const latest = findPreferredSessionFile(preferredCwd);
       if (!latest) return;
+
+      const now = Date.now();
+      const attachedAt = state.attachedAt || 0;
+      const lastEventAt = state.lastEventAt || 0;
+      const idleSince = Math.max(attachedAt, lastEventAt);
+      const idleMs = idleSince > 0 ? now - idleSince : Number.POSITIVE_INFINITY;
+      const shouldSwitch = !state.currentFile || latest.path === state.currentFile || idleMs >= switchIdleMs;
+
+      if (latest.path !== state.currentFile && !shouldSwitch) {
+        follower.poll((obj, meta) => {
+          void processObject(obj, meta);
+        });
+        return;
+      }
+
       if (latest.path !== state.currentFile) {
         state.currentFile = latest.path;
+        state.attachedAt = now;
+        state.lastEventAt = now;
         state.lastConfirmKey = '';
         state.confirmNotifiedForTurn = false;
+        clearPendingCompletion();
         follower.attach(latest.path, (obj, meta) => {
           void processObject(obj, meta);
         });
@@ -665,7 +900,10 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
 
   tick();
   const timer = setInterval(tick, Math.max(500, intervalMs || 1000));
-  return () => clearInterval(timer);
+  return () => {
+    clearInterval(timer);
+    clearPendingCompletion();
+  };
 }
 
 function startGeminiWatch({ intervalMs, quietPeriodMs, log, confirmDetector }) {

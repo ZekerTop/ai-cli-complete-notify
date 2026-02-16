@@ -318,12 +318,11 @@ npm run dist:portable
   - Codex reminder flow consistency fix: keep confirm reminders for interaction prompts and completion reminders for true task completion
   - Confirmation content source is now deterministic: show options when options exist; otherwise show the current AI question/output
   - Prevent completion notification content from reusing previous confirmation prompt text across interaction boundaries
-- 1.5.1:
-  - AI Summary API URL now accepts base URL and auto-appends provider-specific endpoint suffixes
+  - Codex completion alerts now prioritize explicit `task_complete` events for faster and more stable completion notifications
+  - AI Summary API URL supports base URL input and auto-appends provider-specific endpoint suffixes
   - Added real-time API URL preview under the input to show the final request URL
-  - Added URL rules: trailing `/` skips version suffix, trailing `#` forces exact input URL
+  - URL rule refinement: trailing `/` skips version suffix, trailing `#` forces exact input URL
   - Kept backward compatibility for already-complete endpoint URLs to avoid duplicate suffixes
-  - Codex completion alert now prefers the explicit `task_complete` event (immediate; fixes delay/missed alerts when `gpt-5.3-codex` has empty phase)
 - 1.5.0:
   - Codex completion detection hardened with pending-state + token_count grace to reduce premature alerts
   - Added strict mode for Codex completion (`CODEX_STRICT_FINAL_ANSWER=1` by default): only `final_answer` triggers completion alerts

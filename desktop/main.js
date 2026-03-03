@@ -743,9 +743,20 @@ function setupIpc(win) {
   ipcMain.handle('completeNotify:testNotify', async (_event, payload) => {
     const source = payload && typeof payload.source === 'string' ? payload.source : 'claude';
     const taskInfo = payload && typeof payload.taskInfo === 'string' ? payload.taskInfo : '测试提醒';
+    const outputContentRaw = payload && typeof payload.outputContent === 'string' ? payload.outputContent : '';
+    const outputContent = outputContentRaw.trim() ? outputContentRaw : taskInfo;
     const durationMinutes = payload && Number.isFinite(Number(payload.durationMinutes)) ? Number(payload.durationMinutes) : null;
     const durationMs = durationMinutes != null ? durationMinutes * 60 * 1000 : null;
-    const result = await sendNotifications({ source, taskInfo, durationMs, cwd: process.cwd(), force: true });
+    const result = await sendNotifications({
+      source,
+      taskInfo,
+      durationMs,
+      cwd: process.cwd(),
+      force: true,
+      outputContent,
+      // Test notifications should verify channel payload directly and avoid summary masking output.
+      skipSummary: true
+    });
     return result;
   });
   ipcMain.handle('completeNotify:testSound', async (_event, payload) => {

@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.5.2)
+# AI CLI Complete Notify (v1.5.3)
 
-![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.3-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -87,7 +87,7 @@ npm run dev
 - **Channel Configuration**: Configure Webhook, Telegram, Email, and other notification channels
 - **Source Settings**: Set enable status and duration thresholds for Claude / Codex / Gemini separately
 - **Monitoring Configuration**: Set polling interval and debounce time with smart adjustment support
-- **Confirm keywords (optional)**: Watch-only. Used to detect when the AI asks for confirmation/approval/continue. Leave empty to use built-in defaults; comma-separated custom keywords (e.g., confirm,approve,allow).
+- **Confirm reminder (default: OFF)**: Effective only in Watch mode. When enabled, it triggers only when Codex shows an interactive choice prompt that requires your selection or submission (Plan mode); normal output text will not trigger it. Only one reminder is sent per turn: once a confirm reminder is triggered, that turn will not send a separate task-complete reminder.
 - **Watch logs**: Persisted locally with one-click open and retention days.
 - **Test Function**: Test whether each notification channel works properly
 - **AI Summary**: Configure API URL / Key / Model and timeout fallback
@@ -304,7 +304,7 @@ npm run dist:portable
 ## 📝 Usage Tips
 
 - ⏱️ **Threshold function** requires timing data (via `run` / `start-stop` / `watch` mode), `notify` command ignores threshold and sends directly
-- 🔗 **Webhook** uses Feishu post format by default; enable "Use Feishu card format for Webhook" in the Advanced tab if you want JSON cards (watch output will be included when available).
+- 🔗 **Webhook** uses Feishu post format by default; "Use Feishu card format" only applies to Feishu. WeCom/DingTalk will use text format and validate success by `errcode`.
 - 🚀 **Auto-start on boot** is configured in the "Advanced" tab (supports Windows / macOS)
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
@@ -314,6 +314,9 @@ npm run dist:portable
 
 ## Changelog
 
+- 1.5.3:
+  - Webhook auto-detects WeCom/DingTalk/Feishu and uses the proper payload format
+  - Webhook response validation (WeCom/DingTalk errcode, Feishu code) for accurate test results
 - 1.5.2:
   - Codex reminder flow consistency fix: keep confirm reminders for interaction prompts and completion reminders for true task completion
   - Confirmation content source is now deterministic: show options when options exist; otherwise show the current AI question/output

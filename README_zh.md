@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.5.2)
+# AI CLI Complete Notify (v1.5.3)
 
-![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.5.3-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -305,7 +305,7 @@ npm run dist:portable
 ## 📝 使用提示
 
 - ⏱️ **阈值功能**需要有计时数据（通过 `run` / `start-stop` / `watch` 模式），`notify` 命令会忽略阈值直接发送
-- 🔗 **Webhook** 默认使用飞书 post 格式；如需飞书 JSON 卡片，可在“高级”中开启“Webhook 使用飞书卡片格式”（监听有输出内容时会附加到卡片中）
+- 🔗 **Webhook** 飞书默认使用 post 格式；开启“Webhook 使用飞书卡片格式”仅对飞书生效。企业微信/钉钉会自动使用文本格式并根据返回 `errcode` 判断是否成功
 - 🚀 **开机自启**功能在"高级"选项卡中配置（支持 Windows / macOS）
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
@@ -315,6 +315,9 @@ npm run dist:portable
 
 ## 版本更新
 
+- 1.5.3：
+  - Webhook 自动识别企业微信/钉钉/飞书并使用对应格式
+  - Webhook 响应解析（企业微信/钉钉 errcode，飞书 code），测试结果更准确
 - 1.5.2：
   - 修复 Codex 提醒链路一致性：交互询问触发确认提醒，任务真正完成触发完成提醒
   - 固化确认提醒文案来源：有选项优先显示选项；无选项时显示当前 AI 询问/输出

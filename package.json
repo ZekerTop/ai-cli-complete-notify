@@ -1,13 +1,16 @@
 {
   "name": "ai-cli-complete-notify",
-  "version": "1.5.3",
+  "version": "2.0.0",
   "description": "AI CLI Complete Notify：多种 AI CLI 任务完成提醒（Claude/Codex/Gemini），支持耗时阈值与多通道推送。",
-  "main": "desktop/main.js",
   "scripts": {
-    "dev": "electron .",
-    "dist": "node tools/pack.js",
-    "dist:portable": "electron-builder --win portable",
-    "pack": "electron-builder --dir",
+    "dev": "npx tauri dev",
+    "dev:ui": "vite",
+    "build:ui": "vite build",
+    "build:sidecar": "npx pkg ai-reminder.js --target node18-win-x64 -o src-tauri/binaries/ai-reminder-x86_64-pc-windows-msvc.exe",
+    "tauri": "tauri",
+    "dist": "npm run dist:portable",
+    "dist:portable": "npm run build:sidecar && node tools/run-tauri-build.js --no-bundle && node tools/pack-tauri-portable.js",
+    "dist:installer": "npm run build:sidecar && node tools/run-tauri-build.js",
     "wizard": "node setup-wizard.js"
   },
   "keywords": [],
@@ -16,40 +19,27 @@
   "type": "commonjs",
   "dependencies": {
     "dotenv": "^17.2.3",
-    "nodemailer": "^6.10.1"
+    "i18next": "^24.2.2",
+    "nodemailer": "^6.10.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.4.1"
   },
   "devDependencies": {
-    "electron": "^32.3.3",
-    "electron-builder": "^25.1.8",
-    "electron-packager": "^17.1.2"
-  },
-  "build": {
-    "appId": "com.aicli.complete.notify",
-    "productName": "ai-cli-complete-notify",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "desktop/**/*",
-      "src/**/*",
-      "ai-reminder.js",
-      "notify-system.js",
-      "setup-wizard.js",
-      "telegram-notify.js",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "config.example.json",
-        "to": "config.example.json"
-      }
-    ],
-    "win": {
-      "icon": "desktop/assets/tray.ico",
-      "target": [
-        "portable"
-      ],
-      "artifactName": "ai-cli-complete-notify-${version}.exe"
-    }
+    "@tauri-apps/api": "^2.3.0",
+    "@tauri-apps/cli": "^2.3.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-process": "^2.2.0",
+    "@tauri-apps/plugin-shell": "^2.2.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "pkg": "^5.8.1",
+    "pnpm": "^10.32.1",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.1"
   }
 }

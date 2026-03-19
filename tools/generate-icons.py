@@ -8,6 +8,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT / "desktop" / "assets"
+TAURI_ICONS_DIR = ROOT / "src-tauri" / "icons"
 
 
 def clamp_int(value: float) -> int:
@@ -246,20 +247,34 @@ def make_icon(size: int = 512) -> Image.Image:
 
 def main() -> int:
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    TAURI_ICONS_DIR.mkdir(parents=True, exist_ok=True)
     icon = make_icon(512)
+    icon_256 = icon.resize((256, 256), resample=Image.LANCZOS)
+    icon_128 = icon.resize((128, 128), resample=Image.LANCZOS)
+    icon_32 = icon.resize((32, 32), resample=Image.LANCZOS)
 
-    png_path = ASSETS_DIR / "tray.png"
-    ico_path = ASSETS_DIR / "tray.ico"
+    outputs = [
+        (ASSETS_DIR / "tray.png", icon_256, "PNG"),
+        (TAURI_ICONS_DIR / "icon.png", icon_256, "PNG"),
+        (TAURI_ICONS_DIR / "32x32.png", icon_32, "PNG"),
+        (TAURI_ICONS_DIR / "128x128.png", icon_128, "PNG"),
+        (TAURI_ICONS_DIR / "128x128@2x.png", icon_256, "PNG"),
+    ]
+    for path, image, fmt in outputs:
+        image.save(path, fmt, optimize=True)
+        print(f"wrote: {path}")
 
-    icon.resize((256, 256), resample=Image.LANCZOS).save(png_path, "PNG", optimize=True)
-    icon.save(
-        ico_path,
-        "ICO",
-        sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
-    )
+    ico_sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+    for ico_path in (ASSETS_DIR / "tray.ico", TAURI_ICONS_DIR / "icon.ico"):
+        icon.save(ico_path, "ICO", sizes=ico_sizes)
+        print(f"wrote: {ico_path}")
 
-    print(f"wrote: {png_path}")
-    print(f"wrote: {ico_path}")
+    icns_path = TAURI_ICONS_DIR / "icon.icns"
+    try:
+        icon.save(icns_path, "ICNS")
+    except Exception:
+        icon_256.save(icns_path, "PNG", optimize=True)
+    print(f"wrote: {icns_path}")
     return 0
 
 

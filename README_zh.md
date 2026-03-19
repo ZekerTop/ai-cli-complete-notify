@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v1.5.3)
+# AI CLI Complete Notify (v2.0.0)
 
-![Version](https://img.shields.io/badge/version-1.5.3-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -31,7 +31,7 @@
 - 🔀 **分源控制**：Claude / Codex / Gemini 独立启用与阈值设置
 - 📡 **多通道推送**：同时支持多种通知方式，确保消息送达
 - ⏱️ **耗时阈值**：只在任务超过设定时长时提醒，避免频繁打扰
-- 👀 **双模式监听**：支持计时模式（`run`/`start-stop`）和日志监听模式（适合交互式 CLI / VSCode）
+- 🪝 **Hooks + Watch 混合集成**：Claude Code / Gemini CLI 可走原生 Hook 即时提醒，Codex 继续通过日志监听完成提醒
 - 🧠 **AI 摘要（可选）**：任务完成后快速生成简短摘要，超时自动回退
 - 🖥️ **桌面应用**：图形界面配置，支持中英文切换、托盘隐藏、开机自启
 - 🔐 **配置分离**：运行配置与敏感信息分离，安全可靠
@@ -50,7 +50,14 @@
 
 - Claude Code 往往会拆分为多个子任务，为避免每个子任务都提醒，本项目只在“整轮完成”后再通知。
 - 监听模式依赖日志变化，需要一个去抖静默时间确认结束，因此提醒不是即时触发（默认有工具调用时 60 秒、无工具调用时 15 秒）。
-- 若需更快提醒：Codex/Gemini 可使用 `notify` 或 `run`；Claude Code 仍建议用 `watch` 等待整轮完成。
+- 如果想要更快、更干净的提醒：Claude Code / Gemini CLI 优先使用 Hook；Codex 或其他兜底场景继续使用 Watch。
+
+## Hooks 与 Watch 的区别
+
+- **Hook** 直接利用 AI CLI 自己发出的原生生命周期事件。对 Claude Code 和 Gemini CLI 来说，这意味着提醒可以更接近真实完成时刻，而不是依赖静默时间去猜测。
+- **Hook** 不需要为这些工具长期常驻一个后台监听器，空闲期开销更小，也更不容易因为日志解析产生误判。
+- **Watch** 仍然是通用兜底方案。它很适合 Codex，也适合没有配置 Hook 的场景，但它必须依赖本地日志和去抖静默时间来推断一轮是否真正结束。
+- 实际上，之所以增加 Hook 选项，主要是因为 Claude Code 的 `Stop` 事件和 Gemini CLI 的 `AfterAgent` 事件，相比日志轮询能提供更及时、更准确的完成信号；而在当前集成里，Codex 仍以 Watch 作为主要完成提醒路径。
 
 ## 🚀 快速开始
 
@@ -95,12 +102,12 @@ npm run dev
 
 ### 界面预览
 
-![桌面端预览](docs/images/exe预览.png)
-![全局通道](docs/images/全局通道.png)
+![通道](docs/images/通道.png)
 ![各来源设置](docs/images/各cli来源.png)
 ![交互式监听](docs/images/交互式监听.png)
+![Hook集成](docs/images/Hook集成.png)
 ![AI 摘要](docs/images/AI摘要.png)
-![高级设置](docs/images/高级设置.png)
+![系统设置](docs/images/系统设置.png)
 
 ### 托盘功能
 
@@ -109,9 +116,13 @@ npm run dev
 
 ## 💻 命令行使用
 
-> WSL 说明：命令行提醒可用（Webhook/Telegram/邮件）。桌面/声音/托盘仅 Windows 支持。日志监听仅在 AI CLI 运行于 WSL（日志位于 `~/.claude`、`~/.codex`、`~/.gemini`）时生效。WSL/CLI 下，AI 摘要与飞书卡片都建议用 `.env` 控制，且 `.env` 优先于 `settings.json`（见下方示例）。
+> WSL 说明：命令行提醒可用（Webhook/Telegram/邮件），声音提醒也可以通过 Windows PowerShell 在 WSL 下工作。桌面通知和托盘仅 Windows 支持。日志监听仅在 AI CLI 运行于 WSL（日志位于 `~/.claude`、`~/.codex`、`~/.gemini`）时生效。WSL/CLI 下，AI 摘要与飞书卡片都建议用 `.env` 控制，且 `.env` 优先于 `settings.json`（见下方示例）。
 
 命令行（源码方式）使用前请先执行 `npm install`。
+
+Windows 便携版里：
+- `ai-cli-complete-notify.exe` 是桌面界面程序
+- `ai-reminder.exe` 是打包后的命令行 / sidecar，可用于终端命令
 
 ### WSL 快速命令操作（可直接复制）
 
@@ -177,12 +188,33 @@ wslpath -w ~/.codex
 node ai-reminder.js notify --source claude --task "任务完成"
 ```
 
+### 原生 Hook 模式（推荐用于 Claude Code / Gemini CLI）
+
+```bash
+# 查看当前 Hook 状态
+node ai-reminder.js hooks status
+
+# 安装 Claude Code Hook
+node ai-reminder.js hooks install --target claude
+
+# 安装 Gemini CLI Hook
+node ai-reminder.js hooks install --target gemini
+
+# 卸载某个 Hook
+node ai-reminder.js hooks uninstall --target claude
+```
+
+说明：
+- Claude Code 当前使用原生 `Stop` Hook 事件。
+- Gemini CLI 当前使用原生 `AfterAgent` Hook 事件。
+- 当前集成下，Codex 的任务完成提醒仍主要通过 Watch 模式处理。
+
 ### 日志监听模式（推荐）
 
 ```bash
 # 自动监听所有 AI 工具的日志
 # Windows（EXE）
-ai-cli-complete-notify-<版本号>.exe watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
+ai-reminder.exe watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
 
 # macOS / Linux / WSL（Node）
 node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms 60000
@@ -193,7 +225,7 @@ node ai-reminder.js watch --sources all --gemini-quiet-ms 3000 --claude-quiet-ms
 ```bash
 # 自动包裹命令并计时
 # Windows（EXE）
-ai-cli-complete-notify-<版本号>.exe run --source codex -- codex <参数...>
+ai-reminder.exe run --source codex -- codex <参数...>
 
 # macOS / Linux / WSL（Node）
 node ai-reminder.js run --source codex -- codex <参数...>
@@ -286,21 +318,38 @@ WEBHOOK_USE_FEISHU_CARD=true
 ### 开发模式
 
 ```bash
+# Tauri 开发模式（推荐）
 npm run dev
+
+# 仅前端开发
+npm run dev:ui
 ```
 
 ### 构建发布版本
 
 ```bash
-# Windows 可执行文件
+# 默认构建：Tauri 便携版
+# 产物：
+#   dist/ai-cli-complete-notify-<版本号>-portable-win-x64/
+#   dist/ai-cli-complete-notify-<版本号>-portable-win-x64.zip
 npm run dist
 
-# 或使用 electron-builder
+# 显式构建便携版
 npm run dist:portable
 
-# macOS / Linux
-# 在目标系统上使用 electron-packager 或 electron-builder 打包
+# NSIS 安装包（可选）
+npm run dist:installer
+
+# 仅构建 sidecar
+npm run build:sidecar
 ```
+
+Windows 说明：
+
+- `npm run dist` 现在会自动从 `CARGO_HOME`、`D:\cargo` 或 `%USERPROFILE%\\.cargo` 查找 Rust。
+- 如果你仍想走批处理入口，`build-tauri.bat` 默认输出便携版。
+- 如果还需要安装包，可执行 `build-tauri.bat installer`。
+- 便携版产物默认不再携带 `README.md` 和 `README_zh.md`，只保留运行所需文件。
 
 ## 📝 使用提示
 
@@ -310,57 +359,73 @@ npm run dist:portable
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
 - 💡 **EXE 启动默认开启 Watch 监听**：如不需要可在顶部开关关闭。
+- 🪝 **Hooks 模式**更适合 Claude Code / Gemini CLI，因为它直接使用原生完成事件；开启 Hooks 后，Watch 主要保留给 Codex。
 - ✅ **确认提醒开关建议（默认关闭）**：当 AI 经常问你“是否继续/是否授权/请确认”时建议开启；如果你只想收到“任务完成提醒”，建议保持关闭，避免中间输出触发提醒。注意：若你在 `.env` 里设置了 `CODEX_COMPLETION_ONLY=1`，Codex 的确认提醒会被禁用（需改为 `0` 或删除该项）。
 - 🧭 **点击切回**更可靠，但仍受系统焦点限制；若是 VSCode 插件场景，建议选择 VSCode 目标，并确保 VSCode 未最小化/未被专注助手拦截
 
-## 版本更新
+## 版本历史
 
-- 1.5.3：
-  - Webhook 自动识别企业微信/钉钉/飞书并使用对应格式
-  - Webhook 响应解析（企业微信/钉钉 errcode，飞书 code），测试结果更准确
-- 1.5.2：
-  - 修复 Codex 提醒链路一致性：交互询问触发确认提醒，任务真正完成触发完成提醒
-  - 固化确认提醒文案来源：有选项优先显示选项；无选项时显示当前 AI 询问/输出
-  - 修复交互边界上的文案复用问题，避免完成提醒误用上一条确认提醒内容
-  - Codex 完成提醒采用 `task_complete` 事件优先触发，完成通知更即时稳定
-  - AI 摘要 API URL 支持基础地址输入并自动拼接各模型平台后缀
-  - 新增 API URL 实时拼接预览（输入框下方显示最终请求地址）
-  - URL 规则优化：`/` 结尾忽略版本后缀，`#` 结尾强制使用输入地址
-  - 兼容已填写完整 endpoint 的历史配置，避免重复拼接
-- 1.5.0：
-  - 强化 Codex 完成判定（挂起状态 + token_count 缓冲），降低未完成提前提醒
-  - 增加 Codex 严格完成模式（默认 `CODEX_STRICT_FINAL_ANSWER=1`）：仅 `final_answer` 触发完成提醒
-  - 增加下一轮用户消息前兜底补发，降低漏提醒
-  - 新增 Codex 会话锁定 + 空闲切换机制，避免在历史 session 间来回切换导致误提醒
-  - 新增 Codex 仅完成提醒模式（默认 `CODEX_COMPLETION_ONLY=1`），避免确认提醒干扰完成提醒
-  - 确认提醒默认关闭（`confirmAlert.enabled=false`），并同步到示例配置与界面提示
-  - 托盘恢复体验优化：抑制退出选项框闪现，窗口恢复更平滑
-  - 启动白屏优化：增加启动页与深色预绘制背景
-  - 托盘图标几何与边缘质感优化
-- 1.4.3：
-  - Watch 模式确认提醒（无需关键词：AI 提问/Plan 选项框即提醒）
-  - 监听日志持久化 + 一键打开 + 保留天数设置
-  - EXE 启动自动开启 Watch 监听
-  - 修复 `gpt-5.3-codex` 任务未完成就提前提醒的问题（改为仅在任务真正完成后提醒）
-  - 桌面通知升级：通知窗UI优化 + 点击切回（可设置目标/强制最大化）
-  - 声音提醒增强：自定义声音、TTS 开关、WSL 用 PowerShell 播放
-  - 飞书卡片支持 `.env` 开关（WEBHOOK_USE_FEISHU_CARD），且 `.env` 优先
-- 1.3.0：
-  - 飞书卡片 webhook + LOGO 随系统深浅色切换
-  - AI 摘要多模型平台 + 测试 + 流式解析
-  - 启用摘要时仅发送摘要（失败回退为输出内容）
-  - UI 细节优化（退出弹窗/勾选框/数字步进）
-  - watch 日志持久化
-  - 摘要测试默认超时 15s
-- 1.2.0：
-  - 修复隐藏托盘多开问题
-  - 增加部分提示
-  - 修复中英文切换问题
-- 1.1.0：
-  - 修复 CC 整轮对话未完成但子任务优先提醒
-  - 针对 CC 提供自适应去抖时间，自动识别消息类型
-- 1.0.0：
-  - 初始版本
+> `v2.0.0` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
+
+### 2.0.0
+
+- 重大架构升级：桌面端从 `Electron` 迁移到 `Tauri 2`。基于当前实际产物，Windows 便携版整体产物大致缩小到 `40-50 MB` 区间，zip 压缩包约 `20 MB` 左右。
+- 桌面界面全面重写为 `React 18 + TypeScript + Tailwind CSS`，形成当前这套中英双语、结构更清晰的设置界面。
+- 保留原有 Node CLI 作为独立 sidecar，可通过 `pkg` 打包后由 Tauri 调用，已有 `node ai-reminder.js ...` 用法继续兼容。
+- 构建链路切换为 `Vite + Tauri`，并拆分为前端构建、sidecar 构建、便携版打包和可选安装包输出。
+- 桌面运行时逻辑完成迁移：托盘、关闭到托盘、打包后 sidecar 调用、启动诊断等能力都改由 Tauri 实现。
+- 集成模型进一步明确：增加 Hook 选项，主要是为了解决 `Claude Code`、`Gemini CLI` 在监听模式下提醒时机不够及时、与实际完成状态存在偏差的问题；当前 `Codex` 仍主要通过日志监听完成提醒。
+
+### 1.5.3
+
+- Webhook 支持自动识别 `飞书`、`钉钉`、`企业微信`，并按平台发送对应格式。
+- 增强 Webhook 测试结果判断，支持按各平台返回的 `code` / `errcode` 精确校验成功状态。
+
+### 1.5.2
+
+- 修复 Codex 提醒链路一致性：交互询问触发确认提醒，真正完成才触发完成提醒。
+- 固化确认提醒文案来源：有选项优先显示选项，否则显示当前 AI 问题或输出。
+- 修复交互边界上的文案串用问题，避免完成提醒误带上一条确认提醒内容。
+- Codex 完成提醒优先使用显式 `task_complete` 事件，完成时机更快也更稳定。
+- AI 摘要的 API URL 输入能力增强，支持基础地址自动补全、实时预览和精确地址覆盖规则。
+
+### 1.5.0
+
+- 强化 Codex 完成判定，加入挂起状态、`token_count` 缓冲和 final-answer 优先策略，降低提前提醒概率。
+- 新增会话锁定、空闲 session 切换保护，以及下一轮用户消息前的兜底补发，减少漏提醒和串提醒。
+- 新增 `CODEX_COMPLETION_ONLY=1`，并将确认提醒默认改为关闭，避免干扰完成提醒。
+- 优化托盘恢复体验、启动白屏和托盘图标渲染质感。
+
+### 1.4.3
+
+- 新增 Watch 模式确认提醒，Codex 在出现提问或 Plan 选项时可直接触发提醒，不再依赖关键词。
+- 新增监听日志持久化、一键打开日志和保留天数设置。
+- EXE 启动时支持自动开启 Watch 监听。
+- 修复 `gpt-5.3-codex` 未真正完成就提前提醒的问题。
+- 升级桌面通知体验，包括通知窗 UI、点击切回、声音增强，以及 WSL 借助 Windows PowerShell 播放提示音。
+- 飞书卡片格式支持用 `.env` 控制，且 `.env` 优先级高于 `settings.json`。
+
+### 1.3.0
+
+- 新增飞书卡片 Webhook，并支持 LOGO 随系统深浅色切换。
+- 新增 AI 摘要多模型平台、摘要测试和流式解析。
+- 启用摘要时支持优先发送摘要，失败时回退为原始输出内容。
+- 优化多处 UI 细节，并补上 watch 日志持久化能力。
+
+### 1.2.0
+
+- 修复隐藏到托盘后的多开问题。
+- 增加部分界面提示。
+- 修复中英文切换问题。
+
+### 1.1.0
+
+- 修复 Claude Code 整轮对话未完成时被子任务提前触发提醒的问题。
+- 为 Claude Code 增加基于消息类型的自适应去抖时间。
+
+### 1.0.0
+
+- 初始版本发布。
 
 
 ## 🤝 贡献

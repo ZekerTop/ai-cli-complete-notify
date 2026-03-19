@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 
 const { sendNotifications } = require('./engine');
+const { looksLikeClaudeFailure } = require('./hook-context');
 
 function parseTimestamp(value) {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -96,6 +97,10 @@ function truncateText(text, maxLength) {
   if (!value) return '';
   if (value.length <= maxLength) return value;
   return value.slice(0, Math.max(0, maxLength - 1)) + '...';
+}
+
+function stripAnsiCodes(text) {
+  return String(text || '').replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '');
 }
 
 function buildConfirmTaskInfo(_text) {
@@ -314,6 +319,195 @@ class JsonlFollower {
   }
 }
 
+function getCodexTuiLogPath() {
+  const override = String(process.env.CODEX_TUI_LOG_PATH || '').trim();
+  if (override) return path.resolve(override);
+  return path.join(os.homedir(), '.codex', 'log', 'codex-tui.log');
+}
+
+function looksLikeCodexFailureLine(line) {
+  const cleaned = stripAnsiCodes(line)
+    .replace(/\u0000/g, '')
+    .trim();
+  if (!cleaned) return null;
+
+  // Retries are noisy but recoverable. Only alert on clear terminal failures.
+  if (/stream disconnected\s*-\s*retrying sampling request/i.test(cleaned)) {
+    return null;
+  }
+
+  const turnErrorMatch = cleaned.match(/\bTurn error:\s*(.+)$/i);
+  if (turnErrorMatch && turnErrorMatch[1]) {
+    return truncateText(turnErrorMatch[1].trim(), 120);
+  }
+
+  const directPatterns = [
+    /\bstream disconnected before completion\b.*$/i,
+    /\bAPI Error:\s*.+$/i,
+    /\berror sending request for url\b.*$/i,
+    /\bPlease run \/login\b.*$/i,
+    /\bAuthentication failed\b.*$/i,
+    /\bRequest failed\b.*$/i,
+    /\bConnection failed\b.*$/i,
+    /\bNetwork error\b.*$/i,
+    /\btimeout waiting for child process to exit\b.*$/i,
+  ];
+
+  for (const pattern of directPatterns) {
+    const match = cleaned.match(pattern);
+    if (match && match[0]) {
+      return truncateText(match[0].trim(), 120);
+    }
+  }
+
+  return null;
+}
+
+function readTailTextUtf8(filePath, maxBytes) {
+  const stat = safeStat(filePath);
+  if (!stat || stat.size <= 0) return '';
+  const bytes = Math.max(1024, Number(maxBytes) || 0);
+  const start = Math.max(0, stat.size - bytes);
+  return readFileSliceUtf8(filePath, start, stat.size - start);
+}
+
+function extractBalancedJson(text, startIndex) {
+  if (!text || startIndex < 0 || startIndex >= text.length) return '';
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = startIndex; index < text.length; index += 1) {
+    const ch = text[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') {
+      depth += 1;
+      continue;
+    }
+    if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) return text.slice(startIndex, index + 1);
+    }
+  }
+
+  return '';
+}
+
+function extractJsonObjectsAfterMarker(text, marker) {
+  const values = [];
+  if (!text || !marker) return values;
+
+  let cursor = 0;
+  while (cursor < text.length) {
+    const markerIndex = text.indexOf(marker, cursor);
+    if (markerIndex < 0) break;
+
+    const braceIndex = text.indexOf('{', markerIndex + marker.length);
+    if (braceIndex < 0) break;
+
+    const raw = extractBalancedJson(text, braceIndex);
+    if (raw) {
+      const parsed = safeJsonParse(raw) || safeJsonParse(raw.replace(/\\"/g, '"'));
+      if (parsed) values.push(parsed);
+      cursor = braceIndex + raw.length;
+      continue;
+    }
+
+    cursor = markerIndex + marker.length;
+  }
+
+  return values;
+}
+
+function rememberSeenKey(set, key, maxSize) {
+  if (!key || set.has(key)) return false;
+  set.add(key);
+  while (set.size > maxSize) {
+    const first = set.values().next();
+    if (first.done) break;
+    set.delete(first.value);
+  }
+  return true;
+}
+
+function buildCodexSqliteEventKey(event) {
+  if (!event || typeof event !== 'object') return '';
+
+  if (event.type === 'response.created' && event.response && typeof event.response.id === 'string') {
+    return `created:${event.response.id}`;
+  }
+
+  if (event.type === 'response.completed' && event.response && typeof event.response.id === 'string') {
+    return `completed:${event.response.id}`;
+  }
+
+  if (event.type === 'response.output_item.done' && event.item && typeof event.item.id === 'string') {
+    return `item_done:${event.item.id}:${event.sequence_number || ''}`;
+  }
+
+  if (event.type === 'response.output_item.added' && event.item && typeof event.item.id === 'string') {
+    return `item_added:${event.item.id}:${event.sequence_number || ''}`;
+  }
+
+  if (event.type === 'response.output_text.done' && typeof event.item_id === 'string') {
+    return `text_done:${event.item_id}:${event.sequence_number || ''}`;
+  }
+
+  return '';
+}
+
+function getLatestCodexSqlitePath() {
+  const root = path.join(os.homedir(), '.codex');
+  let entries;
+  try {
+    entries = fs.readdirSync(root, { withFileTypes: true });
+  } catch (_error) {
+    return '';
+  }
+
+  let latest = null;
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (!/^logs.*\.sqlite$/i.test(entry.name)) continue;
+    const fullPath = path.join(root, entry.name);
+    const stat = safeStat(fullPath);
+    if (!stat) continue;
+    if (!latest || stat.mtimeMs > latest.mtimeMs) {
+      latest = { path: fullPath, mtimeMs: stat.mtimeMs };
+    }
+  }
+
+  return latest ? latest.path : '';
+}
+
+function pickCodexWatchBackend() {
+  const forced = String(process.env.CODEX_WATCH_BACKEND || 'auto').trim().toLowerCase();
+  if (forced === 'sessions' || forced === 'sqlite') return forced;
+
+  const latestSession = findLatestFile(
+    path.join(os.homedir(), '.codex', 'sessions'),
+    (_full, name) => name.toLowerCase().endsWith('.jsonl'),
+  );
+  if (latestSession) return 'sessions';
+
+  const sqlitePath = getLatestCodexSqlitePath();
+  return sqlitePath ? 'sqlite' : 'sessions';
+}
+
 function makeLogger(log) {
   if (typeof log === 'function') return log;
   return () => {};
@@ -414,16 +608,20 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
     const durationMs =
       state.lastAssistantAt >= state.lastUserTextAt ? state.lastAssistantAt - state.lastUserTextAt : null;
     const cwd = state.lastCwd || process.cwd();
+    const assistantOutput = state.lastAssistantContent || state.lastAssistantText;
+    const failureSummary = looksLikeClaudeFailure(assistantOutput);
     const result = await sendNotifications({
       source: 'claude',
-      taskInfo: 'Claude 完成',
+      taskInfo: failureSummary ? `Claude 失败: ${failureSummary}` : 'Claude 完成',
       durationMs,
       cwd,
-      outputContent: state.lastAssistantContent || state.lastAssistantText,
+      outputContent: assistantOutput,
       summaryContext: {
         userMessage: state.lastUserText,
         assistantMessage: state.lastAssistantText
-      }
+      },
+      skipSummary: Boolean(failureSummary),
+      notifyKind: failureSummary ? 'error' : undefined,
     });
     state.confirmNotifiedForTurn = true;
     logger(`[watch][claude] ${summarizeResult(result)}`);
@@ -570,7 +768,95 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
   return () => clearInterval(timer);
 }
 
-function startCodexWatch({ intervalMs, log, confirmDetector }) {
+function startCodexTuiLogWatch({ intervalMs, log, failureContext }) {
+  const logger = makeLogger(log);
+  const state = {
+    filePath: '',
+    offset: 0,
+    remainder: '',
+    tickRunning: false,
+  };
+
+  async function processLogLine(line) {
+    const failureSummary = looksLikeCodexFailureLine(line);
+    if (!failureSummary) return;
+
+    const cwd = String((failureContext && failureContext.cwd) || process.cwd()).trim() || process.cwd();
+    const userText = String((failureContext && failureContext.lastUserText) || '').trim();
+    const assistantText = String((failureContext && failureContext.lastAssistantText) || '').trim();
+    const durationMs =
+      failureContext && Number.isFinite(Number(failureContext.lastStartedAt)) && Date.now() >= Number(failureContext.lastStartedAt)
+        ? Date.now() - Number(failureContext.lastStartedAt)
+        : null;
+    const outputContent = [
+      failureSummary,
+      userText ? `Prompt: ${truncateText(userText, 240)}` : '',
+    ].filter(Boolean).join('\n\n');
+
+    const result = await sendNotifications({
+      source: 'codex',
+      taskInfo: `Codex 失败: ${failureSummary}`,
+      durationMs,
+      cwd,
+      outputContent,
+      summaryContext: {
+        userMessage: userText,
+        assistantMessage: assistantText || failureSummary,
+      },
+      notifyKind: 'error',
+      skipSummary: true,
+      force: true,
+    });
+
+    logger(`[watch][codex] ${summarizeResult(result)} (tui log failure)`);
+  }
+
+  async function tick() {
+    if (state.tickRunning) return;
+    state.tickRunning = true;
+    try {
+      const filePath = getCodexTuiLogPath();
+      const stat = safeStat(filePath);
+      if (!stat || !stat.isFile()) return;
+
+      if (state.filePath !== filePath || stat.size < state.offset) {
+        state.filePath = filePath;
+        state.offset = stat.size;
+        state.remainder = '';
+        logger(`[watch][codex] following tui log ${filePath}`);
+        return;
+      }
+
+      if (stat.size <= state.offset) return;
+
+      const text = readFileSliceUtf8(filePath, state.offset, stat.size - state.offset);
+      state.offset = stat.size;
+      if (!text) return;
+
+      const chunk = `${state.remainder}${text}`;
+      const hasTrailingNewline = /\r?\n$/.test(chunk);
+      const lines = chunk.split(/\r?\n/);
+      state.remainder = hasTrailingNewline ? '' : (lines.pop() || '');
+
+      for (const line of lines) {
+        await processLogLine(line);
+      }
+    } finally {
+      state.tickRunning = false;
+    }
+  }
+
+  void tick();
+  const timer = setInterval(() => {
+    void tick();
+  }, Math.max(500, intervalMs || 1000));
+
+  return () => {
+    clearInterval(timer);
+  };
+}
+
+function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureContext }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.codex', 'sessions');
   const completionGraceMs = Math.max(200, Number(process.env.CODEX_TOKEN_GRACE_MS || 1500));
@@ -801,6 +1087,26 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
       pendingCompletion: null
     };
 
+    function syncFailureContext(overrides = {}) {
+      if (!failureContext || typeof failureContext !== 'object') return;
+      const nextCwd = String(overrides.cwd || state.lastCwd || failureContext.cwd || process.cwd()).trim() || process.cwd();
+      const userText = Object.prototype.hasOwnProperty.call(overrides, 'userText')
+        ? String(overrides.userText || '').trim()
+        : String(state.lastUserText || failureContext.lastUserText || '').trim();
+      const assistantText = Object.prototype.hasOwnProperty.call(overrides, 'assistantText')
+        ? String(overrides.assistantText || '').trim()
+        : String(state.lastAgentContent || state.lastAssistantText || failureContext.lastAssistantText || '').trim();
+      const startedAt = Object.prototype.hasOwnProperty.call(overrides, 'startedAt')
+        ? (Number.isFinite(Number(overrides.startedAt)) ? Number(overrides.startedAt) : null)
+        : (state.lastUserAt != null ? state.lastUserAt : state.lastTaskStartedAt != null ? state.lastTaskStartedAt : failureContext.lastStartedAt || null);
+
+      failureContext.cwd = nextCwd;
+      failureContext.lastUserText = userText;
+      failureContext.lastAssistantText = assistantText;
+      failureContext.lastStartedAt = startedAt;
+      failureContext.lastUpdatedAt = Date.now();
+    }
+
     function clearPendingCompletion() {
       const pending = state.pendingCompletion;
       if (!pending) return;
@@ -898,6 +1204,7 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
       if (obj.type === 'turn_context') {
         if (obj.payload && typeof obj.payload.cwd === 'string') {
           state.lastCwd = obj.payload.cwd;
+          syncFailureContext({ cwd: obj.payload.cwd });
         }
         if (obj.payload && typeof obj.payload.turn_id === 'string') {
           const nextTurnId = obj.payload.turn_id;
@@ -938,6 +1245,10 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
         state.lastInteractionResolvedAt = null;
         state.interactionLoggedForTurn = false;
         state.interactionNotifiedForTurn = false;
+        syncFailureContext({
+          userText: state.lastUserText,
+          startedAt: ts != null ? ts : Date.now(),
+        });
         return;
       }
 
@@ -1053,13 +1364,13 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
           if (!seed) {
             await flushPendingCompletion('before_task_started', { allowWithoutToken: true });
           }
-          if (obj.payload && typeof obj.payload.turn_id === 'string') {
-            state.currentTurnId = obj.payload.turn_id;
-          }
-          if (obj.payload && typeof obj.payload.collaboration_mode_kind === 'string') {
-            state.collaborationModeKind = obj.payload.collaboration_mode_kind;
-          }
-          state.lastTaskStartedAt = ts;
+        if (obj.payload && typeof obj.payload.turn_id === 'string') {
+          state.currentTurnId = obj.payload.turn_id;
+        }
+        if (obj.payload && typeof obj.payload.collaboration_mode_kind === 'string') {
+          state.collaborationModeKind = obj.payload.collaboration_mode_kind;
+        }
+        state.lastTaskStartedAt = ts;
           // New turn begins; reset per-turn dedupe/flags.
           state.lastRequestUserInputPrompt = '';
           state.lastConfirmKey = '';
@@ -1067,12 +1378,13 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
           state.interactionRequiredForTurn = false;
           state.pendingRequestUserInputCallIds.clear();
           state.pendingRequestUserInputWithoutId = 0;
-          state.lastInteractionResolvedAt = null;
-          state.interactionLoggedForTurn = false;
-          state.interactionNotifiedForTurn = false;
-          clearPendingCompletion();
-          return;
-        }
+        state.lastInteractionResolvedAt = null;
+        state.interactionLoggedForTurn = false;
+        state.interactionNotifiedForTurn = false;
+        clearPendingCompletion();
+        syncFailureContext({ startedAt: ts != null ? ts : Date.now() });
+        return;
+      }
 
         if (kind === 'task_complete') {
           if (seed) return;
@@ -1090,6 +1402,7 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
             state.lastAssistantText = lastAgentMessage;
             state.lastAgentContent = lastAgentMessage;
             state.lastAssistantAt = completionAt;
+            syncFailureContext({ assistantText: lastAgentMessage });
           }
           const assistantStaleByInteraction =
             !lastAgentMessage
@@ -1241,20 +1554,24 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
             await flushPendingCompletion('before_user_event', { allowWithoutToken: true });
           }
           clearPendingCompletion();
-          state.lastTaskStartedAt = null;
-          state.lastUserAt = ts;
-          state.lastUserText = extractTextFromAny(obj.payload);
+        state.lastTaskStartedAt = null;
+        state.lastUserAt = ts;
+        state.lastUserText = extractTextFromAny(obj.payload);
           state.lastRequestUserInputPrompt = '';
           state.lastConfirmKey = '';
           state.confirmNotifiedForTurn = false;
           state.interactionRequiredForTurn = false;
           state.pendingRequestUserInputCallIds.clear();
           state.pendingRequestUserInputWithoutId = 0;
-          state.lastInteractionResolvedAt = null;
-          state.interactionLoggedForTurn = false;
-          state.interactionNotifiedForTurn = false;
-          return;
-        }
+        state.lastInteractionResolvedAt = null;
+        state.interactionLoggedForTurn = false;
+        state.interactionNotifiedForTurn = false;
+        syncFailureContext({
+          userText: state.lastUserText,
+          startedAt: ts != null ? ts : Date.now(),
+        });
+        return;
+      }
 
         if (kind === 'token_count') {
           // Kept for backward-compat (older Codex session formats).
@@ -1289,6 +1606,10 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
           if (content && content.trim()) {
             state.lastAgentContent = content;
           }
+
+          syncFailureContext({
+            assistantText: state.lastAgentContent || state.lastAssistantText,
+          });
 
           // Confirm alerts for Codex are triggered only by explicit interactive prompts
           // (request_user_input), not by text output.
@@ -1419,6 +1740,266 @@ function startCodexWatch({ intervalMs, log, confirmDetector }) {
     for (const session of sessions.values()) {
       try {
         if (session && typeof session.stop === 'function') session.stop();
+      } catch (_error) {
+        // ignore
+      }
+    }
+  };
+}
+
+function startCodexWatchSqlite({ intervalMs, log, failureContext }) {
+  const logger = makeLogger(log);
+  const tailBytes = Math.max(512 * 1024, Number(process.env.CODEX_SQLITE_TAIL_BYTES || 4 * 1024 * 1024));
+  const maxSeen = Math.max(1000, Number(process.env.CODEX_SQLITE_MAX_SEEN || 4000));
+
+  const state = {
+    basePath: '',
+    seen: new Set(),
+    seeded: false,
+    tickRunning: false,
+    currentResponse: {
+      id: '',
+      createdAt: null,
+      completedAt: null,
+      lastAssistantText: '',
+      lastFinalAnswerText: '',
+      lastUserText: '',
+      interactionRequired: false,
+      notified: false,
+    },
+  };
+
+  function syncFailureContext(overrides = {}) {
+    if (!failureContext || typeof failureContext !== 'object') return;
+    const current = getCurrentResponse();
+    const nextCwd = String(overrides.cwd || failureContext.cwd || process.cwd()).trim() || process.cwd();
+    const userText = Object.prototype.hasOwnProperty.call(overrides, 'userText')
+      ? String(overrides.userText || '').trim()
+      : String(current.lastUserText || failureContext.lastUserText || '').trim();
+    const assistantText = Object.prototype.hasOwnProperty.call(overrides, 'assistantText')
+      ? String(overrides.assistantText || '').trim()
+      : String(current.lastFinalAnswerText || current.lastAssistantText || failureContext.lastAssistantText || '').trim();
+    const startedAt = Object.prototype.hasOwnProperty.call(overrides, 'startedAt')
+      ? (Number.isFinite(Number(overrides.startedAt)) ? Number(overrides.startedAt) : null)
+      : (current.createdAt != null ? current.createdAt : failureContext.lastStartedAt || null);
+
+    failureContext.cwd = nextCwd;
+    failureContext.lastUserText = userText;
+    failureContext.lastAssistantText = assistantText;
+    failureContext.lastStartedAt = startedAt;
+    failureContext.lastUpdatedAt = Date.now();
+  }
+
+  function ensureBasePath() {
+    const nextBasePath = getLatestCodexSqlitePath();
+    if (!nextBasePath) return '';
+    if (state.basePath !== nextBasePath) {
+      state.basePath = nextBasePath;
+      logger(`[watch][codex] following ${nextBasePath}`);
+    }
+    return state.basePath;
+  }
+
+  function resetCurrentResponse(responseId, createdAt) {
+    state.currentResponse = {
+      id: responseId || '',
+      createdAt: createdAt != null ? createdAt : null,
+      completedAt: null,
+      lastAssistantText: '',
+      lastFinalAnswerText: '',
+      lastUserText: '',
+      interactionRequired: false,
+      notified: false,
+    };
+  }
+
+  function getCurrentResponse() {
+    if (!state.currentResponse || typeof state.currentResponse !== 'object') {
+      resetCurrentResponse('', null);
+    }
+    return state.currentResponse;
+  }
+
+  async function processEvent(event, { seed }) {
+    if (!event || typeof event !== 'object') return;
+
+    if (event.type === 'response.created' && event.response && typeof event.response.id === 'string') {
+      const createdAt = Number.isFinite(Number(event.response.created_at))
+        ? Number(event.response.created_at) * 1000
+        : Date.now();
+      resetCurrentResponse(event.response.id, createdAt);
+      syncFailureContext({ startedAt: createdAt });
+      return;
+    }
+
+    if (event.type === 'response.output_item.done' && event.item && typeof event.item === 'object') {
+      const current = getCurrentResponse();
+      const item = event.item;
+
+      if (item.type === 'message') {
+        const role = String(item.role || '');
+        const phase = String(item.phase || '').toLowerCase();
+        const text = extractTextFromAny(item).trim();
+        if (role === 'assistant' && text) {
+          current.lastAssistantText = text;
+          if (phase === 'final_answer' || !phase) current.lastFinalAnswerText = text;
+          syncFailureContext({ assistantText: current.lastFinalAnswerText || current.lastAssistantText });
+          if (phase === 'final_answer' && !seed && !current.interactionRequired && !current.notified) {
+            const durationMs =
+              current.createdAt != null && Date.now() >= current.createdAt
+                ? Date.now() - current.createdAt
+                : null;
+            const result = await sendNotifications({
+              source: 'codex',
+              taskInfo: 'Codex 完成',
+              durationMs,
+              cwd: process.cwd(),
+              outputContent: text,
+              summaryContext: {
+                userMessage: current.lastUserText || '',
+                assistantMessage: text,
+              },
+            });
+            current.notified = true;
+            logger(`[watch][codex] ${summarizeResult(result)} (sqlite final_answer)`);
+          }
+        } else if (role === 'user' && text) {
+          current.lastUserText = text;
+          syncFailureContext({ userText: text, startedAt: current.createdAt != null ? current.createdAt : Date.now() });
+        }
+      }
+
+      if (
+        (item.type === 'function_call' || item.type === 'custom_tool_call' || item.type === 'tool_use')
+        && (
+          item.name === 'request_user_input'
+          || item.function_name === 'request_user_input'
+          || (item.function && item.function.name === 'request_user_input')
+        )
+      ) {
+        current.interactionRequired = true;
+      }
+      return;
+    }
+
+    if (event.type === 'response.output_text.done') {
+      const current = getCurrentResponse();
+      const text = typeof event.text === 'string' ? event.text.trim() : '';
+      if (text) {
+        current.lastAssistantText = text;
+        if (!current.lastFinalAnswerText) current.lastFinalAnswerText = text;
+        syncFailureContext({ assistantText: current.lastFinalAnswerText || current.lastAssistantText });
+      }
+      return;
+    }
+
+    if (event.type === 'response.completed' && event.response && typeof event.response.id === 'string') {
+      const current = getCurrentResponse();
+      if (!current.id || current.id !== event.response.id) current.id = event.response.id;
+
+      current.completedAt = Number.isFinite(Number(event.response.completed_at))
+        ? Number(event.response.completed_at) * 1000
+        : Date.now();
+
+      if (seed) return;
+
+      if (current.interactionRequired) {
+        logger('[watch][codex] skipped completion (sqlite: interaction required)');
+        resetCurrentResponse('', null);
+        return;
+      }
+
+      if (current.notified) {
+        resetCurrentResponse('', null);
+        return;
+      }
+
+      const outputContent = String(current.lastFinalAnswerText || current.lastAssistantText || '').trim();
+      const durationMs =
+        current.createdAt != null && current.completedAt != null && current.completedAt >= current.createdAt
+          ? current.completedAt - current.createdAt
+          : null;
+
+      const result = await sendNotifications({
+        source: 'codex',
+        taskInfo: 'Codex 完成',
+        durationMs,
+        cwd: process.cwd(),
+        outputContent,
+        summaryContext: {
+          userMessage: current.lastUserText || '',
+          assistantMessage: outputContent || current.lastAssistantText || '',
+        },
+      });
+
+      logger(`[watch][codex] ${summarizeResult(result)} (sqlite response.completed)`);
+      resetCurrentResponse('', null);
+    }
+  }
+
+  async function tick() {
+    if (state.tickRunning) return;
+    state.tickRunning = true;
+    try {
+      const basePath = ensureBasePath();
+      if (!basePath) return;
+
+      const chunks = [];
+      const mainText = readTailTextUtf8(basePath, tailBytes);
+      if (mainText) chunks.push(mainText);
+
+      const walText = readTailTextUtf8(`${basePath}-wal`, tailBytes);
+      if (walText) chunks.push(walText);
+
+      for (const text of chunks) {
+        const events = extractJsonObjectsAfterMarker(text, 'SSE event: ');
+        for (const event of events) {
+          const key = buildCodexSqliteEventKey(event);
+          if (!key) continue;
+          if (!rememberSeenKey(state.seen, key, maxSeen)) continue;
+          await processEvent(event, { seed: !state.seeded });
+        }
+      }
+
+      state.seeded = true;
+    } finally {
+      state.tickRunning = false;
+    }
+  }
+
+  void tick();
+  const timer = setInterval(() => {
+    void tick();
+  }, Math.max(500, intervalMs || 1000));
+
+  return () => {
+    clearInterval(timer);
+  };
+}
+
+function startCodexWatch({ intervalMs, log, confirmDetector }) {
+  const backend = pickCodexWatchBackend();
+  const logger = makeLogger(log);
+  const failureContext = {
+    cwd: process.cwd(),
+    lastUserText: '',
+    lastAssistantText: '',
+    lastStartedAt: null,
+    lastUpdatedAt: 0,
+  };
+  logger(`[watch][codex] backend=${backend}`);
+  const stops = [
+    startCodexTuiLogWatch({ intervalMs, log, failureContext }),
+  ];
+  if (backend === 'sqlite') {
+    stops.push(startCodexWatchSqlite({ intervalMs, log, confirmDetector, failureContext }));
+  } else {
+    stops.push(startCodexWatchSessions({ intervalMs, log, confirmDetector, failureContext }));
+  }
+  return () => {
+    for (const stop of stops) {
+      try {
+        if (typeof stop === 'function') stop();
       } catch (_error) {
         // ignore
       }
@@ -1581,26 +2162,27 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log, confirmDetector }) {
         if (m.type === 'gemini') {
           state.lastGeminiAt = ts;
 
-          // 鎹曡幏gemini娑堟伅鐨勫唴瀹?- 澧炲己鐗?          let content = '';
+          // Extract Gemini content from the supported payload shapes.
+          let content = '';
 
           if (m.content && Array.isArray(m.content)) {
-            // 鏍煎紡1锛歝ontent鏄瓧绗︿覆鏁扮粍
+            // Shape 1: content is an array of strings.
             const textParts = m.content
               .filter(item => item && typeof item === 'string')
               .filter(Boolean);
             content = textParts.join('\n\n');
           } else if (m.content && typeof m.content === 'string') {
-            // 鏍煎紡2锛歝ontent鐩存帴鏄瓧绗︿覆
+            // Shape 2: content is already a string.
             content = m.content;
           } else if (m.parts && Array.isArray(m.parts)) {
-            // 鏍煎紡3锛氫娇鐢╬arts瀛楁
+            // Shape 3: Gemini uses a parts array with text fields.
             const textParts = m.parts
               .filter(part => part && part.text && typeof part.text === 'string')
               .map(part => part.text)
               .filter(Boolean);
             content = textParts.join('\n\n');
           } else if (m.text && typeof m.text === 'string') {
-            // 鏍煎紡4锛氱洿鎺ヤ娇鐢╰ext瀛楁
+            // Shape 4: plain text field.
             content = m.text;
           }
 

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>AI CLI Complete Notify</title>
+    <style>
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #0b1022;
+        color: #eaf0ff;
+      }
+      body { overflow: hidden; font-family: "Aptos", "Segoe UI Variable Text", "Segoe UI", sans-serif; }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(960px 540px at 0% 0%, rgba(110, 123, 255, 0.18), transparent 56%),
+          radial-gradient(900px 480px at 100% 0%, rgba(58, 108, 255, 0.14), transparent 54%),
+          linear-gradient(180deg, #07101d 0%, #0c1628 52%, #08111e 100%);
+      }
+      .boot-card {
+        width: min(420px, calc(100vw - 40px));
+        padding: 24px 24px 20px;
+        border-radius: 24px;
+        border: 1px solid rgba(190, 210, 255, 0.12);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.024));
+        box-shadow: 0 24px 70px rgba(1, 8, 24, 0.44);
+      }
+      .boot-kicker {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(221, 231, 255, 0.62);
+      }
+      .boot-title {
+        margin-top: 10px;
+        font-size: 26px;
+        line-height: 1;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+      .boot-subtitle {
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: rgba(221, 231, 255, 0.68);
+      }
+      .boot-progress {
+        position: relative;
+        overflow: hidden;
+        margin-top: 18px;
+        height: 5px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .boot-progress::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 38%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, rgba(110, 123, 255, 0.88), rgba(58, 108, 255, 0.96));
+        animation: boot-slide 1.15s ease-in-out infinite;
+      }
+      @keyframes boot-slide {
+        0% { transform: translateX(-120%); }
+        100% { transform: translateX(280%); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot" aria-hidden="true">
+      <div class="boot-card">
+        <div class="boot-kicker">AI CLI COMPLETE NOTIFY</div>
+        <div class="boot-title">Loading...</div>
+        <div class="boot-subtitle">Preparing the desktop workspace and runtime bridge.</div>
+        <div class="boot-progress"></div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src-ui/main.tsx"></script>
+  </body>
+</html>

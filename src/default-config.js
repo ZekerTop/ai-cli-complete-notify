@@ -28,7 +28,8 @@ const DEFAULT_CONFIG = {
     focusTarget: 'auto', // auto | vscode | terminal
     confirmAlert: {
       enabled: false
-    }
+    },
+    notificationMode: 'watch' // 'watch' | 'hooks'
   },
   channels: {
     webhook: {

@@ -35,6 +35,44 @@ function getStatePath() {
   return path.join(getDataDir(), 'state.json');
 }
 
+function getWatchLogsDir() {
+  return path.join(getDataDir(), 'watch-logs');
+}
+
+function formatWatchLogDate(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getWatchLogPath(date = new Date()) {
+  return path.join(getWatchLogsDir(), `watch-${formatWatchLogDate(date)}.log`);
+}
+
+function getLatestWatchLogPath() {
+  const logDir = getWatchLogsDir();
+  let fs;
+  try {
+    fs = require('fs');
+  } catch (_error) {
+    return '';
+  }
+
+  try {
+    if (!fs.existsSync(logDir)) return '';
+    const files = fs
+      .readdirSync(logDir, { withFileTypes: true })
+      .filter((entry) => entry && entry.isFile() && /^watch-\d{4}-\d{2}-\d{2}\.log$/i.test(entry.name))
+      .map((entry) => entry.name)
+      .sort((a, b) => b.localeCompare(a));
+    if (files.length === 0) return '';
+    return path.join(logDir, files[0]);
+  } catch (_error) {
+    return '';
+  }
+}
+
 function getEnvPathCandidates() {
   const candidates = [];
 
@@ -59,5 +97,8 @@ module.exports = {
   getDataDir,
   getSettingsPath,
   getStatePath,
+  getWatchLogsDir,
+  getWatchLogPath,
+  getLatestWatchLogPath,
   getEnvPathCandidates
 };

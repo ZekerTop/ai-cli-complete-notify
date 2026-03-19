@@ -8,6 +8,9 @@ const { notifyDesktopBalloon } = require('./notifiers/desktop');
 const { notifyEmail } = require('./notifiers/email');
 const { summarizeTask } = require('./summary');
 const { focusTarget } = require('./focus');
+const { checkAndRememberNotification } = require('./state');
+
+const NOTIFICATION_DEDUPE_MS = Math.max(30 * 1000, Number(process.env.NOTIFICATION_DEDUPE_MS || 2 * 60 * 1000));
 
 function isChannelEnabled(config, channelName, sourceName) {
   const channelGlobal = config.channels[channelName] && config.channels[channelName].enabled;
@@ -33,14 +36,40 @@ function shouldNotifyByDuration({ minDurationMinutes, durationMs, force }) {
   return { should: true, reason: null };
 }
 
-async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force, summaryContext, outputContent, skipSummary, notifyKind }) {
+function buildDesktopErrorPreview(text, fallback) {
+  const raw = String(text || fallback || '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!raw) return '';
+  if (raw.length <= 100) return raw;
+  return `${raw.slice(0, 97).trimEnd()}...`;
+}
+
+async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force, summaryContext, outputContent, skipSummary, notifyKind, fromHook }) {
   const config = loadConfig();
   const sourceName = source || 'claude';
   const sourceConfig = config.sources[sourceName] || config.sources.claude;
-  const kind = notifyKind === 'confirm' ? 'confirm' : 'complete';
+  const kind = notifyKind === 'confirm' ? 'confirm' : notifyKind === 'error' ? 'error' : 'complete';
 
   if (!sourceConfig || !sourceConfig.enabled) {
     return { skipped: true, reason: `source ${sourceName} disabled`, results: [] };
+  }
+
+  // Hooks are only supported by Claude Code and Gemini CLI.
+  // In hooks mode, keep watch-originated results as a fallback because some CLI
+  // builds may stop emitting hook events for certain responses. Cross-path
+  // duplicates are suppressed later via persistent notification dedupe.
+  const notificationMode = (config.ui && config.ui.notificationMode) || 'watch';
+  const sourceUsesHooks = sourceName === 'claude' || sourceName === 'gemini';
+  if (notificationMode === 'watch' && fromHook && sourceUsesHooks) {
+    return {
+      skipped: true,
+      reason: `notificationMode is watch; hook-originated notification skipped for ${sourceName}`,
+      results: []
+    };
   }
 
   const { should, reason } = shouldNotifyByDuration({
@@ -56,11 +85,34 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const cwdToUse = cwd || process.cwd();
   const projectName = projectNameOverride || getProjectName(cwdToUse);
   const sourceLabel = getSourceLabel(sourceName);
+  const dedupeText = String(
+    outputContent
+      || (summaryContext && summaryContext.assistantMessage)
+      || taskInfo
+      || ''
+  ).trim();
+
+  if (dedupeText) {
+    const duplicated = checkAndRememberNotification({
+      source: sourceName,
+      cwd: cwdToUse,
+      text: dedupeText,
+      dedupeMs: NOTIFICATION_DEDUPE_MS,
+    });
+    if (duplicated) {
+      return {
+        skipped: true,
+        reason: `duplicate notification suppressed for ${sourceName}`,
+        results: [],
+      };
+    }
+  }
 
   const durationText = formatDurationMs(durationMs);
   const timestamp = new Date().toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
+  const statusLine = kind === 'error' ? 'Failed at' : kind === 'confirm' ? 'Alert at' : 'Completed at';
   const lines = [
-    `Completed at: ${timestamp}`,
+    `${statusLine}: ${timestamp}`,
     durationText ? `Duration: ${durationText}` : null,
     `Source: ${sourceLabel}`
   ].filter(Boolean);
@@ -122,15 +174,24 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
         : (lang === 'en' ? 'workspace' : '工作界面');
     const notifyLabel = kind === 'confirm'
       ? (lang === 'en' ? 'Confirmation needed' : '确认提醒')
+      : kind === 'error'
+        ? (lang === 'en' ? 'Task failed' : '任务失败')
       : (lang === 'en' ? 'Task completed' : '任务完成');
     const clickHint = focusEnabled
       ? (lang === 'en' ? `Click to return to ${targetLabel}` : `点击通知切回${targetLabel}`)
       : '';
     const desktopTitle = kind === 'confirm'
       ? notifyLabel
+      : kind === 'error'
+        ? String(effectiveTaskInfo || notifyLabel)
       : String(effectiveTaskInfo || notifyLabel);
     const desktopMessage = kind === 'confirm'
       ? (lang === 'en' ? 'Please confirm in the workspace' : '请确认任务结果')
+      : kind === 'error'
+        ? buildDesktopErrorPreview(
+            resolvedOutput,
+            lang === 'en' ? 'See Claude output for details' : '请查看 Claude 输出详情',
+          )
       : (durationText ? (lang === 'en' ? `Duration: ${durationText}` : `耗时：${durationText}`) : '');
     tasks.push(
       notifyDesktopBalloon({

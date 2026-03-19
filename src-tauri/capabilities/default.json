@@ -1,0 +1,39 @@
+{
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:default",
+    "shell:allow-open",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/ai-reminder",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/ai-reminder",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    },
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-message",
+    "dialog:allow-ask",
+    "process:default",
+    "process:allow-exit",
+    "process:allow-restart"
+  ]
+}

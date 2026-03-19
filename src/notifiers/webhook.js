@@ -6,7 +6,7 @@ const { exec } = require('child_process');
 
 const REQUEST_TIMEOUT_MS = 10000;
 
-// Logo鍥剧墖key鏄犲皠 - 鏀寔娣辫壊/娴呰壊涓婚
+// Logo key map for light and dark themes.
 const LOGO_MAP = {
   'codex': {
     light: 'img_v3_02u8_e7160911-b3b6-49fe-98b6-4fcf92f857fg',
@@ -30,25 +30,25 @@ const LOGO_MAP = {
   }
 };
 
-// 缂撳瓨涓婚妫€娴嬬粨鏋滐紝閬垮厤棰戠箒鏌ヨ
+// Cache the detected system theme to avoid frequent registry queries.
 let cachedTheme = null;
 let themeCacheTime = 0;
-const THEME_CACHE_DURATION = 60000; // 缂撳瓨1鍒嗛挓
+const THEME_CACHE_DURATION = 60000; // Cache for 1 minute.
 
 /**
- * 妫€娴媁indows绯荤粺鐨勪富棰樻ā寮忥紙娴呰壊/娣辫壊锛?
- * @returns {Promise<string>} 'light' 鎴?'dark'
+ * Detect the Windows system theme.
+ * @returns {Promise<string>} 'light' or 'dark'
  */
 function detectSystemTheme() {
   return new Promise((resolve) => {
-    // 妫€鏌ョ紦瀛?
+    // Return cached result when available.
     const now = Date.now();
     if (cachedTheme && (now - themeCacheTime) < THEME_CACHE_DURATION) {
       resolve(cachedTheme);
       return;
     }
 
-    // 闈濿indows绯荤粺锛岄粯璁ゆ祬鑹?
+    // Non-Windows platforms fall back to light theme.
     if (process.platform !== 'win32') {
       cachedTheme = 'light';
       themeCacheTime = now;
@@ -56,14 +56,14 @@ function detectSystemTheme() {
       return;
     }
 
-    // Windows绯荤粺锛氭煡璇㈡敞鍐岃〃
+    // Read the Windows registry theme flag.
     // HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme
     const command = 'reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize" /v AppsUseLightTheme';
 
     exec(command, { encoding: 'buffer' }, (error, stdout, stderr) => {
       if (error) {
-        // 濡傛灉鏌ヨ澶辫触锛岄粯璁ゆ祬鑹?
-        console.error('[webhook] 妫€娴嬬郴缁熶富棰樺け璐?', error.message);
+        // Fall back to light theme if registry query fails.
+        console.error('[webhook] 检测系统主题失败:', error.message);
         cachedTheme = 'light';
         themeCacheTime = now;
         resolve('light');
@@ -71,26 +71,26 @@ function detectSystemTheme() {
       }
 
       try {
-        // 灏咮uffer杞崲涓哄瓧绗︿覆
+        // Decode the registry output as UTF-8 text.
         const output = stdout.toString('utf8');
-        // 鏌ユ壘AppsUseLightTheme鐨勫€?
+        // Extract AppsUseLightTheme value.
         const match = output.match(/AppsUseLightTheme\s+REG_DWORD\s+0x(\d+)/);
         if (match) {
           const value = parseInt(match[1], 16);
-          // 0 = 娣辫壊妯″紡, 1 = 娴呰壊妯″紡
+          // 0 = dark mode, 1 = light mode.
           const theme = value === 0 ? 'dark' : 'light';
           cachedTheme = theme;
           themeCacheTime = now;
-          console.log(`[webhook] 妫€娴嬪埌绯荤粺涓婚: ${theme}`);
+          console.log(`[webhook] 检测到系统主题: ${theme}`);
           resolve(theme);
         } else {
-          // 濡傛灉娌℃湁鎵惧埌鍊硷紝榛樿娴呰壊
+          // Fall back to light theme if the registry value is missing.
           cachedTheme = 'light';
           themeCacheTime = now;
           resolve('light');
         }
       } catch (err) {
-        console.error('[webhook] 瑙ｆ瀽涓婚妫€娴嬬粨鏋滃け璐?', err.message);
+        console.error('[webhook] 解析主题检测结果失败:', err.message);
         cachedTheme = 'light';
         themeCacheTime = now;
         resolve('light');
@@ -99,7 +99,7 @@ function detectSystemTheme() {
   });
 }
 
-// 榛樿椋炰功鍗＄墖妯℃澘
+// Default Feishu card template.
 const DEFAULT_CARD_TEMPLATE = {
   "schema": "2.0",
   "config": {
@@ -208,7 +208,7 @@ function readUseFeishuCard(channel) {
   return Boolean(channel.useFeishuCard);
 }
 
-// 鍔犺浇鑷畾涔夊崱鐗囨ā鏉?
+// Build plain text fallback content.
 function buildPlainText({ title, contentText, summaryText, outputText }) {
   const blocks = [title, contentText].filter(Boolean);
   if (summaryText) blocks.push(`AI \u6458\u8981\uff1a${summaryText}`);
@@ -228,18 +228,18 @@ function loadCardTemplate(templatePath) {
   return DEFAULT_CARD_TEMPLATE;
 }
 
-// 鏋勫缓椋炰功鍗＄墖
+// Build Feishu card payload.
 async function buildFeishuCard({ projectName, timestamp, durationText, sourceLabel, taskInfo, templatePath, outputContent }) {
   const template = loadCardTemplate(templatePath);
   const hasTaskInfoPlaceholder = JSON.stringify(template).includes('${TASK_INFO}');
   const trimmedOutput = String(outputContent || '').trim();
   const shouldInjectSummary = Boolean(taskInfo) && !hasTaskInfoPlaceholder;
 
-  // 妫€娴嬬郴缁熶富棰樺苟鑾峰彇瀵瑰簲鐨刲ogo key
+  // Detect the current system theme and choose the matching logo.
   const theme = await detectSystemTheme();
   const sourceKey = sourceLabel.toLowerCase();
 
-  // 鏍规嵁涓婚鑾峰彇logo key
+  // Resolve logo by source and theme.
   let logoKey;
   if (LOGO_MAP[sourceKey]) {
     logoKey = LOGO_MAP[sourceKey][theme] || LOGO_MAP[sourceKey]['light'];
@@ -247,12 +247,12 @@ async function buildFeishuCard({ projectName, timestamp, durationText, sourceLab
     logoKey = LOGO_MAP['claude'][theme];
   }
 
-  console.log(`[webhook] 浣跨敤涓婚: ${theme}, logo: ${logoKey.substring(0, 30)}...`);
+  console.log(`[webhook] 使用主题: ${theme}, logo: ${logoKey.substring(0, 30)}...`);
 
-  // 娣辨嫹璐濇ā鏉?
+  // Deep-clone the template before replacing variables.
   const card = JSON.parse(JSON.stringify(template));
 
-  // 鏇挎崲鍙橀噺
+  // Replace template variables recursively.
   const replaceVariables = (obj) => {
     if (typeof obj === 'string') {
       return obj
@@ -289,28 +289,28 @@ async function buildFeishuCard({ projectName, timestamp, durationText, sourceLab
     });
   }
 
-  // 濡傛灉鏈夎緭鍑哄唴瀹癸紝鍦ㄥ崱鐗囦腑娣诲姞markdown鍏冪礌
+  // Append output content when it exists.
   if (trimmedOutput) {
     let content = trimmedOutput;
     if (shouldInjectSummary) {
       content = `AI 摘要：${taskInfo}\n\n${content}`;
     }
-    console.log('[webhook] 妫€娴嬪埌杈撳嚭鍐呭锛岄暱搴?', content.length);
+    console.log('[webhook] 检测到输出内容，长度:', content.length);
 
-    // 闄愬埗杈撳嚭鍐呭闀垮害锛岄伩鍏嶈秴杩囬涔﹀崱鐗囬檺鍒?
+    // Limit output length to keep card size under control.
     const maxLength = 3000;
     if (content.length > maxLength) {
       content = content.substring(0, maxLength) + "\n\n...(\u5185\u5bb9\u8fc7\u957f\u5df2\u622a\u65ad)";
     }
 
-    console.log('[webhook] 鎴柇鍚庣殑鍐呭闀垮害:', content.length);
+    console.log('[webhook] 截断后的内容长度:', content.length);
 
-    // 杞箟markdown鐗规畩瀛楃锛屼絾淇濈暀鏍煎紡
+    // Escape HTML-sensitive characters while keeping markdown layout.
     content = content
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // 娣诲姞鍒嗛殧绗﹀拰杈撳嚭鍐呭鍏冪礌
+    // Insert a divider and output block.
     const outputElement = {
       tag: 'hr',
       margin: '12px 0 12px 0'
@@ -324,13 +324,13 @@ async function buildFeishuCard({ projectName, timestamp, durationText, sourceLab
       margin: '8px 0 0 0'
     };
 
-    // 鎻掑叆鍒板崱鐗嘼ody鐨別lements涓?
+    // Append the extra blocks to the card body.
     if (cardWithVars.body && Array.isArray(cardWithVars.body.elements)) {
       cardWithVars.body.elements.push(outputElement);
       cardWithVars.body.elements.push(contentElement);
     }
   } else {
-    console.log('[webhook] 鏈娴嬪埌杈撳嚭鍐呭');
+    console.log('[webhook] 未检测到输出内容');
   }
 
   return cardWithVars;

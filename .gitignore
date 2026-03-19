@@ -37,8 +37,10 @@ Thumbs.db
 
 # 构建输出
 dist/
+dist-ui/
 build/
 package-zip.ps1
+src-tauri/target/
 
 # 测试覆盖率
 coverage/
@@ -46,3 +48,10 @@ coverage/
 # 缓存文件
 .cache/
 .npm/
+npm-cache/
+
+# Tauri / Windows local artifacts
+tauri-run.log
+nul
+src-tauri/binaries/*.exe
+src-tauri/gen/

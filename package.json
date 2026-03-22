@@ -1,6 +1,6 @@
 {
   "name": "ai-cli-complete-notify",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "AI CLI Complete Notify：多种 AI CLI 任务完成提醒（Claude/Codex/Gemini），支持耗时阈值与多通道推送。",
   "scripts": {
     "dev": "npx tauri dev",

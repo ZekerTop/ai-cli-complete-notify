@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.0.0)
+# AI CLI Complete Notify (v2.1.0)
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -364,11 +364,19 @@ Windows notes:
 
 ## Changelog
 
-> `v2.0.0` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
+> `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
 
-### 2.0.0
+### 2.1.0
 
-- Major architecture migration from Electron to Tauri 2. Based on the current `dist/ai-cli-complete-notify-2.0.0-portable-win-x64/` output, the full portable desktop package is now roughly in the `40-50 MB` range, and the zip package is about `20 MB`.
+- Desktop notification popup migrated from HTA (mshta.exe) to PowerShell WPF, completely eliminating the white flash before popup appears.
+- Added WPF assembly pre-warming on app startup, pre-loading PresentationFramework and related assemblies in the background to reduce first-popup latency.
+- Desktop notifications now fire fully in parallel with Webhook and other channels, removing the previous headstart delay for faster popup response.
+- Desktop notification countdown shortened to 3 seconds for less visual interruption.
+- Popup UI refined: rounded card with shadow, thin animated progress bar, cleaner and more polished look.
+
+### 2.0.1
+
+- Major architecture migration from Electron to Tauri 2. Based on the current `dist/ai-cli-complete-notify-2.0.1-portable-win-x64/` output, the full portable desktop package is now roughly in the `40-50 MB` range, and the zip package is about `20 MB`.
 - Desktop UI rebuilt with `React 18 + TypeScript + Tailwind CSS`, with the current bilingual settings console and simplified navigation structure.
 - Node CLI kept intact as a standalone sidecar executable via `pkg`, so existing `node ai-reminder.js ...` workflows remain compatible.
 - Build chain streamlined around `Vite + Tauri`, with separate frontend, sidecar, portable package, and optional installer outputs.

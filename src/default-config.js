@@ -58,7 +58,7 @@ const DEFAULT_CONFIG = {
     },
     desktop: {
       enabled: true,
-      balloonMs: 6000
+      balloonMs: 3000
     },
     email: {
       enabled: false,

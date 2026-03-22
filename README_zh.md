@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.0.0)
+# AI CLI Complete Notify (v2.1.0)
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -365,9 +365,17 @@ Windows 说明：
 
 ## 版本历史
 
-> `v2.0.0` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
+> `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
 
-### 2.0.0
+### 2.1.0
+
+- 桌面通知弹窗从 HTA（mshta.exe）迁移到 PowerShell WPF，彻底消除弹窗前的白屏闪烁。
+- 新增 WPF 程序集预热机制，应用启动时后台预加载 PresentationFramework 等程序集，缩短首次弹窗延迟。
+- 桌面通知与 Webhook 等通道改为完全并行发送，移除原有的 headstart 延迟，弹窗响应更及时。
+- 桌面通知倒计时缩短至 3 秒，减少视觉干扰。
+- 弹窗 UI 优化：圆角卡片、阴影效果、细进度条动画，整体更简洁美观。
+
+### 2.0.1
 
 - 重大架构升级：桌面端从 `Electron` 迁移到 `Tauri 2`。基于当前实际产物，Windows 便携版整体产物大致缩小到 `40-50 MB` 区间，zip 压缩包约 `20 MB` 左右。
 - 桌面界面全面重写为 `React 18 + TypeScript + Tailwind CSS`，形成当前这套中英双语、结构更清晰的设置界面。

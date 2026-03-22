@@ -34,6 +34,18 @@ function copyOptional(src, dest) {
   fs.copyFileSync(src, dest);
 }
 
+function pickNewestExisting(paths) {
+  const existing = paths.filter((filePath) => fs.existsSync(filePath));
+  if (existing.length === 0) {
+    return null;
+  }
+  return existing.sort((a, b) => {
+    const aTime = fs.statSync(a).mtimeMs;
+    const bTime = fs.statSync(b).mtimeMs;
+    return bTime - aTime;
+  })[0];
+}
+
 function removeIfExists(filePath) {
   if (!fs.existsSync(filePath)) return;
   if (process.platform === 'win32') {
@@ -102,10 +114,15 @@ function main() {
   const version = pkg && pkg.version ? String(pkg.version) : '0.0.0';
   const rootDir = path.join(__dirname, '..');
   const releaseDir = path.join(rootDir, 'src-tauri', 'target', 'release');
+  const binariesDir = path.join(rootDir, 'src-tauri', 'binaries');
   const distDir = path.join(rootDir, 'dist');
   const portableName = `ai-cli-complete-notify-${version}-portable-win-x64`;
   const portableDir = path.join(distDir, portableName);
   const portableZip = path.join(distDir, `${portableName}.zip`);
+  const sidecarSource = pickNewestExisting([
+    path.join(binariesDir, 'ai-reminder-x86_64-pc-windows-msvc.exe'),
+    path.join(releaseDir, 'ai-reminder.exe')
+  ]);
 
   fs.mkdirSync(distDir, { recursive: true });
   cleanDir(portableDir);
@@ -115,7 +132,7 @@ function main() {
     path.join(portableDir, 'ai-cli-complete-notify.exe')
   );
   copyRequired(
-    path.join(releaseDir, 'ai-reminder.exe'),
+    sidecarSource || path.join(releaseDir, 'ai-reminder.exe'),
     path.join(portableDir, 'ai-reminder.exe')
   );
 

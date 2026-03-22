@@ -34,6 +34,14 @@ impl CloseBehavior {
     }
 }
 
+fn restore_main_window(app: &tauri::AppHandle) {
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.show();
+        let _ = win.unminimize();
+        let _ = win.set_focus();
+    }
+}
+
 fn get_data_dir() -> PathBuf {
     const DATA_DIR_ENV: [&str; 4] = [
         "AI_CLI_COMPLETE_NOTIFY_DATA_DIR",
@@ -127,6 +135,9 @@ fn set_autostart_enabled(app: tauri::AppHandle, enabled: bool) -> Result<bool, S
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            restore_main_window(app);
+        }))
         .plugin(
             tauri_plugin_autostart::Builder::new()
                 .args(["--silent-start"])
@@ -162,11 +173,7 @@ pub fn run() {
             let _tray = tray
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "show" => {
-                        if let Some(win) = app.get_webview_window("main") {
-                            let _ = win.show();
-                            let _ = win.unminimize();
-                            let _ = win.set_focus();
-                        }
+                        restore_main_window(app);
                     }
                     "quit" => {
                         app.exit(0);
@@ -181,11 +188,7 @@ pub fn run() {
                     } = event
                     {
                         let app = tray.app_handle();
-                        if let Some(win) = app.get_webview_window("main") {
-                            let _ = win.show();
-                            let _ = win.unminimize();
-                            let _ = win.set_focus();
-                        }
+                        restore_main_window(&app);
                     }
                 })
                 .build(app)?;

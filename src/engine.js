@@ -4,13 +4,16 @@ const { formatDurationMs, getSourceLabel, buildTitle } = require('./format');
 const { notifyWebhook } = require('./notifiers/webhook');
 const { notifyTelegram } = require('./notifiers/telegram');
 const { notifySound } = require('./notifiers/sound');
-const { notifyDesktopBalloon } = require('./notifiers/desktop');
+const { notifyDesktopBalloon, prewarmWpf } = require('./notifiers/desktop');
 const { notifyEmail } = require('./notifiers/email');
 const { summarizeTask } = require('./summary');
 const { focusTarget } = require('./focus');
 const { checkAndRememberNotification } = require('./state');
 
 const NOTIFICATION_DEDUPE_MS = Math.max(30 * 1000, Number(process.env.NOTIFICATION_DEDUPE_MS || 2 * 60 * 1000));
+
+// Pre-warm PowerShell WPF assemblies on module load for faster desktop notifications
+if (process.platform === 'win32') prewarmWpf();
 
 function isChannelEnabled(config, channelName, sourceName) {
   const channelGlobal = config.channels[channelName] && config.channels[channelName].enabled;
@@ -111,21 +114,67 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const durationText = formatDurationMs(durationMs);
   const timestamp = new Date().toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
   const statusLine = kind === 'error' ? 'Failed at' : kind === 'confirm' ? 'Alert at' : 'Completed at';
+  const resolvedOutput = String(
+    outputContent
+      || (summaryContext && summaryContext.assistantMessage)
+      || ''
+  );
   const lines = [
     `${statusLine}: ${timestamp}`,
     durationText ? `Duration: ${durationText}` : null,
     `Source: ${sourceLabel}`
   ].filter(Boolean);
   const contentText = lines.join('\n');
+  const tasks = [];
+  const results = [];
+  if (isChannelEnabled(config, 'desktop', sourceName)) {
+    const focusEnabled = Boolean(config?.ui?.autoFocusOnNotify);
+    const focusTargetKey = String(config?.ui?.focusTarget || 'auto');
+    const lang = String(config?.ui?.language || 'zh-CN');
+    const targetLabel = focusTargetKey === 'vscode'
+      ? 'VSCode'
+      : focusTargetKey === 'terminal'
+        ? (lang === 'en' ? 'terminal' : '命令行')
+        : (lang === 'en' ? 'workspace' : '工作界面');
+    const notifyLabel = kind === 'confirm'
+      ? (lang === 'en' ? 'Confirmation needed' : '确认提醒')
+      : kind === 'error'
+        ? (lang === 'en' ? 'Task failed' : '任务失败')
+      : (lang === 'en' ? 'Task completed' : '任务完成');
+    const clickHint = focusEnabled
+      ? (lang === 'en' ? `Return to ${targetLabel}` : `点击返回${targetLabel}`)
+      : '';
+    const desktopTitle = kind === 'confirm'
+      ? notifyLabel
+      : kind === 'error'
+        ? String(taskInfo || notifyLabel)
+      : String(taskInfo || notifyLabel);
+    const desktopMessage = kind === 'confirm'
+      ? (lang === 'en' ? 'Please confirm in the workspace' : '请确认任务结果')
+      : kind === 'error'
+        ? buildDesktopErrorPreview(
+            resolvedOutput,
+            lang === 'en' ? 'See Claude output for details' : '请查看 Claude 输出详情',
+          )
+      : (durationText ? (lang === 'en' ? `Duration: ${durationText}` : `耗时：${durationText}`) : '');
+    tasks.push(
+      notifyDesktopBalloon({
+        title: desktopTitle,
+        message: desktopMessage,
+        timeoutMs: config.channels.desktop.balloonMs,
+        clickHint,
+        kind,
+        projectName,
+        onClick: focusEnabled
+          ? () => focusTarget(config, { cwd: cwdToUse, source: sourceName, ppid: process.ppid })
+          : null
+      }).then((r) => ({ channel: 'desktop', ...r }))
+    );
+  }
 
   const summary = skipSummary ? '' : await summarizeTask({ config, taskInfo, contentText, summaryContext });
   const summaryUsed = Boolean(summary);
   const effectiveTaskInfo = summary || taskInfo;
-  const resolvedOutput = String(
-    outputContent
-      || (summaryContext && summaryContext.assistantMessage)
-      || ''
-  );
 
   const titleTaskInfo = effectiveTaskInfo;
   const title = buildTitle({
@@ -134,9 +183,6 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     sourceLabel,
     includeSourcePrefixInTitle: true
   });
-
-  const tasks = [];
-  const results = [];
 
   if (isChannelEnabled(config, 'telegram', sourceName)) {
     tasks.push(
@@ -160,51 +206,6 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
         summaryUsed
       })
         .then((r) => ({ channel: 'webhook', ...r }))
-    );
-  }
-
-  if (isChannelEnabled(config, 'desktop', sourceName)) {
-    const focusEnabled = Boolean(config?.ui?.autoFocusOnNotify);
-    const focusTargetKey = String(config?.ui?.focusTarget || 'auto');
-    const lang = String(config?.ui?.language || 'zh-CN');
-    const targetLabel = focusTargetKey === 'vscode'
-      ? 'VSCode'
-      : focusTargetKey === 'terminal'
-        ? (lang === 'en' ? 'terminal' : '命令行')
-        : (lang === 'en' ? 'workspace' : '工作界面');
-    const notifyLabel = kind === 'confirm'
-      ? (lang === 'en' ? 'Confirmation needed' : '确认提醒')
-      : kind === 'error'
-        ? (lang === 'en' ? 'Task failed' : '任务失败')
-      : (lang === 'en' ? 'Task completed' : '任务完成');
-    const clickHint = focusEnabled
-      ? (lang === 'en' ? `Click to return to ${targetLabel}` : `点击通知切回${targetLabel}`)
-      : '';
-    const desktopTitle = kind === 'confirm'
-      ? notifyLabel
-      : kind === 'error'
-        ? String(effectiveTaskInfo || notifyLabel)
-      : String(effectiveTaskInfo || notifyLabel);
-    const desktopMessage = kind === 'confirm'
-      ? (lang === 'en' ? 'Please confirm in the workspace' : '请确认任务结果')
-      : kind === 'error'
-        ? buildDesktopErrorPreview(
-            resolvedOutput,
-            lang === 'en' ? 'See Claude output for details' : '请查看 Claude 输出详情',
-          )
-      : (durationText ? (lang === 'en' ? `Duration: ${durationText}` : `耗时：${durationText}`) : '');
-    tasks.push(
-      notifyDesktopBalloon({
-        title: desktopTitle,
-        message: desktopMessage,
-        timeoutMs: config.channels.desktop.balloonMs,
-        clickHint,
-        kind,
-        projectName,
-        onClick: focusEnabled
-          ? () => focusTarget(config, { cwd: cwdToUse, source: sourceName, ppid: process.ppid })
-          : null
-      }).then((r) => ({ channel: 'desktop', ...r }))
     );
   }
 

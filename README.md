@@ -10,8 +10,6 @@
 
 English | [中文](README_zh.md)
 
-![桌面端预览](docs/images/exe预览.png)
-
 </div>
 
 ### 📖 Introduction
@@ -102,12 +100,12 @@ npm run dev
 
 ### Interface Preview
 
-![Desktop Preview](docs/images/exe预览.png)
-![Global Channels](docs/images/全局通道.png)
+![Global Channels](docs/images/通道.png)
 ![Source Settings](docs/images/各cli来源.png)
 ![Interactive monitoring](docs/images/交互式监听.png)
+![Hook integration](docs/images/Hook集成.png)  
 ![AI Summary](docs/images/AI摘要.png)
-![Advanced Settings](docs/images/高级设置.png)
+![Advanced Settings](docs/images/系统设置.png)
 
 ### Tray Function
 

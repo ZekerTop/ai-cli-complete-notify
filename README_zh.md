@@ -10,7 +10,6 @@
 
 [English](README.md) | 中文
 
-![桌面端预览](docs/images/exe预览.png)
 
 </div>
 
@@ -102,12 +101,12 @@ npm run dev
 
 ### 界面预览
 
-![通道](docs/images/通道.png)
-![各来源设置](docs/images/各cli来源.png)
-![交互式监听](docs/images/交互式监听.png)
-![Hook集成](docs/images/Hook集成.png)
-![AI 摘要](docs/images/AI摘要.png)
-![系统设置](docs/images/系统设置.png)
+![Global Channels](docs/images/通道.png)
+![Source Settings](docs/images/各cli来源.png)
+![Interactive monitoring](docs/images/交互式监听.png)
+![Hook integration](docs/images/Hook集成.png)  
+![AI Summary](docs/images/AI摘要.png)
+![Advanced Settings](docs/images/系统设置.png)
 
 ### 托盘功能
 

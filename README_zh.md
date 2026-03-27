@@ -439,6 +439,10 @@ Windows 说明：
 
 欢迎提交 Issue 和 Pull Request！
 
+## 🔗 链接
+
+- [LINUX DO](https://linux.do/)
+
 ---
 
 **享受智能提醒，让 AI 为您工作！** 🎉

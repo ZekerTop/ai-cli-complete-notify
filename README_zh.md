@@ -124,6 +124,16 @@ Windows 便携版里：
 - `ai-cli-complete-notify.exe` 是桌面界面程序
 - `ai-reminder.exe` 是打包后的命令行 / sidecar，可用于终端命令
 
+### 查看帮助
+
+```bash
+# 源码方式（Node）
+node ai-reminder.js help
+
+# Windows 便携版（EXE）
+ai-reminder.exe help
+```
+
 ### WSL 快速命令操作（可直接复制）
 
 ```bash

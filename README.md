@@ -123,6 +123,16 @@ On Windows portable builds:
 - `ai-cli-complete-notify.exe` is the desktop GUI.
 - `ai-reminder.exe` is the packaged CLI/sidecar and should be used for terminal commands.
 
+### Show Help
+
+```bash
+# Source / Node
+node ai-reminder.js help
+
+# Windows portable EXE
+ai-reminder.exe help
+```
+
 ### WSL Quick Command Guide (Copy & Run)
 
 ```bash

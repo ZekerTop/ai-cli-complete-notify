@@ -2,42 +2,43 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.1.0)
+# AI CLI Complete Notify (v2.2.0)
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
 [English](README.md) | 中文
 
+![界面预览](docs/images/通道.png)
 
 </div>
 
 ### 📖 简介
 
-面向 Claude Code / Codex / Gemini 的智能任务完成提醒工具，支持多种通知渠道和灵活的配置选项。当 AI 助手完成长时间任务时，自动通过多种方式通知您，让您无需守在电脑前等待。
+面向 Claude Code / Codex / OpenCode / Gemini 的智能任务完成提醒工具，支持多种通知渠道和灵活的配置选项。当 AI 助手完成长时间任务时，自动通过多种方式通知您，让您无需守在电脑前等待。
 
 **支持的通知方式：**
 
 📱 Webhook（飞书/钉钉/企业微信）• 💬 Telegram Bot • 📧 邮件（SMTP）
 
-🖥️ 桌面通知 • 🔊 声音/TTS 提醒 • ⌚ 手环提醒
+🖥️ 桌面通知 • 🔊 声音/TTS 提醒 • ⌚ 手环/手表提醒（通过现有通知链路间接接入）
 
 
 ## ✨ 核心特性（更多详细更新日志见文末）
 
 - 🎯 **智能去抖**：根据任务类型自动调整提醒时机，有工具调用时等待 60 秒，无工具调用时仅需 15 秒
-- 🔀 **分源控制**：Claude / Codex / Gemini 独立启用与阈值设置
+- 🔀 **分源控制**：Claude / Codex / OpenCode / Gemini 独立启用与阈值设置
 - 📡 **多通道推送**：同时支持多种通知方式，确保消息送达
 - ⏱️ **耗时阈值**：只在任务超过设定时长时提醒，避免频繁打扰
-- 🪝 **Hooks + Watch 混合集成**：Claude Code / Gemini CLI 可走原生 Hook 即时提醒，Codex 继续通过日志监听完成提醒
+- 🪝 **Hooks + Watch 混合集成**：Claude Code / Gemini CLI 可走原生 Hook，OpenCode 可走全局插件事件，Codex 继续通过日志监听完成提醒
 - 🧠 **AI 摘要（可选）**：任务完成后快速生成简短摘要，超时自动回退
 - 🖥️ **桌面应用**：图形界面配置，支持中英文切换、托盘隐藏、开机自启
 - 🔐 **配置分离**：运行配置与敏感信息分离，安全可靠
 
 ## 💡 推荐配置
 
-**重要提示**：为了获得最佳使用体验，建议在使用 Claude Code / Codex / Gemini 时授予 AI 助手**完整的文件读写权限**。
+**重要提示**：为了获得最佳使用体验，建议在使用 Claude Code / Codex / OpenCode / Gemini 时授予 AI 助手**完整的文件读写权限**。
 
 这样做的好处：
 - ✅ 确保任务日志被正确记录到本地文件
@@ -49,20 +50,20 @@
 
 - Claude Code 往往会拆分为多个子任务，为避免每个子任务都提醒，本项目只在“整轮完成”后再通知。
 - 监听模式依赖日志变化，需要一个去抖静默时间确认结束，因此提醒不是即时触发（默认有工具调用时 60 秒、无工具调用时 15 秒）。
-- 如果想要更快、更干净的提醒：Claude Code / Gemini CLI 优先使用 Hook；Codex 或其他兜底场景继续使用 Watch。
+- 如果想要更快、更干净的提醒：Claude Code / Gemini CLI 优先使用 Hook，OpenCode 优先使用全局插件；Codex 或其他兜底场景继续使用 Watch。
 
 ## Hooks 与 Watch 的区别
 
-- **Hook** 直接利用 AI CLI 自己发出的原生生命周期事件。对 Claude Code 和 Gemini CLI 来说，这意味着提醒可以更接近真实完成时刻，而不是依赖静默时间去猜测。
+- **Hook / 插件事件** 直接利用 AI CLI 自己发出的显式生命周期事件。对 Claude Code、Gemini CLI 和 OpenCode 来说，这意味着提醒可以更接近真实完成时刻，而不是依赖静默时间去猜测。
 - **Hook** 不需要为这些工具长期常驻一个后台监听器，空闲期开销更小，也更不容易因为日志解析产生误判。
 - **Watch** 仍然是通用兜底方案。它很适合 Codex，也适合没有配置 Hook 的场景，但它必须依赖本地日志和去抖静默时间来推断一轮是否真正结束。
-- 实际上，之所以增加 Hook 选项，主要是因为 Claude Code 的 `Stop` 事件和 Gemini CLI 的 `AfterAgent` 事件，相比日志轮询能提供更及时、更准确的完成信号；而在当前集成里，Codex 仍以 Watch 作为主要完成提醒路径。
+- 实际上，之所以增加 Hook / 插件事件选项，主要是因为 Claude Code 的 `Stop`、Gemini CLI 的 `AfterAgent`，以及 OpenCode 的 `session.idle` / `session.error`，相比日志轮询能提供更及时、更准确的完成信号；而在当前集成里，Codex 仍以 Watch 作为主要完成提醒路径。
 
 ## 🚀 快速开始
 
 ### Windows 用户
 
-1. 从 [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases) 下载最新的 `ai-cli-complete-notify-x.x.x.zip`
+1. 从 [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases) 下载最新的 `ai-cli-complete-notify-<版本号>-portable-win-x64.zip`
 2. 压缩包解压后放到任意目录（如 `D:\Tools\`）
 3. 复制 `.env.example` 为 `.env`，按照里面的要求填写通知配置
 4. 双击运行桌面应用
@@ -91,7 +92,7 @@ npm run dev
 
 - **顶部栏**：语言切换、Watch 监听开关、窗口控制
 - **通道配置**：配置 Webhook、Telegram、邮件等通知渠道
-- **来源设置**：为 Claude / Codex / Gemini 分别设置启用状态和耗时阈值
+- **来源设置**：为 Claude / Codex / OpenCode / Gemini 分别设置启用状态和耗时阈值
 - **监听配置**：设置轮询间隔和去抖时间，支持智能调整
 - **确认提醒（默认关闭）**：仅在 Watch 监听生效。开启后，仅当 Codex 出现交互式选项框（需要你选择/提交，Plan 模式）时提醒；不会因普通输出文本触发。同一轮只提醒一次：触发“确认提醒”后本轮不再发送“任务完成提醒”。
 - **监听日志**：本地持久化，可一键打开，并支持保留天数设置。
@@ -187,7 +188,7 @@ wslpath -w ~/.codex
 node ai-reminder.js notify --source claude --task "任务完成"
 ```
 
-### 原生 Hook 模式（推荐用于 Claude Code / Gemini CLI）
+### 原生 Hook / 插件模式（推荐用于 Claude Code / Gemini CLI / OpenCode）
 
 ```bash
 # 查看当前 Hook 状态
@@ -199,6 +200,12 @@ node ai-reminder.js hooks install --target claude
 # 安装 Gemini CLI Hook
 node ai-reminder.js hooks install --target gemini
 
+# 安装 OpenCode 全局插件
+node ai-reminder.js hooks install --target opencode
+
+# 预览将要写入的 Hook / 插件内容
+node ai-reminder.js hooks preview --target opencode
+
 # 卸载某个 Hook
 node ai-reminder.js hooks uninstall --target claude
 ```
@@ -206,6 +213,7 @@ node ai-reminder.js hooks uninstall --target claude
 说明：
 - Claude Code 当前使用原生 `Stop` Hook 事件。
 - Gemini CLI 当前使用原生 `AfterAgent` Hook 事件。
+- OpenCode 当前使用全局插件，监听 `session.idle` / `session.error` 事件。
 - 当前集成下，Codex 的任务完成提醒仍主要通过 Watch 模式处理。
 
 ### 日志监听模式（推荐）
@@ -246,12 +254,22 @@ node ai-reminder.js stop --source gemini --task "构建项目"
 
 ### 常用参数
 
-- `--source` / `--sources`：指定 AI 来源（claude / codex / gemini / all）
+- `--source` / `--sources`：指定 AI 来源（claude / codex / opencode / gemini / all）。其中 `watch --sources all` 当前覆盖 Claude / Codex / Gemini；OpenCode 走上面的插件方案。
 - `--task`：任务描述
 - `--interval-ms`：轮询间隔（毫秒）
 - `--gemini-quiet-ms`：Gemini 去抖时间（毫秒）
 - `--claude-quiet-ms`：Claude 去抖时间（毫秒）
 - `--force`：强制发送通知，忽略阈值
+
+### 诊断 / 查看
+
+```bash
+# 查看 settings.json、状态文件、watch 日志目录等路径
+node ai-reminder.js paths
+
+# 查看当前生效配置
+node ai-reminder.js config
+```
 
 ## ⚙️ 配置说明
 
@@ -354,17 +372,26 @@ Windows 说明：
 
 - ⏱️ **阈值功能**需要有计时数据（通过 `run` / `start-stop` / `watch` 模式），`notify` 命令会忽略阈值直接发送
 - 🔗 **Webhook** 飞书默认使用 post 格式；开启“Webhook 使用飞书卡片格式”仅对飞书生效。企业微信/钉钉会自动使用文本格式并根据返回 `errcode` 判断是否成功
+- ⌚ **手环/手表提醒**当前没有独立通道，通常通过你现有的手机通知同步、Webhook 中转或 Telegram / 邮件等链路间接实现
 - 🚀 **开机自启**功能在"高级"选项卡中配置（支持 Windows / macOS）
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
 - 💡 **EXE 启动默认开启 Watch 监听**：如不需要可在顶部开关关闭。
-- 🪝 **Hooks 模式**更适合 Claude Code / Gemini CLI，因为它直接使用原生完成事件；开启 Hooks 后，Watch 主要保留给 Codex。
+- 🪝 **Hooks / 插件模式**更适合 Claude Code / Gemini CLI / OpenCode，因为它直接使用显式完成事件；开启后，Watch 主要保留给 Codex。
 - ✅ **确认提醒开关建议（默认关闭）**：当 AI 经常问你“是否继续/是否授权/请确认”时建议开启；如果你只想收到“任务完成提醒”，建议保持关闭，避免中间输出触发提醒。注意：若你在 `.env` 里设置了 `CODEX_COMPLETION_ONLY=1`，Codex 的确认提醒会被禁用（需改为 `0` 或删除该项）。
 - 🧭 **点击切回**更可靠，但仍受系统焦点限制；若是 VSCode 插件场景，建议选择 VSCode 目标，并确保 VSCode 未最小化/未被专注助手拦截
 
 ## 版本历史
 
 > `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
+
+### 2.2.0
+
+- 新增 `OpenCode` 第四个来源，可独立设置启用状态、阈值和通道开关。
+- 新增 `hooks install --target opencode`，会在 `~/.config/opencode/plugins/` 下写入全局插件，并通过 `session.idle` / `session.error` 触发提醒。
+- OpenCode 的完成提醒改为事件驱动，不再依赖 watch 去猜测完成时机。
+- Hooks 面板、测试面板和 CLI 已全面接入 `OpenCode`，可直接安装、查看状态和测试提醒。
+- 托盘体验补强：增加专用托盘图标，并修复部分场景下隐藏到托盘后图标不明显、窗口恢复不稳定的问题。
 
 ### 2.1.0
 

@@ -12,6 +12,10 @@ const LOGO_MAP = {
     light: 'img_v3_02u8_e7160911-b3b6-49fe-98b6-4fcf92f857fg',
     dark: 'img_v3_02u8_789a1ca1-bfe3-4091-a2a3-55a264d2383g'
   },
+  'opencode': {
+    light: 'img_v3_02104_f9d256c4-a7c9-4631-854d-d66d72b6159g',
+    dark: 'img_v3_02104_f9d256c4-a7c9-4631-854d-d66d72b6159g'
+  },
   'claude': {
     light: 'img_v3_02u8_5ee72144-4bc3-4242-add0-e60ac3ad800g',
     dark: 'img_v3_02u8_5ee72144-4bc3-4242-add0-e60ac3ad800g'

@@ -3,6 +3,8 @@ use std::{env, fs, path::PathBuf};
 use tauri::{Emitter, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
+const TRAY_ICON: tauri::image::Image<'_> = tauri::include_image!("./icons/icon.png");
+
 #[derive(Clone, Copy)]
 struct LaunchState {
     silent_start_requested: bool,
@@ -96,6 +98,25 @@ fn read_close_behavior() -> CloseBehavior {
         .unwrap_or(CloseBehavior::Ask)
 }
 
+fn read_silent_start_setting() -> bool {
+    let settings_path = get_data_dir().join("settings.json");
+    let bytes = match fs::read(&settings_path) {
+        Ok(bytes) => bytes,
+        Err(_) => return false,
+    };
+
+    let parsed: serde_json::Value = match serde_json::from_slice(&bytes) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+
+    parsed
+        .get("ui")
+        .and_then(|ui| ui.get("silentStart"))
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+}
+
 fn build_startup_status(app: &tauri::AppHandle, launch_state: LaunchState) -> StartupStatus {
     match app.autolaunch().is_enabled() {
         Ok(enabled) => StartupStatus {
@@ -151,9 +172,13 @@ pub fn run() {
             set_autostart_enabled
         ])
         .setup(|app| {
-            app.manage(LaunchState {
+            let launch_state = LaunchState {
                 silent_start_requested: std::env::args().any(|arg| arg == "--silent-start"),
-            });
+            };
+            let should_stay_hidden =
+                launch_state.silent_start_requested || read_silent_start_setting();
+
+            app.manage(launch_state);
 
             // Build system tray
             let tray_menu = tauri::menu::MenuBuilder::new(app)
@@ -162,15 +187,11 @@ pub fn run() {
                 .text("quit", "Quit")
                 .build()?;
 
-            let mut tray = tauri::tray::TrayIconBuilder::with_id("main")
+            let tray = tauri::tray::TrayIconBuilder::with_id("main")
+                .icon(TRAY_ICON.clone())
                 .menu(&tray_menu)
-                .tooltip("AI CLI Complete Notify");
-
-            if let Some(icon) = app.default_window_icon().cloned() {
-                tray = tray.icon(icon);
-            }
-
-            let _tray = tray
+                .tooltip("AI CLI Complete Notify")
+                .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "show" => {
                         restore_main_window(app);
@@ -193,6 +214,12 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            let _ = tray.set_visible(true);
+
+            if !should_stay_hidden {
+                restore_main_window(app.handle());
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -201,6 +228,9 @@ pub fn run() {
 
                 match read_close_behavior() {
                     CloseBehavior::Tray => {
+                        if let Some(tray) = window.app_handle().tray_by_id("main") {
+                            let _ = tray.set_visible(true);
+                        }
                         let _ = window.hide();
                     }
                     CloseBehavior::Exit => {

@@ -16,7 +16,7 @@ export default function TestPanel({ config }: Props) {
   const [log, setLog] = useState('');
   const [sending, setSending] = useState(false);
   const useHookSimulation =
-    config.ui.notificationMode === 'hooks' && (source === 'claude' || source === 'gemini');
+    source === 'opencode' || (config.ui.notificationMode === 'hooks' && (source === 'claude' || source === 'gemini'));
 
   const handleSend = async () => {
     setSending(true);
@@ -30,12 +30,10 @@ export default function TestPanel({ config }: Props) {
         '--force',
       ];
       if (useHookSimulation) args.push('--from-hook');
-      const out = await sidecar([
-        ...args,
-      ]);
+      const out = await sidecar(args);
       setLog(out.stdout || out.stderr || 'Done');
-    } catch (e) {
-      setLog(`Error: ${e}`);
+    } catch (error) {
+      setLog(`Error: ${error}`);
     } finally {
       setSending(false);
     }
@@ -52,6 +50,7 @@ export default function TestPanel({ config }: Props) {
         >
           <option value="claude">Claude</option>
           <option value="codex">Codex</option>
+          <option value="opencode">OpenCode</option>
           <option value="gemini">Gemini</option>
         </select>
 
@@ -86,7 +85,7 @@ export default function TestPanel({ config }: Props) {
       </pre>
       {useHookSimulation && (
         <div className="mt-2 text-xs text-muted leading-relaxed">
-          当前会模拟 hook 触发路径，等价于 Claude Code / Gemini CLI 调用 `notify --from-hook`。
+          当前会模拟事件回调路径，等价于 Claude Code / Gemini CLI 调用 `notify --from-hook`，或 OpenCode 插件回调该命令。
         </div>
       )}
     </Panel>

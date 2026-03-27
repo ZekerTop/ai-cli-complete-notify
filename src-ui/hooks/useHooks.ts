@@ -18,7 +18,7 @@ export function useHooks() {
   }, []);
 
   const install = useCallback(
-    async (target: 'claude' | 'gemini') => {
+    async (target: 'claude' | 'gemini' | 'opencode') => {
       try {
         const out = await sidecar(['hooks', 'install', '--target', target]);
         await refreshStatus();
@@ -31,7 +31,7 @@ export function useHooks() {
   );
 
   const uninstall = useCallback(
-    async (target: 'claude' | 'gemini') => {
+    async (target: 'claude' | 'gemini' | 'opencode') => {
       try {
         const out = await sidecar(['hooks', 'uninstall', '--target', target]);
         await refreshStatus();
@@ -43,7 +43,7 @@ export function useHooks() {
     [refreshStatus],
   );
 
-  const refreshPreview = useCallback(async (target: 'claude' | 'gemini') => {
+  const refreshPreview = useCallback(async (target: 'claude' | 'gemini' | 'opencode') => {
     try {
       const out = await sidecar(['hooks', 'preview', '--target', target]);
       setPreview(out.stdout);

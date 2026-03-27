@@ -2,41 +2,42 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.1.0)
+# AI CLI Complete Notify (v2.2.0)
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
 English | [中文](README_zh.md)
 
+![UI Preview](docs/images/通道.png)
 </div>
 
 ### 📖 Introduction
 
-An intelligent task completion notification tool for Claude Code / Codex / Gemini, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
+An intelligent task completion notification tool for Claude Code / Codex / OpenCode / Gemini, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
 
 **Supported Notification Methods:**
 
 📱 Webhook (Feishu/DingTalk/WeCom) • 💬 Telegram Bot • 📧 Email (SMTP)
 
-🖥️ Desktop Notifications • 🔊 Sound/TTS Alerts • ⌚ Smart Band Alerts
+🖥️ Desktop Notifications • 🔊 Sound/TTS Alerts • ⌚ Smart Band / Watch Alerts (via existing notification channels)
 
 
 ## ✨ Key Features(For more detailed update logs, please refer to the end of the article)
 
 - 🎯 **Smart Debouncing**: Automatically adjusts notification timing based on task type - 60s for tool calls, only 15s without tool calls
-- 🔀 **Source Control**: Independent enable/disable and threshold settings for Claude / Codex / Gemini
+- 🔀 **Source Control**: Independent enable/disable and threshold settings for Claude / Codex / OpenCode / Gemini
 - 📡 **Multi-Channel Push**: Support multiple notification methods simultaneously to ensure message delivery
 - ⏱️ **Duration Threshold**: Only notify when tasks exceed the set duration to avoid frequent interruptions
-- 🪝 **Hooks + Watch Integration**: Claude Code / Gemini CLI can use native hooks for near-instant alerts, while Codex continues through log watching
+- 🪝 **Hooks + Watch Integration**: Claude Code / Gemini CLI can use native hooks, OpenCode can use a global plugin, while Codex continues through log watching
 - 🧠 **AI Summary (Optional)**: Generate a short summary quickly; fallback to the original task if it times out
 - 🖥️ **Desktop Application**: GUI configuration with language switching, tray hiding, and auto-start
 - 🔐 **Configuration Separation**: Runtime configuration separated from sensitive information for security
 
 ## 💡 Recommended Configuration
 
-**Important**: For the best experience, it's recommended to grant AI assistants **full file read/write permissions** when using Claude Code / Codex / Gemini.
+**Important**: For the best experience, it's recommended to grant AI assistants **full file read/write permissions** when using Claude Code / Codex / OpenCode / Gemini.
 
 Benefits:
 - ✅ Ensures task logs are correctly recorded to local files
@@ -48,20 +49,20 @@ Benefits:
 
 - Claude Code often splits a request into sub-tasks. To avoid spam, this tool only notifies after the whole turn completes.
 - Log monitoring relies on a quiet period to confirm completion, so notifications are not instant (default 60s with tool calls, 15s without).
-- For the fastest and cleanest alerts, prefer Hooks for Claude Code / Gemini CLI; keep Watch for Codex or as a general fallback mode.
+- For the fastest and cleanest alerts, prefer Hooks for Claude Code / Gemini CLI and the global plugin for OpenCode; keep Watch for Codex or as a general fallback mode.
 
 ## Hooks vs Watch
 
-- **Hooks** use native lifecycle events emitted by the AI CLI itself. For Claude Code and Gemini CLI, that means reminders can fire closer to the real finish point instead of waiting for a quiet-period guess.
+- **Hooks / plugin events** use explicit lifecycle events emitted by the AI CLI itself. For Claude Code, Gemini CLI, and OpenCode, that means reminders can fire closer to the real finish point instead of waiting for a quiet-period guess.
 - **Hooks** do not require a long-running background watcher for those tools, which reduces idle overhead and lowers the chance of log-parsing false positives.
 - **Watch** remains the universal fallback. It works well for Codex and for cases where hooks are not configured, but it depends on local logs and debounce time to infer that a turn has ended.
-- In practice, Hooks were added mainly because Claude Code's `Stop` event and Gemini CLI's `AfterAgent` event provide more timely and accurate completion signals than watch-based log polling for those two tools. In the current integration, Codex still uses Watch as the main completion path.
+- In practice, Hooks / plugin events were added because Claude Code's `Stop`, Gemini CLI's `AfterAgent`, and OpenCode's `session.idle` / `session.error` events provide more timely and accurate completion signals than watch-based log polling. In the current integration, Codex still uses Watch as the main completion path.
 
 ## 🚀 Quick Start
 
 ### Windows Users
 
-1. Download the latest `ai-cli-complete-notify-x.x.x.zip` from [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases)
+1. Download the latest `ai-cli-complete-notify-<version>-portable-win-x64.zip` from [Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases)
 2. Extract the archive and place it in any directory (e.g., `D:\Tools\`)
 3. Copy `.env.example` to `.env` and fill in your notification configuration according to the requirements inside
 4. Double-click to run the desktop application
@@ -90,7 +91,7 @@ npm run dev
 
 - **Top Bar**: Language switching, Watch monitoring toggle, window controls
 - **Channel Configuration**: Configure Webhook, Telegram, Email, and other notification channels
-- **Source Settings**: Set enable status and duration thresholds for Claude / Codex / Gemini separately
+- **Source Settings**: Set enable status and duration thresholds for Claude / Codex / OpenCode / Gemini separately
 - **Monitoring Configuration**: Set polling interval and debounce time with smart adjustment support
 - **Confirm reminder (default: OFF)**: Effective only in Watch mode. When enabled, it triggers only when Codex shows an interactive choice prompt that requires your selection or submission (Plan mode); normal output text will not trigger it. Only one reminder is sent per turn: once a confirm reminder is triggered, that turn will not send a separate task-complete reminder.
 - **Watch logs**: Persisted locally with one-click open and retention days.
@@ -103,7 +104,7 @@ npm run dev
 ![Global Channels](docs/images/通道.png)
 ![Source Settings](docs/images/各cli来源.png)
 ![Interactive monitoring](docs/images/交互式监听.png)
-![Hook integration](docs/images/Hook集成.png)  
+![Hook Integration](docs/images/Hook集成.png)
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
 
@@ -186,7 +187,7 @@ Notes:
 node ai-reminder.js notify --source claude --task "Task completed"
 ```
 
-### Native Hooks Mode (Recommended for Claude Code / Gemini CLI)
+### Native Hooks / Plugin Mode (Recommended for Claude Code / Gemini CLI / OpenCode)
 
 ```bash
 # Check current hook status
@@ -198,6 +199,12 @@ node ai-reminder.js hooks install --target claude
 # Install Gemini CLI hook
 node ai-reminder.js hooks install --target gemini
 
+# Install OpenCode global plugin
+node ai-reminder.js hooks install --target opencode
+
+# Preview the hook / plugin file that will be written
+node ai-reminder.js hooks preview --target opencode
+
 # Remove a hook
 node ai-reminder.js hooks uninstall --target claude
 ```
@@ -205,6 +212,7 @@ node ai-reminder.js hooks uninstall --target claude
 Notes:
 - Claude Code currently uses the native `Stop` hook event.
 - Gemini CLI currently uses the native `AfterAgent` hook event.
+- OpenCode currently uses a global plugin and listens to `session.idle` / `session.error`.
 - In the current integration, Codex completion reminders are still handled mainly through Watch mode.
 
 ### Log Monitoring Mode (Recommended)
@@ -243,12 +251,22 @@ node ai-reminder.js stop --source gemini --task "Build project"
 
 ### Common Parameters
 
-- `--source` / `--sources`: Specify AI source (claude / codex / gemini / all)
+- `--source` / `--sources`: Specify AI source (claude / codex / opencode / gemini / all). `watch --sources all` currently covers Claude / Codex / Gemini; OpenCode uses the plugin path above.
 - `--task`: Task description
 - `--interval-ms`: Polling interval (milliseconds)
 - `--gemini-quiet-ms`: Gemini debounce time (milliseconds)
 - `--claude-quiet-ms`: Claude debounce time (milliseconds)
 - `--force`: Force send notification, ignore threshold
+
+### Diagnostics / Inspection
+
+```bash
+# Print settings.json, state file, and watch-log paths
+node ai-reminder.js paths
+
+# Print the current effective runtime config
+node ai-reminder.js config
+```
 
 ## ⚙️ Configuration
 
@@ -352,17 +370,26 @@ Windows notes:
 
 - ⏱️ **Threshold function** requires timing data (via `run` / `start-stop` / `watch` mode), `notify` command ignores threshold and sends directly
 - 🔗 **Webhook** uses Feishu post format by default; "Use Feishu card format" only applies to Feishu. WeCom/DingTalk will use text format and validate success by `errcode`.
+- ⌚ **Smart band / watch alerts** do not have a dedicated native channel yet; they are typically achieved indirectly through phone notification sync, webhook relays, Telegram, or email pipelines.
 - 🚀 **Auto-start on boot** is configured in the "Advanced" tab (supports Windows / macOS)
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
 - 💡 **EXE starts with Watch enabled by default**: toggle it in the top bar if you don?t need it.
-- 🪝 **Hooks mode** is the preferred choice for Claude Code / Gemini CLI because it uses native completion events; when Hooks mode is enabled, Watch mainly remains for Codex.
+- 🪝 **Hooks / plugin mode** is the preferred choice for Claude Code / Gemini CLI / OpenCode because it uses explicit completion events; when enabled, Watch mainly remains for Codex.
 - ✅ **Confirm prompt toggle guidance (default: OFF)**: turn it on if AI often asks “confirm/approve/continue”; keep it off if you only want final completion alerts without intermediate interruptions. Note: if you set `CODEX_COMPLETION_ONLY=1` in `.env`, Codex confirm alerts are disabled (set it to `0` or remove it).
 - 🧭 **Click to return** is more reliable but still best-effort due to OS focus rules; for VSCode extensions choose the VSCode target and ensure VSCode is not minimized
 
 ## Changelog
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
+
+### 2.2.0
+
+- Added `OpenCode` as a fourth source with independent enable/threshold/channel settings.
+- Added `hooks install --target opencode`, which writes a global plugin under `~/.config/opencode/plugins/` and triggers reminders from `session.idle` / `session.error`.
+- OpenCode completion reminders now use event callbacks instead of watch-based guessing.
+- The Hooks panel, Test panel, and CLI now fully support `OpenCode`, including install, status, and reminder testing.
+- Tray behavior was refined with dedicated tray icons and more reliable hide-to-tray visibility and window restore behavior.
 
 ### 2.1.0
 

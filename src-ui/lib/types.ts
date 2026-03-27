@@ -84,6 +84,7 @@ export interface AppConfig {
 export interface HookStatus {
   claude: { installed: boolean; settingsPath: string };
   gemini: { installed: boolean; settingsPath: string };
+  opencode: { installed: boolean; settingsPath: string };
 }
 
 export interface WatchPayload {
@@ -94,7 +95,7 @@ export interface WatchPayload {
 }
 
 export type ChannelKey = 'webhook' | 'telegram' | 'desktop' | 'sound' | 'email';
-export type SourceKey = 'claude' | 'codex' | 'gemini';
+export type SourceKey = 'claude' | 'codex' | 'opencode' | 'gemini';
 
 export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] = [
   { key: 'webhook', titleKey: 'channel.webhook', descKey: 'channel.webhook.desc' },
@@ -107,5 +108,6 @@ export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] 
 export const SOURCES: { key: SourceKey; titleKey: string; descKey: string }[] = [
   { key: 'claude', titleKey: 'source.claude', descKey: 'source.claude.desc' },
   { key: 'codex', titleKey: 'source.codex', descKey: 'source.codex.desc' },
+  { key: 'opencode', titleKey: 'source.opencode', descKey: 'source.opencode.desc' },
   { key: 'gemini', titleKey: 'source.gemini', descKey: 'source.gemini.desc' },
 ];

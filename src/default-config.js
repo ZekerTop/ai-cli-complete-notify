@@ -101,6 +101,17 @@ const DEFAULT_CONFIG = {
         email: false
       }
     },
+    opencode: {
+      enabled: true,
+      minDurationMinutes: 0,
+      channels: {
+        webhook: true,
+        telegram: false,
+        sound: true,
+        desktop: true,
+        email: false
+      }
+    },
     gemini: {
       enabled: true,
       minDurationMinutes: 0,

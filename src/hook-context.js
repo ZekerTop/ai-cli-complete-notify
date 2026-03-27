@@ -222,8 +222,51 @@ function getClaudeHookNotificationContext(hookContext, defaultTaskInfo) {
   };
 }
 
+function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
+  if (!hookContext || hookContext.hook_source !== 'opencode-plugin') return null;
+
+  const eventName = String(hookContext.hook_event_name || '').trim();
+  if (!eventName) return null;
+
+  const assistantText = normalizeText(
+    hookContext.output_content
+      || hookContext.assistant_message
+      || hookContext.error_message
+      || ''
+  );
+  const defaultTask = String(defaultTaskInfo || '').trim();
+
+  if (eventName === 'session.error') {
+    const failureSummary = truncate(
+      hookContext.error_message
+        || assistantText
+        || 'OpenCode task failed',
+      88,
+    );
+    return {
+      notifyKind: 'error',
+      taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : `OpenCode 失败: ${failureSummary}`,
+      outputContent: assistantText,
+      summaryContext: assistantText ? { assistantMessage: assistantText } : undefined,
+      skipSummary: true,
+      delayMs: 0,
+    };
+  }
+
+  if (eventName !== 'session.idle') return null;
+
+  return {
+    taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : 'OpenCode 完成',
+    outputContent: assistantText,
+    summaryContext: assistantText ? { assistantMessage: assistantText } : undefined,
+    skipSummary: !assistantText,
+    delayMs: 0,
+  };
+}
+
 module.exports = {
   extractClaudeAssistantText,
   getClaudeHookNotificationContext,
+  getOpenCodeHookNotificationContext,
   looksLikeClaudeFailure,
 };

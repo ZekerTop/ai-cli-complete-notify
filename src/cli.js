@@ -10,7 +10,7 @@ const {
   getWatchLogPath,
   getLatestWatchLogPath
 } = require('./paths');
-const { getClaudeHookNotificationContext } = require('./hook-context');
+const { getClaudeHookNotificationContext, getOpenCodeHookNotificationContext } = require('./hook-context');
 const { spawn } = require('child_process');
 const path = require('path');
 
@@ -32,19 +32,21 @@ function printHelp() {
   ${invoke} watch  [--sources all] [--interval-ms 1000] [--gemini-quiet-ms 3000] [--claude-quiet-ms 60000] [--quiet]
   ${invoke} paths
   ${invoke} hooks  status
-  ${invoke} hooks  install   --target claude|gemini
-  ${invoke} hooks  uninstall --target claude|gemini
+  ${invoke} hooks  install   --target claude|gemini|opencode
+  ${invoke} hooks  uninstall --target claude|gemini|opencode
+  ${invoke} hooks  preview   --target claude|gemini|opencode
   ${invoke} config
 
 说明:
-  - source 支持: claude / codex / gemini
+  - source 支持: claude / codex / opencode / gemini
   - 阈值提醒建议使用 start/stop（自动计算耗时）
   - 最省事的接入方式是 run：由 ${PRODUCT_NAME} 负责计时并在命令结束后提醒
-  - 交互式/VSCode 插件场景建议使用 watch：自动监听本机日志并在每次回复完成后提醒
-  - hooks：利用 Claude Code / Gemini CLI 的原生 hooks 机制实现即时通知
+  - 交互式 / VSCode 插件场景建议使用 watch：自动监听本机日志并在每次回复完成后提醒（Claude / Codex / Gemini）
+  - hooks：Claude Code / Gemini CLI 使用原生 hooks；OpenCode 通过全局 plugin 接收 session.idle / session.error 事件
 
 配置:
   - settings: ${getConfigPath()}
+  - dataDir: ${getDataDir()}
   - env: WEBHOOK_URLS, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_HOST/EMAIL_USER/EMAIL_PASS/EMAIL_FROM/EMAIL_TO
 `);
 }
@@ -61,6 +63,10 @@ function sleep(ms) {
   const delay = Number(ms);
   if (!Number.isFinite(delay) || delay <= 0) return Promise.resolve();
   return new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+function isValidHookTarget(target) {
+  return target === 'claude' || target === 'gemini' || target === 'opencode';
 }
 
 async function runCli(argv) {
@@ -100,7 +106,7 @@ async function runCli(argv) {
   if (command === 'hooks') {
     const { getHookStatus, installHook, uninstallHook, getHookConfigPreview } = require('./hooks');
     const subCommand = positional[1] || 'status';
-    const target = flags.target || flags.t || '';
+    const target = String(flags.target || flags.t || '');
 
     if (subCommand === 'status') {
       const status = getHookStatus();
@@ -109,27 +115,27 @@ async function runCli(argv) {
     }
 
     if (subCommand === 'install') {
-      if (!target || (target !== 'claude' && target !== 'gemini')) {
-        console.error('请指定 --target claude 或 --target gemini');
+      if (!isValidHookTarget(target)) {
+        console.error('请指定 --target claude / gemini / opencode');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = installHook(target);
-      console.log(result.ok ? `已安装 ${target} hook → ${result.settingsPath}` : `安装失败: ${result.error}`);
+      console.log(result.ok ? `已安装 ${target} 集成 -> ${result.settingsPath}` : `安装失败: ${result.error}`);
       return { ok: result.ok, mode: 'hooks', subCommand: 'install', result };
     }
 
     if (subCommand === 'uninstall') {
-      if (!target || (target !== 'claude' && target !== 'gemini')) {
-        console.error('请指定 --target claude 或 --target gemini');
+      if (!isValidHookTarget(target)) {
+        console.error('请指定 --target claude / gemini / opencode');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = uninstallHook(target);
-      console.log(result.ok ? `已卸载 ${target} hook` : `卸载失败: ${result.error}`);
+      console.log(result.ok ? `已卸载 ${target} 集成` : `卸载失败: ${result.error}`);
       return { ok: result.ok, mode: 'hooks', subCommand: 'uninstall', result };
     }
 
     if (subCommand === 'preview') {
-      const previewTarget = target || 'claude';
+      const previewTarget = isValidHookTarget(target) ? target : 'claude';
       const preview = getHookConfigPreview(previewTarget);
       console.log(preview);
       return { ok: true, mode: 'hooks', subCommand: 'preview' };
@@ -229,7 +235,9 @@ async function runCli(argv) {
     const hookNotificationContext =
       fromHook && source === 'claude'
         ? getClaudeHookNotificationContext(hookContext, effectiveTask)
-        : null;
+        : fromHook && source === 'opencode'
+          ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
+          : null;
 
     if (hookNotificationContext && hookNotificationContext.skip) {
       const skipped = {
@@ -294,7 +302,7 @@ async function runCli(argv) {
 function runChild(childArgv) {
   return new Promise((resolve) => {
     const command = String(childArgv[0] || '');
-    const args = childArgv.slice(1).map((a) => String(a));
+    const args = childArgv.slice(1).map((arg) => String(arg));
 
     let settled = false;
     const done = (result) => {
@@ -314,7 +322,6 @@ function runChild(childArgv) {
         return;
       }
 
-      // Windows 下对 .cmd/.bat 等情况做一次 cmd.exe 兜底
       const cmdExe = process.env.ComSpec || 'cmd.exe';
       const cmdLine = [command, ...args].map(quoteForCmd).join(' ');
       const fallback = spawn(cmdExe, ['/d', '/s', '/c', cmdLine], {
@@ -351,7 +358,7 @@ function buildAutoTask(childArgv, exitCode) {
 }
 
 function formatCommandPreview(argv) {
-  const parts = argv.map((p) => quoteIfNeeded(String(p)));
+  const parts = argv.map((value) => quoteIfNeeded(String(value)));
   const joined = parts.join(' ');
   if (joined.length <= 120) return joined;
   return joined.slice(0, 117) + '...';
@@ -368,9 +375,9 @@ function printResult(result) {
     console.log(`已跳过提醒: ${result.reason}`);
     return;
   }
-  for (const r of result.results) {
-    const status = r.ok ? 'OK' : 'FAIL';
-    console.log(`${status} ${r.channel}${r.error ? `: ${r.error}` : ''}`);
+  for (const item of result.results) {
+    const status = item.ok ? 'OK' : 'FAIL';
+    console.log(`${status} ${item.channel}${item.error ? `: ${item.error}` : ''}`);
   }
 }
 

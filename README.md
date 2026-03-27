@@ -436,6 +436,10 @@ Windows notes:
 
 Issues and Pull Requests are welcome!
 
+## 🔗 Links
+
+- [LINUX DO](https://linux.do/)
+
 ---
 
 **Enjoy smart notifications and let AI work for you!** 🎉

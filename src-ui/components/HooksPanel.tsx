@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppConfig, HookStatus } from '@/lib/types';
+import { sidecar } from '@/lib/sidecar';
 import Panel from './ui/Panel';
 
 type HookTarget = 'claude' | 'gemini' | 'opencode';
@@ -18,6 +19,7 @@ interface Props {
   config: AppConfig;
   onUpdate: (fn: (c: AppConfig) => AppConfig) => void;
   hooks: HooksState;
+  onHooksStatusChange?: (uninstalled: string[]) => void;
 }
 
 const TARGETS: { key: HookTarget; title: string; descKey: string }[] = [
@@ -26,13 +28,18 @@ const TARGETS: { key: HookTarget; title: string; descKey: string }[] = [
   { key: 'opencode', title: 'OpenCode', descKey: 'hooks.opencode.desc' },
 ];
 
-export default function HooksPanel({ config, onUpdate, hooks }: Props) {
+export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChange }: Props) {
   const { t } = useTranslation();
   const [previewTarget, setPreviewTarget] = useState<HookTarget>('claude');
   const [messages, setMessages] = useState<Record<HookTarget, string>>({
     claude: '',
     gemini: '',
     opencode: '',
+  });
+  const [loading, setLoading] = useState<Record<HookTarget, boolean>>({
+    claude: false,
+    gemini: false,
+    opencode: false,
   });
 
   useEffect(() => {
@@ -46,14 +53,41 @@ export default function HooksPanel({ config, onUpdate, hooks }: Props) {
     }, 3000);
   };
 
+  const checkAndNotifyStatus = async () => {
+    if (!onHooksStatusChange) return;
+    const status = await hooks.refreshStatus();
+    if (!status) return;
+    const uninstalled: string[] = [];
+    if (!status.claude?.installed) uninstalled.push('Claude Code');
+    if (!status.gemini?.installed) uninstalled.push('Gemini CLI');
+    if (!status.opencode?.installed) uninstalled.push('OpenCode');
+    onHooksStatusChange(uninstalled);
+  };
+
   const handleInstall = async (target: HookTarget) => {
+    setLoading((c) => ({ ...c, [target]: true }));
     const result = await hooks.install(target);
+    if (target === previewTarget) await hooks.refreshPreview(target);
+    setLoading((c) => ({ ...c, [target]: false }));
     setTransientMessage(target, result.ok ? t('hooks.installOk') : `${t('hooks.installFail')}: ${result.output}`);
+    await checkAndNotifyStatus();
   };
 
   const handleUninstall = async (target: HookTarget) => {
+    setLoading((c) => ({ ...c, [target]: true }));
     const result = await hooks.uninstall(target);
+    if (target === previewTarget) await hooks.refreshPreview(target);
+    setLoading((c) => ({ ...c, [target]: false }));
     setTransientMessage(target, result.ok ? t('hooks.uninstallOk') : `${t('hooks.uninstallFail')}: ${result.output}`);
+    await checkAndNotifyStatus();
+  };
+
+  const btnStyle = {
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))',
+  };
+
+  const openFile = (filePath: string) => {
+    sidecar(['open-file', filePath]).catch((e) => console.error('open file failed:', e));
   };
 
   return (
@@ -86,6 +120,7 @@ export default function HooksPanel({ config, onUpdate, hooks }: Props) {
           const info = hooks.status?.[target.key];
           const installed = info?.installed ?? false;
           const message = messages[target.key];
+          const busy = loading[target.key];
           return (
             <div key={target.key} className="surface-card min-w-0 p-4">
               <div className="flex items-center justify-between gap-2.5 mb-2">
@@ -107,34 +142,36 @@ export default function HooksPanel({ config, onUpdate, hooks }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => handleInstall(target.key)}
-                  disabled={installed}
+                  disabled={installed || busy}
                   className={`px-3 py-1.5 rounded-xl border text-xs transition-colors disabled:cursor-not-allowed ${
                     installed
                       ? 'border-white/[0.12] bg-white/[0.05] text-muted'
                       : 'border-white/[0.14] bg-gradient-to-br from-accent to-accent2 text-white cursor-pointer'
                   }`}
                 >
-                  {installed ? t('hooks.status.installed') : t('hooks.install')}
+                  {busy && !installed ? '...' : installed ? t('hooks.status.installed') : t('hooks.install')}
                 </button>
                 <button
                   onClick={() => handleUninstall(target.key)}
-                  disabled={!installed}
+                  disabled={!installed || busy}
                   className={`px-3 py-1.5 rounded-xl border text-xs transition-colors disabled:cursor-not-allowed ${
                     installed
                       ? 'border-white/[0.14] text-[var(--text)] cursor-pointer'
                       : 'border-white/[0.12] bg-white/[0.04] text-muted'
                   }`}
-                  style={
-                    installed
-                      ? {
-                          background:
-                            'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))',
-                        }
-                      : undefined
-                  }
+                  style={installed ? btnStyle : undefined}
                 >
-                  {t('hooks.uninstall')}
+                  {busy && installed ? '...' : t('hooks.uninstall')}
                 </button>
+                {info?.settingsPath && (
+                  <button
+                    onClick={() => openFile(info.settingsPath)}
+                    className="px-3 py-1.5 rounded-xl border border-white/[0.14] text-xs cursor-pointer"
+                    style={btnStyle}
+                  >
+                    {t('hooks.openFile')}
+                  </button>
+                )}
                 {message && <span className="text-xs text-muted ml-1">{message}</span>}
               </div>
             </div>
@@ -159,13 +196,19 @@ export default function HooksPanel({ config, onUpdate, hooks }: Props) {
           <button
             onClick={() => navigator.clipboard.writeText(hooks.preview)}
             className="px-2.5 py-1 rounded-[10px] border border-white/[0.14] text-xs cursor-pointer"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))',
-            }}
+            style={btnStyle}
           >
             {t('hooks.copy')}
           </button>
+          {hooks.status?.[previewTarget]?.settingsPath && (
+            <button
+              onClick={() => openFile(hooks.status![previewTarget]!.settingsPath)}
+              className="px-2.5 py-1 rounded-[10px] border border-white/[0.14] text-xs cursor-pointer"
+              style={btnStyle}
+            >
+              {t('hooks.openFile')}
+            </button>
+          )}
         </div>
         <pre className="mt-2.5 p-2.5 bg-black/25 border border-white/[0.10] rounded-xl text-xs leading-relaxed overflow-auto max-h-[220px] whitespace-pre-wrap break-all">
           {hooks.preview || '...'}

@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.2.0)
+# AI CLI Complete Notify (v2.3.0)
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -189,7 +189,7 @@ wslpath -w ~/.codex
 
 提示：
 - WSL 场景建议优先使用 Webhook / Telegram / 邮件；托盘属于 Windows GUI 功能。
-- 若你在 WSL 里跑 CLI，但想让配置生效，优先写 `.env`（会覆盖 `settings.json`）。
+- 若你在 WSL 里跑 CLI，但想让 webhook、摘要等配置生效，优先写 `.env`；桌面应用里已经保存过的全局通道开关仍以 `settings.json` 为准。
 
 ### 直接通知
 
@@ -294,7 +294,9 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # WEBHOOK_USE_FEISHU_CARD=false
 
 # 桌面通知和声音
+# 作为默认值使用：仅在 settings.json 尚未明确设置对应开关时生效
 NOTIFICATION_ENABLED=true
+# 作为默认值使用：仅在 settings.json 尚未明确设置声音开关时生效
 SOUND_ENABLED=true
 
 # Telegram Bot
@@ -394,6 +396,18 @@ Windows 说明：
 ## 版本历史
 
 > `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
+
+### 2.3.0
+
+- 全局通道开关现在会和来源里的同名通道保持同步：无论关闭还是重新开启，都会同步更新所有来源下对应的通道状态。
+- `.env` 中的 `SOUND_ENABLED` / `NOTIFICATION_ENABLED` 现在只作为默认值使用，不再强行覆盖 `settings.json` 里已经保存的全局通道开关。
+- 修复桌面通知自带系统提示音的问题，Toast 通知现在强制静音，不再触发 Windows 默认提示音。
+- 桌面通知与声音通道并行触发，两者同时到达，不再有先后延迟。
+- 修复 Watch 模式在任务未完成时就提前发送通知的问题，现在始终等待完整的静默期后再提醒。
+- Watch 模式启动时，若检测到 hooks 未安装，会弹出提示，告知用户准确度可能受影响。
+- Hook 安装/卸载操作增加加载状态指示，完成后立即刷新配置预览。
+- Hooks 面板每个 hook 卡片及预览区新增「打开配置文件」按钮，点击直接用系统默认编辑器打开对应文件。
+- 应用启动时自动检查 hooks 安装状态，若 Hooks 模式下有未安装项，顶部显示黄色提示条，告知用户可能会出现提醒时机不够及时、与实际完成状态存在偏差的问题；安装/卸载操作后实时更新提示条状态。
 
 ### 2.2.0
 

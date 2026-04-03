@@ -174,5 +174,6 @@
   "hooks.installOk": "Hook installed",
   "hooks.installFail": "Hook install failed",
   "hooks.uninstallOk": "Hook uninstalled",
-  "hooks.uninstallFail": "Hook uninstall failed"
+  "hooks.uninstallFail": "Hook uninstall failed",
+  "hooks.openFile": "Open config file"
 }

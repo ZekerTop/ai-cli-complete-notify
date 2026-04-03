@@ -86,6 +86,7 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
               <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
                 {CHANNELS.map((ch) => {
                   const active = s.channels[ch.key] ?? false;
+                  const globallyEnabled = config.channels[ch.key]?.enabled ?? false;
                   return (
                     <div
                       key={ch.key}
@@ -95,7 +96,7 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
                       <Switch
                         checked={active}
                         onChange={() => toggleSourceChannel(src.key, ch.key)}
-                        disabled={!s.enabled}
+                        disabled={!s.enabled || !globallyEnabled}
                       />
                     </div>
                   );

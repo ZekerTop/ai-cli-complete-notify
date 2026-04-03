@@ -78,6 +78,19 @@ async function runCli(argv) {
     return { ok: true, mode: 'help' };
   }
 
+  if (command === 'open-file') {
+    const filePath = positional[1] || String(flags.path || flags.p || '');
+    if (!filePath) {
+      console.error(JSON.stringify({ ok: false, error: 'missing file path' }));
+      return { ok: false };
+    }
+    const { exec } = require('child_process');
+    const escaped = filePath.replace(/"/g, '\\"');
+    exec(`start "" "${escaped}"`);
+    console.log(JSON.stringify({ ok: true }));
+    return { ok: true, mode: 'open-file' };
+  }
+
   if (command === 'config') {
     if (flags.set) {
       const config = loadConfig();
@@ -162,6 +175,10 @@ async function runCli(argv) {
       logWriter.writeLine(line);
       if (!quiet) console.log(line);
     };
+
+    // Check and remind about missing hooks
+    const { checkAndRemindHooks } = require('./hook-reminder');
+    checkAndRemindHooks(sources, { quiet });
 
     const { startWatch } = require('./watch');
     const stop = startWatch({

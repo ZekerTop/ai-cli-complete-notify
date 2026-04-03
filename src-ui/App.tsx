@@ -7,6 +7,7 @@ import { useConfig } from '@/hooks/useConfig';
 import { useWatch } from '@/hooks/useWatch';
 import { useHooks } from '@/hooks/useHooks';
 import { getStartupStatus, setAutostartEnabled, type StartupStatus } from '@/lib/startup';
+import { sidecar } from '@/lib/sidecar';
 import Sidebar from '@/components/Sidebar';
 import ChannelsPanel from '@/components/ChannelsPanel';
 import SoundPanel from '@/components/SoundPanel';
@@ -18,7 +19,7 @@ import SummaryPanel from '@/components/SummaryPanel';
 import AdvancedPanel from '@/components/AdvancedPanel';
 import CloseDialog from '@/components/CloseDialog';
 
-const VERSION = '2.2.0';
+const VERSION = '2.3.0';
 const appWindow = getCurrentWindow();
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
   const [activePanel, setActivePanel] = useState('notifications');
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [startupStatus, setStartupStatus] = useState<StartupStatus | null>(null);
+  const [showHooksBanner, setShowHooksBanner] = useState<string[] | false>(false);
   const [autostartBusy, setAutostartBusy] = useState(false);
   const didAutoStartWatchRef = useRef(false);
   const closeDialogOpenRef = useRef(false);
@@ -103,9 +105,20 @@ export default function App() {
         }
       }
 
-      await hooks.refreshStatus();
+      const hookStatus = await hooks.refreshStatus();
 
       if (cancelled) return;
+
+      // Show banner if hooks mode is active but any hook not installed
+      if (cfg && cfg.ui.notificationMode === 'hooks' && hookStatus) {
+        const uninstalled: string[] = [];
+        if (!hookStatus.claude?.installed) uninstalled.push('Claude Code');
+        if (!hookStatus.gemini?.installed) uninstalled.push('Gemini CLI');
+        if (!hookStatus.opencode?.installed) uninstalled.push('OpenCode');
+        if (uninstalled.length > 0) {
+          setShowHooksBanner(uninstalled);
+        }
+      }
 
       const shouldStayHidden = Boolean(runtimeStartupStatus?.silentStartRequested) || Boolean(cfg?.ui?.silentStart);
       if (!shouldStayHidden || !cfg) {
@@ -150,6 +163,10 @@ export default function App() {
       });
     }
   }, [config, watch.running, watchSources]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDismissHooksBanner = useCallback(() => {
+    setShowHooksBanner(false);
+  }, []);
 
   const handleLanguageChange = useCallback(
     (lang: string) => {
@@ -217,6 +234,21 @@ export default function App() {
         }}
       />
       <main className="content-shell scroll-smooth">
+        {showHooksBanner && (
+          <div className="mx-4 mt-4 flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm">
+            <span className="mt-0.5 text-yellow-400">⚠</span>
+            <span className="flex-1 text-yellow-200/90">
+              {(config.ui.language || 'zh-CN').toLowerCase().startsWith('en')
+                ? `${(showHooksBanner as string[]).join(', ')} hook${(showHooksBanner as string[]).length > 1 ? 's are' : ' is'} not installed. Without hooks, notifications rely on watch polling and may not fire at the right time. Go to Integrations → Hooks to install.`
+                : `${(showHooksBanner as string[]).join('、')} 的 hook 未安装。未安装时将回退到 watch 轮询，可能会出现提醒时机不够及时、与实际完成状态存在偏差的问题。请前往「集成 → Hooks」安装。`}
+            </span>
+            <button
+              onClick={handleDismissHooksBanner}
+              className="ml-1 shrink-0 text-yellow-400/60 hover:text-yellow-300 transition-colors"
+              aria-label="dismiss"
+            >✕</button>
+          </div>
+        )}
         <div className="content-inner">
           {activePanel === 'notifications' && (
             <>
@@ -229,7 +261,9 @@ export default function App() {
           )}
           {activePanel === 'integrations' && (
             <>
-              <HooksPanel config={config} onUpdate={update} hooks={hooks} />
+              <HooksPanel config={config} onUpdate={update} hooks={hooks} onHooksStatusChange={(uninstalled) => {
+                setShowHooksBanner(uninstalled.length > 0 ? uninstalled : false);
+              }} />
               <WatchPanel config={config} onUpdate={update} watch={watch} />
               <TestPanel config={config} />
             </>

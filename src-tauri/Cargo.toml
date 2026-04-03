@@ -1,6 +1,6 @@
 [package]
 name = "ai-cli-complete-notify"
-version = "2.2.0"
+version = "2.3.0"
 description = "AI CLI task completion notification tool"
 authors = [""]
 edition = "2021"

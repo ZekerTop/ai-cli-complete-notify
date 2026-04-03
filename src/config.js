@@ -21,16 +21,41 @@ function parseEnvBoolean(value) {
   return undefined;
 }
 
-function applyEnvOverrides(config) {
+function hasExplicitBoolean(config, pathParts) {
+  let current = config;
+  for (let index = 0; index < pathParts.length - 1; index += 1) {
+    const key = pathParts[index];
+    if (!current || typeof current !== 'object' || !Object.prototype.hasOwnProperty.call(current, key)) {
+      return false;
+    }
+    current = current[key];
+  }
+
+  const lastKey = pathParts[pathParts.length - 1];
+  return Boolean(
+    current
+      && typeof current === 'object'
+      && Object.prototype.hasOwnProperty.call(current, lastKey)
+      && typeof current[lastKey] === 'boolean'
+  );
+}
+
+function applyEnvOverrides(config, rawConfig) {
   const notificationEnabled = parseEnvBoolean(process.env.NOTIFICATION_ENABLED);
   if (notificationEnabled !== undefined) {
-    if (config.channels.webhook) config.channels.webhook.enabled = notificationEnabled;
-    config.channels.telegram.enabled = notificationEnabled;
-    if (config.channels.email) config.channels.email.enabled = notificationEnabled;
+    if (config.channels.webhook && !hasExplicitBoolean(rawConfig, ['channels', 'webhook', 'enabled'])) {
+      config.channels.webhook.enabled = notificationEnabled;
+    }
+    if (config.channels.telegram && !hasExplicitBoolean(rawConfig, ['channels', 'telegram', 'enabled'])) {
+      config.channels.telegram.enabled = notificationEnabled;
+    }
+    if (config.channels.email && !hasExplicitBoolean(rawConfig, ['channels', 'email', 'enabled'])) {
+      config.channels.email.enabled = notificationEnabled;
+    }
   }
 
   const soundEnabled = parseEnvBoolean(process.env.SOUND_ENABLED);
-  if (soundEnabled !== undefined) {
+  if (soundEnabled !== undefined && config.channels.sound && !hasExplicitBoolean(rawConfig, ['channels', 'sound', 'enabled'])) {
     config.channels.sound.enabled = soundEnabled;
   }
 
@@ -115,7 +140,8 @@ function loadRawConfig() {
 }
 
 function loadConfig() {
-  return applyEnvOverrides(normalizeConfig(loadRawConfig()));
+  const rawConfig = loadRawConfig();
+  return applyEnvOverrides(normalizeConfig(rawConfig), rawConfig);
 }
 
 function saveConfig(config) {

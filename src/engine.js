@@ -127,6 +127,13 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const contentText = lines.join('\n');
   const tasks = [];
   const results = [];
+
+  // Start summary generation immediately (don't await yet)
+  const summaryPromise = skipSummary
+    ? Promise.resolve('')
+    : summarizeTask({ config, taskInfo, contentText, summaryContext });
+
+  // Add desktop notification task immediately (uses original taskInfo, doesn't need summary)
   if (isChannelEnabled(config, 'desktop', sourceName)) {
     const focusEnabled = Boolean(config?.ui?.autoFocusOnNotify);
     const focusTargetKey = String(config?.ui?.focusTarget || 'auto');
@@ -172,7 +179,15 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     );
   }
 
-  const summary = skipSummary ? '' : await summarizeTask({ config, taskInfo, contentText, summaryContext });
+  // Add sound notification task (doesn't need summary)
+  if (isChannelEnabled(config, 'sound', sourceName)) {
+    tasks.push(
+      notifySound({ config, title: taskInfo }).then((r) => ({ channel: 'sound', ...r }))
+    );
+  }
+
+  // Now wait for summary to complete before adding notifications that need it
+  const summary = await summaryPromise;
   const summaryUsed = Boolean(summary);
   const effectiveTaskInfo = summary || taskInfo;
 
@@ -206,12 +221,6 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
         summaryUsed
       })
         .then((r) => ({ channel: 'webhook', ...r }))
-    );
-  }
-
-  if (isChannelEnabled(config, 'sound', sourceName)) {
-    tasks.push(
-      notifySound({ config, title }).then((r) => ({ channel: 'sound', ...r }))
     );
   }
 

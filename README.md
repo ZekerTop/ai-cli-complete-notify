@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.2.0)
+# AI CLI Complete Notify (v2.3.0)
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -188,7 +188,7 @@ wslpath -w ~/.codex
 
 Notes:
 - In WSL, prefer webhook/Telegram/email channels; tray is a Windows GUI feature.
-- For WSL CLI behavior, configure `.env` first (`.env` overrides `settings.json`).
+- For WSL CLI behavior, prefer `.env` for webhook and summary-related settings; global channel switches already saved in the desktop app still follow `settings.json`.
 
 ### Direct Notification
 
@@ -291,7 +291,9 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # WEBHOOK_USE_FEISHU_CARD=false
 
 # Desktop notifications and sound
+# Used as defaults only when settings.json has not explicitly set these channel switches
 NOTIFICATION_ENABLED=true
+# Used as a default only when settings.json has not explicitly set the sound switch
 SOUND_ENABLED=true
 
 # Telegram Bot
@@ -392,6 +394,18 @@ Windows notes:
 ## Changelog
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
+
+### 2.3.0
+
+- Global channel toggles now stay in sync with per-source channel switches: turning a global channel off or back on updates the same channel under every source.
+- `.env` defaults such as `SOUND_ENABLED` / `NOTIFICATION_ENABLED` no longer forcibly override global channel switches already saved in `settings.json`.
+- Desktop notification no longer plays the Windows system sound — the Toast notification is now forced silent so it no longer triggers the OS default chime.
+- Desktop notification fires in parallel with sound, so both arrive at the same time instead of sound lagging behind.
+- Watch mode no longer sends premature notifications mid-task; it now always waits the full quiet period before notifying.
+- Added a warning prompt when starting Watch mode without hooks installed, so users know accuracy may be reduced.
+- Hook install/uninstall now shows a loading indicator and immediately refreshes the config preview on completion.
+- Added "Open config file" button to each hook card and the preview section; clicking it opens the file in the system default editor.
+- On startup, the app now checks hook installation status automatically. If any hooks are missing in Hooks mode, a yellow banner appears at the top warning that notifications may not fire at the right time; the banner updates immediately after any install or uninstall action.
 
 ### 2.2.0
 

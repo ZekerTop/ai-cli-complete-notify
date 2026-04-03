@@ -636,7 +636,7 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
     const windowMs = Math.max(quietMs * 2, 15000);
     if (now - state.lastAssistantAt > windowMs) return;
 
-    const adaptiveQuietMs = state.lastAssistantHadToolUse ? quietMs : Math.min(15000, quietMs);
+    const adaptiveQuietMs = quietMs;
     if (state.pendingTimer) clearTimeout(state.pendingTimer);
     state.pendingTimer = setTimeout(() => {
       void maybeNotify(state.lastAssistantAt);
@@ -719,11 +719,9 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
       } else {
         if (state.pendingTimer) clearTimeout(state.pendingTimer);
 
-        const adaptiveQuietMs = hasToolUse ? quietMs : Math.min(15000, quietMs);
-
         state.pendingTimer = setTimeout(() => {
           void maybeNotify(state.lastAssistantAt);
-        }, adaptiveQuietMs);
+        }, quietMs);
       }
     }
   }

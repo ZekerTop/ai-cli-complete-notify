@@ -237,7 +237,7 @@ function notifyDesktopViaPowerShell({ finalTitle, body, timeoutMs, onClick, kind
       const toastMessage = escapeXml(String(body || '').split('\n')[0] || '');
       const toastHint = clickHint ? escapeXml(clickHint) : '';
       const toastHintNode = toastHint ? `<text>${toastHint}</text>` : '';
-      const toastXml = `<toast duration="short"><visual><binding template="ToastGeneric"><text>${toastTitle}</text><text>${toastMessage}</text>${toastHintNode}</binding></visual></toast>`;
+      const toastXml = `<toast duration="short"><visual><binding template="ToastGeneric"><text>${toastTitle}</text><text>${toastMessage}</text>${toastHintNode}</binding></visual><audio silent="true"/></toast>`;
       const preferredMode = getDesktopNotifyMode() === 'toast' ? 'toast' : 'balloon';
       const iconName = getBalloonIcon(kind);
 

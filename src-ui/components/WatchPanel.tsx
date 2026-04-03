@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { message } from '@tauri-apps/plugin-dialog';
+import { message, ask } from '@tauri-apps/plugin-dialog';
 import { open } from '@tauri-apps/plugin-shell';
 import type { AppConfig } from '@/lib/types';
 import { sidecar } from '@/lib/sidecar';
@@ -29,8 +29,10 @@ export default function WatchPanel({ config, onUpdate, watch }: Props) {
   const { t } = useTranslation();
   const logRef = useRef<HTMLPreElement>(null);
   const [openingLog, setOpeningLog] = useState(false);
+  const [checkingHooks, setCheckingHooks] = useState(false);
   const checkboxClass = 'check-toggle mt-0.5';
   const watchSources = 'all';
+  const isEn = (config.ui.language || 'zh-CN').toLowerCase().startsWith('en');
   const sourceItems = [
     { label: 'Claude', active: true },
     { label: 'Codex', active: true },
@@ -42,6 +44,60 @@ export default function WatchPanel({ config, onUpdate, watch }: Props) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
   }, [watch.logs]);
+
+  async function checkHooksBeforeStart() {
+    if (checkingHooks) return false;
+    setCheckingHooks(true);
+    try {
+      const { stdout, code } = await sidecar(['hooks', 'status']);
+      if (code !== 0) return true; // Continue if check fails
+
+      const hookStatus = JSON.parse(stdout || '{}') as {
+        claude?: { installed: boolean };
+        gemini?: { installed: boolean };
+        opencode?: { installed: boolean };
+      };
+
+      const uninstalled: string[] = [];
+      if (hookStatus.claude && !hookStatus.claude.installed) uninstalled.push('Claude Code');
+      if (hookStatus.gemini && !hookStatus.gemini.installed) uninstalled.push('Gemini CLI');
+
+      if (uninstalled.length === 0) return true;
+
+      const lang = config.ui.language || 'zh-CN';
+      const isEn = lang.toLowerCase().startsWith('en');
+
+      const title = isEn ? 'Hooks Not Configured' : 'Hooks 未配置';
+      const messageText = isEn
+        ? `${uninstalled.join(', ')} hooks are not installed.\n\nWatch mode may send inaccurate notifications (e.g., before task completion).\n\nRecommended: Install hooks for precise, event-driven notifications.\n\nContinue anyway?`
+        : `${uninstalled.join('、')} 的 hooks 尚未安装。\n\nWatch 模式可能发送不准确的通知（例如任务未完成就提醒）。\n\n建议：安装 hooks 以获得精确的事件驱动通知。\n\n仍要继续吗？`;
+
+      const confirmed = await ask(messageText, {
+        title,
+        kind: 'warning',
+        okLabel: isEn ? 'Continue' : '继续',
+        cancelLabel: isEn ? 'Cancel' : '取消',
+      });
+
+      return confirmed;
+    } catch {
+      return true; // Continue if check fails
+    } finally {
+      setCheckingHooks(false);
+    }
+  }
+
+  async function handleWatchStart() {
+    const shouldContinue = await checkHooksBeforeStart();
+    if (!shouldContinue) return;
+
+    await watch.start({
+      sources: watchSources,
+      intervalMs: 1000,
+      geminiQuietMs: 3000,
+      claudeQuietMs: 60000,
+    });
+  }
 
   async function handleOpenWatchLog() {
     if (openingLog) return;
@@ -195,18 +251,11 @@ export default function WatchPanel({ config, onUpdate, watch }: Props) {
           {/* Start/Stop buttons */}
           <div className="mt-3 flex items-center gap-2.5">
             <button
-              onClick={() =>
-                watch.start({
-                  sources: watchSources,
-                  intervalMs: 1000,
-                  geminiQuietMs: 3000,
-                  claudeQuietMs: 60000,
-                })
-              }
-              disabled={watch.running}
+              onClick={handleWatchStart}
+              disabled={watch.running || checkingHooks}
               className="px-3 py-2 rounded-xl border border-white/[0.14] bg-gradient-to-br from-accent to-accent2 text-white text-sm cursor-pointer disabled:opacity-50"
             >
-              {t('btn.watchStart')}
+              {checkingHooks ? (isEn ? 'Checking...' : '检查中...') : t('btn.watchStart')}
             </button>
             <button
               onClick={() => watch.stop()}

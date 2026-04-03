@@ -13,13 +13,30 @@ export default function ChannelsPanel({ config, onUpdate }: Props) {
   const { t, i18n } = useTranslation();
 
   const toggleChannel = (key: ChannelKey) => {
-    onUpdate((c) => ({
-      ...c,
-      channels: {
-        ...c.channels,
-        [key]: { ...c.channels[key], enabled: !c.channels[key].enabled },
-      },
-    }));
+    onUpdate((c) => {
+      const nextEnabled = !c.channels[key].enabled;
+      const nextSources = Object.fromEntries(
+        Object.entries(c.sources).map(([sourceKey, sourceConfig]) => [
+          sourceKey,
+          {
+            ...sourceConfig,
+            channels: {
+              ...sourceConfig.channels,
+              [key]: nextEnabled,
+            },
+          },
+        ]),
+      );
+
+      return {
+        ...c,
+        channels: {
+          ...c.channels,
+          [key]: { ...c.channels[key], enabled: nextEnabled },
+        },
+        sources: nextSources,
+      };
+    });
   };
 
   return (

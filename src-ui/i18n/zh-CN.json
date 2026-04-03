@@ -174,5 +174,6 @@
   "hooks.installOk": "Hook 安装成功",
   "hooks.installFail": "Hook 安装失败",
   "hooks.uninstallOk": "Hook 已卸载",
-  "hooks.uninstallFail": "Hook 卸载失败"
+  "hooks.uninstallFail": "Hook 卸载失败",
+  "hooks.openFile": "打开配置文件"
 }

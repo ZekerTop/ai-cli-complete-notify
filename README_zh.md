@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.3.0)
+# AI CLI Complete Notify (v2.4.0)
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -396,6 +396,11 @@ Windows 说明：
 ## 版本历史
 
 > `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
+
+### 2.4.0
+
+- 修复 Windows 桌面弹窗通知会抢走当前输入焦点的问题。提醒出现时，如果你正在微信等应用的输入框里打字，光标应继续停留在原输入框内。
+- 优化 Hooks 面板里的“通知模式”选择控件：不再使用展开后不易辨认的下拉选项，改为直接展示的模式卡片，同时保留原有 `watch / hooks` 切换逻辑不变。
 
 ### 2.3.0
 

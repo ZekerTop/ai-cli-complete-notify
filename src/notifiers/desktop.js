@@ -60,6 +60,34 @@ function buildWpfPopupScript({ timeoutMs, tintHex, clickFile, readyFile, tagVis,
   return `Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public static class NotifyWin32 {
+  public const int GWL_EXSTYLE = -20;
+  public const long WS_EX_NOACTIVATE = 0x08000000L;
+
+  [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr", SetLastError = true)]
+  private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+
+  [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
+  private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+  [DllImport("user32.dll", EntryPoint = "GetWindowLong", SetLastError = true)]
+  private static extern IntPtr GetWindowLongPtr32(IntPtr hWnd, int nIndex);
+
+  [DllImport("user32.dll", EntryPoint = "SetWindowLong", SetLastError = true)]
+  private static extern IntPtr SetWindowLongPtr32(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+  public static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex) {
+    return IntPtr.Size == 8 ? GetWindowLongPtr64(hWnd, nIndex) : GetWindowLongPtr32(hWnd, nIndex);
+  }
+
+  public static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong) {
+    return IntPtr.Size == 8 ? SetWindowLongPtr64(hWnd, nIndex, dwNewLong) : SetWindowLongPtr32(hWnd, nIndex, dwNewLong);
+  }
+}
+"@
 
 $clickFile = $env:NOTIFY_CLICK_FILE
 $readyFile = $env:NOTIFY_READY_FILE
@@ -68,7 +96,7 @@ $global:clicked = $false
 $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         Title="AI Notify" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Topmost="True" ShowInTaskbar="False" Width="352" SizeToContent="Height" MaxHeight="200"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False" Width="352" SizeToContent="Height" MaxHeight="200"
         WindowStartupLocation="Manual">
   <Border CornerRadius="10" Background="#F7F7F8" Margin="4"
           BorderBrush="#E0E0E0" BorderThickness="0.5">
@@ -99,6 +127,15 @@ $xaml = @'
 
 $global:w = [System.Windows.Markup.XamlReader]::Parse($xaml)
 $global:bar = $global:w.FindName('TimerBar')
+
+$global:w.Add_SourceInitialized({
+  try {
+    $interop = New-Object System.Windows.Interop.WindowInteropHelper($global:w)
+    $style = [NotifyWin32]::GetWindowLongPtr($interop.Handle, [NotifyWin32]::GWL_EXSTYLE)
+    $noActivateStyle = [IntPtr]($style.ToInt64() -bor [NotifyWin32]::WS_EX_NOACTIVATE)
+    [NotifyWin32]::SetWindowLongPtr($interop.Handle, [NotifyWin32]::GWL_EXSTYLE, $noActivateStyle) | Out-Null
+  } catch {}
+})
 
 $tb = $global:w.FindName('TagBlock')
 if ($tb) { $tb.Text = $env:NOTIFY_PROJECT }
@@ -134,7 +171,14 @@ $global:w.Add_MouseLeftButtonDown({
   $global:w.Close()
 })
 
-$global:w.ShowDialog() | Out-Null
+$global:w.Add_Closed({
+  try {
+    [System.Windows.Threading.Dispatcher]::CurrentDispatcher.BeginInvokeShutdown([System.Windows.Threading.DispatcherPriority]::Background) | Out-Null
+  } catch {}
+})
+
+$null = $global:w.Show()
+[System.Windows.Threading.Dispatcher]::Run()
 if ($global:clicked) { Write-Output 'CLICKED' }
 Write-Output 'MODE:POPUP'
 `;

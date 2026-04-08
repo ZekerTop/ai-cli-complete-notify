@@ -19,7 +19,7 @@ import SummaryPanel from '@/components/SummaryPanel';
 import AdvancedPanel from '@/components/AdvancedPanel';
 import CloseDialog from '@/components/CloseDialog';
 
-const VERSION = '2.3.0';
+const VERSION = '2.4.0';
 const appWindow = getCurrentWindow();
 
 export default function App() {

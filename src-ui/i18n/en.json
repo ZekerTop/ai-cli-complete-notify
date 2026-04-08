@@ -159,6 +159,8 @@
   "hooks.notificationMode": "Notification mode",
   "hooks.mode.watch": "Watch (log polling)",
   "hooks.mode.hooks": "Hooks / plugin (instant)",
+  "hooks.mode.watch.desc": "Broader fallback compatibility, but reminder timing depends on quiet-period detection and can be slower.",
+  "hooks.mode.hooks.desc": "Uses explicit completion events for faster, more accurate timing; recommended for Claude, Gemini, and OpenCode.",
   "hooks.modeHint": "In Hooks mode, Claude Code and Gemini use native hooks. OpenCode uses a global plugin file, while Codex still relies on watch.",
   "hooks.status.installed": "Configured",
   "hooks.status.notInstalled": "Not configured",

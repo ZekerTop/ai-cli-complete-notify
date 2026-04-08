@@ -159,6 +159,8 @@
   "hooks.notificationMode": "通知模式",
   "hooks.mode.watch": "Watch（日志轮询）",
   "hooks.mode.hooks": "Hooks / 插件（即时通知）",
+  "hooks.mode.watch.desc": "兼容性更广，适合作为兜底；但依赖日志静默期判断，提醒时机可能略慢。",
+  "hooks.mode.hooks.desc": "优先使用显式完成事件，时机更准更快；Claude / Gemini / OpenCode 推荐使用。",
   "hooks.modeHint": "Hooks 模式下，Claude Code 和 Gemini 使用原生 hooks；OpenCode 使用全局插件文件；Codex 仍通过 watch 监听。",
   "hooks.status.installed": "已配置",
   "hooks.status.notInstalled": "未配置",

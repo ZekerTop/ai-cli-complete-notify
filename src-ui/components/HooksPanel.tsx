@@ -28,6 +28,15 @@ const TARGETS: { key: HookTarget; title: string; descKey: string }[] = [
   { key: 'opencode', title: 'OpenCode', descKey: 'hooks.opencode.desc' },
 ];
 
+const MODE_OPTIONS: {
+  key: 'watch' | 'hooks';
+  titleKey: string;
+  descKey: string;
+}[] = [
+  { key: 'watch', titleKey: 'hooks.mode.watch', descKey: 'hooks.mode.watch.desc' },
+  { key: 'hooks', titleKey: 'hooks.mode.hooks', descKey: 'hooks.mode.hooks.desc' },
+];
+
 export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChange }: Props) {
   const { t } = useTranslation();
   const [previewTarget, setPreviewTarget] = useState<HookTarget>('claude');
@@ -92,27 +101,65 @@ export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChang
 
   return (
     <Panel title={t('section.hooks.title')} subtitle={t('section.hooks.sub')}>
-      <div className="flex items-center gap-2.5 mb-3">
-        <label className="text-sm">{t('hooks.notificationMode')}</label>
-        <select
-          value={config.ui.notificationMode}
-          onChange={(e) =>
-            onUpdate((c) => ({
-              ...c,
-              ui: { ...c.ui, notificationMode: e.target.value as 'watch' | 'hooks' },
-            }))
-          }
-          className="px-2.5 py-2 rounded-xl border border-white/[0.16] bg-[rgba(6,10,24,0.55)] text-[var(--text)] outline-none text-sm"
+      <div className="mb-4">
+        <div className="flex items-center gap-2.5 mb-2">
+          <label className="text-sm">{t('hooks.notificationMode')}</label>
+          <span
+            className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/[0.14] text-[rgba(11,16,34,0.9)] text-[11px] font-extrabold cursor-help border border-white/[0.22]"
+            title={t('hooks.modeHint')}
+          >
+            ?
+          </span>
+        </div>
+
+        <div
+          role="radiogroup"
+          aria-label={t('hooks.notificationMode')}
+          className="grid grid-cols-1 md:grid-cols-2 gap-2.5"
         >
-          <option value="watch">{t('hooks.mode.watch')}</option>
-          <option value="hooks">{t('hooks.mode.hooks')}</option>
-        </select>
-        <span
-          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/[0.14] text-[rgba(11,16,34,0.9)] text-[11px] font-extrabold cursor-help border border-white/[0.22]"
-          title={t('hooks.modeHint')}
-        >
-          ?
-        </span>
+          {MODE_OPTIONS.map((option) => {
+            const active = config.ui.notificationMode === option.key;
+            return (
+              <button
+                key={option.key}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() =>
+                  onUpdate((c) => ({
+                    ...c,
+                    ui: { ...c.ui, notificationMode: option.key },
+                  }))
+                }
+                className={`relative overflow-hidden rounded-2xl border px-4 py-3 text-left transition-all ${
+                  active
+                    ? 'border-[rgba(110,123,255,0.55)] bg-[linear-gradient(180deg,rgba(110,123,255,0.22),rgba(58,108,255,0.10))] shadow-[0_12px_30px_rgba(25,41,92,0.22)]'
+                    : 'border-white/[0.12] bg-[rgba(8,14,30,0.34)] hover:border-white/[0.2] hover:bg-[rgba(12,18,36,0.44)]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className={`text-sm font-semibold ${active ? 'text-white' : 'text-[rgba(232,239,255,0.9)]'}`}>
+                      {t(option.titleKey)}
+                    </div>
+                    <div className="mt-1 text-xs leading-relaxed text-muted">
+                      {t(option.descKey)}
+                    </div>
+                  </div>
+                  <span
+                    className={`mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border px-1.5 text-[11px] font-semibold ${
+                      active
+                        ? 'border-[rgba(139,168,255,0.44)] bg-[rgba(110,123,255,0.24)] text-white'
+                        : 'border-white/[0.12] bg-black/20 text-muted'
+                    }`}
+                  >
+                    {active ? 'ON' : ''}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3">

@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.3.0)
+# AI CLI Complete Notify (v2.4.0)
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -394,6 +394,11 @@ Windows notes:
 ## Changelog
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
+
+### 2.4.0
+
+- Desktop popup notifications on Windows no longer steal focus from the current input field. When the reminder appears while you are typing in apps such as WeChat, the caret should stay in the original textbox.
+- Improved the notification mode selector in the Hooks panel: the hard-to-read dropdown has been replaced with directly visible mode cards, while the underlying `watch / hooks` behavior remains unchanged.
 
 ### 2.3.0
 

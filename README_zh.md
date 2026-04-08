@@ -499,6 +499,16 @@ Windows 说明：
 
 - [LINUX DO](https://linux.do/)
 
+## 📈 项目统计
+
+<a href="https://www.star-history.com/#ZekerTop/ai-cli-complete-notify&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ZekerTop/ai-cli-complete-notify&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ZekerTop/ai-cli-complete-notify&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ZekerTop/ai-cli-complete-notify&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ---
 
 **享受智能提醒，让 AI 为您工作！** 🎉

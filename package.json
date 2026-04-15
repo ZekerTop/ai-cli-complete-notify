@@ -7,6 +7,8 @@
     "dev:ui": "vite",
     "build:ui": "vite build",
     "build:sidecar": "npx pkg ai-reminder.js --target node18-win-x64 -o src-tauri/binaries/ai-reminder-x86_64-pc-windows-msvc.exe",
+    "build:sidecar:mac": "npx pkg ai-reminder.js --target node18-macos-arm64 -o src-tauri/binaries/ai-reminder-aarch64-apple-darwin",
+    "build": "npm run build:sidecar:mac && npx tauri build",
     "tauri": "tauri",
     "dist": "npm run dist:portable",
     "dist:portable": "npm run build:sidecar && node tools/run-tauri-build.js --no-bundle && node tools/pack-tauri-portable.js",

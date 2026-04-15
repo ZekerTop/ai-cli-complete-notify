@@ -54,4 +54,5 @@ npm-cache/
 tauri-run.log
 nul
 src-tauri/binaries/*.exe
+src-tauri/binaries/ai-reminder-*
 src-tauri/gen/

@@ -53,5 +53,5 @@ npm-cache/
 # Tauri / Windows local artifacts
 tauri-run.log
 nul
-src-tauri/binaries/*.exe
+src-tauri/binaries/*
 src-tauri/gen/

@@ -6,7 +6,7 @@
     "dev": "npx tauri dev",
     "dev:ui": "vite",
     "build:ui": "vite build",
-    "build:sidecar": "npx pkg ai-reminder.js --target node18-win-x64 -o src-tauri/binaries/ai-reminder-x86_64-pc-windows-msvc.exe",
+    "build:sidecar": "node tools/build-sidecar.js",
     "tauri": "tauri",
     "dist": "npm run dist:portable",
     "dist:portable": "npm run build:sidecar && node tools/run-tauri-build.js --no-bundle && node tools/pack-tauri-portable.js",
@@ -28,7 +28,7 @@
   "devDependencies": {
     "@tauri-apps/api": "^2.3.0",
     "@tauri-apps/cli": "^2.3.0",
-    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-dialog": "2.6.0",
     "@tauri-apps/plugin-process": "^2.2.0",
     "@tauri-apps/plugin-shell": "^2.2.0",
     "@types/react": "^18.3.18",

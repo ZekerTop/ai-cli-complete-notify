@@ -8,7 +8,7 @@
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
-English | [中文](README_zh.md)
+English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
 ![UI Preview](docs/images/通道.png)
 </div>
@@ -411,7 +411,7 @@ Windows notes:
 - `npm run dist` now looks for Rust automatically from `CARGO_HOME`, `D:\cargo`, or `%USERPROFILE%\\.cargo`.
 - If you still prefer the batch entry, `build-tauri.bat` defaults to the portable package.
 - Use `build-tauri.bat installer` if you still need the NSIS installer.
-- The portable package intentionally excludes `README.md` and `README_zh.md`; only the executables and required runtime files are shipped.
+- The portable package intentionally excludes `README*.md`; only the executables and required runtime files are shipped.
 
 macOS notes:
 

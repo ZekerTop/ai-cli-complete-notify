@@ -8,7 +8,7 @@
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
-[English](README.md) | 中文
+[English](README.md) | 简体中文 | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
 ![界面预览](docs/images/通道.png)
 
@@ -412,7 +412,7 @@ Windows 说明：
 - `npm run dist` 现在会自动从 `CARGO_HOME`、`D:\cargo` 或 `%USERPROFILE%\\.cargo` 查找 Rust。
 - 如果你仍想走批处理入口，`build-tauri.bat` 默认输出便携版。
 - 如果还需要安装包，可执行 `build-tauri.bat installer`。
-- 便携版产物默认不再携带 `README.md` 和 `README_zh.md`，只保留运行所需文件。
+- 便携版产物默认不再携带 `README*.md`，只保留运行所需文件。
 
 macOS 说明：
 

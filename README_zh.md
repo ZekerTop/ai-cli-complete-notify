@@ -70,10 +70,15 @@
 
 ### macOS / Linux 用户
 
+源码 / 开发模式需要 Node.js/npm 和 Rust/Cargo。Tauri 在执行 `npm run dev` 时会调用 `cargo`；如果 `cargo --version` 失败，请先从 [Rust 官方安装页面](https://www.rust-lang.org/tools/install) 安装 Rust。
+
 ```bash
 # 克隆仓库
 git clone https://github.com/ZekerTop/ai-cli-complete-notify.git
 cd ai-cli-complete-notify
+
+# 确认 Rust/Cargo 可用
+cargo --version
 
 # 安装依赖
 npm install

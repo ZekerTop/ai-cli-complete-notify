@@ -69,10 +69,15 @@ Benefits:
 
 ### macOS / Linux Users
 
+Source/dev mode requires Node.js/npm and Rust/Cargo. Tauri calls `cargo` when running `npm run dev`; if `cargo --version` fails, install Rust from the [official Rust installation page](https://www.rust-lang.org/tools/install) first.
+
 ```bash
 # Clone repository
 git clone https://github.com/ZekerTop/ai-cli-complete-notify.git
 cd ai-cli-complete-notify
+
+# Verify Rust/Cargo is available
+cargo --version
 
 # Install dependencies
 npm install

@@ -64,10 +64,15 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 
 
 ### macOS / Linux 사용자
 
+소스/개발 모드에는 Node.js/npm과 Rust/Cargo가 필요합니다. Tauri는 `npm run dev` 실행 중 `cargo`를 호출합니다. `cargo --version`이 실패하면 먼저 [Rust 공식 설치 페이지](https://www.rust-lang.org/tools/install)에서 Rust를 설치하세요.
+
 ```bash
 # 저장소 복제
 git clone https://github.com/ZekerTop/ai-cli-complete-notify.git
 cd ai-cli-complete-notify
+
+# Rust/Cargo 사용 가능 여부 확인
+cargo --version
 
 # 의존성 설치
 npm install

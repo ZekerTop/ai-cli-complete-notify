@@ -111,7 +111,7 @@ export interface EnvSetupStatus {
   error: string;
 }
 
-export type ChannelKey = 'webhook' | 'telegram' | 'desktop' | 'sound' | 'email';
+export type ChannelKey = 'webhook' | 'telegram' | 'desktop' | 'sound' | 'email' | 'gotify';
 export type SourceKey = 'claude' | 'codex' | 'opencode' | 'gemini';
 
 export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] = [
@@ -120,6 +120,7 @@ export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] 
   { key: 'desktop', titleKey: 'channel.desktop', descKey: 'channel.desktop.desc' },
   { key: 'sound', titleKey: 'channel.sound', descKey: 'channel.sound.desc' },
   { key: 'email', titleKey: 'channel.email', descKey: 'channel.email.desc' },
+  { key: 'gotify', titleKey: 'channel.gotify', descKey: 'channel.gotify.desc' },
 ];
 
 export const SOURCES: { key: SourceKey; titleKey: string; descKey: string }[] = [

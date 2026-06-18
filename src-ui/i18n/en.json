@@ -122,6 +122,8 @@
   "channel.sound.desc": "TTS / beep fallback",
   "channel.email": "Email",
   "channel.email.desc": "SMTP email alerts (configure via .env)",
+  "channel.gotify": "Gotify",
+  "channel.gotify.desc": "Self-hosted push notifications (Gotify server)",
   "source.claude": "Claude",
   "source.claude.desc": "Claude Code CLI / extension",
   "source.codex": "Codex",

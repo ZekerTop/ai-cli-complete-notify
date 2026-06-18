@@ -110,7 +110,9 @@ done
 
 BIN_DIR="$(CDPATH= cd -- "$(dirname -- "$SELF")" && pwd)"
 
-for BASE in "$BIN_DIR/../Resources/resources" "$BIN_DIR/../Resources"; do
+# Packaged .app: binary is in Contents/MacOS, resources in Contents/Resources
+# Dev mode: binary and resources/ are siblings in the same target directory
+for BASE in "$BIN_DIR/../Resources/resources" "$BIN_DIR/../Resources" "$BIN_DIR/resources"; do
   NODE_BIN="$BASE/node/bin/node"
   ENTRY="$BASE/ai-reminder/ai-reminder.js"
   if [ -x "$NODE_BIN" ] && [ -f "$ENTRY" ]; then

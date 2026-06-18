@@ -80,6 +80,18 @@ const DEFAULT_CONFIG = {
       passEnv: 'EMAIL_PASS',
       fromEnv: 'EMAIL_FROM',
       toEnv: 'EMAIL_TO'
+    },
+    gotify: {
+      enabled: false,
+      url: '',
+      urlEnv: 'GOTIFY_URL',
+      appToken: '',
+      appTokenEnv: 'GOTIFY_APP_TOKEN',
+      priority: {
+        complete: 5,
+        confirm: 8,
+        error: 10
+      }
     }
   },
   sources: {
@@ -91,7 +103,8 @@ const DEFAULT_CONFIG = {
         telegram: false,
         sound: true,
         desktop: true,
-        email: false
+        email: false,
+        gotify: false
       }
     },
     codex: {
@@ -102,7 +115,8 @@ const DEFAULT_CONFIG = {
         telegram: false,
         sound: true,
         desktop: true,
-        email: false
+        email: false,
+        gotify: false
       }
     },
     opencode: {
@@ -113,7 +127,8 @@ const DEFAULT_CONFIG = {
         telegram: false,
         sound: true,
         desktop: true,
-        email: false
+        email: false,
+        gotify: false
       }
     },
     gemini: {
@@ -124,7 +139,8 @@ const DEFAULT_CONFIG = {
         telegram: false,
         sound: true,
         desktop: true,
-        email: false
+        email: false,
+        gotify: false
       }
     }
   }

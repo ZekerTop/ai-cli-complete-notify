@@ -22,6 +22,10 @@ WEBHOOK_URLS=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 
+# Gotify (self-hosted push notifications)
+# GOTIFY_URL=https://gotify.example.com
+# GOTIFY_APP_TOKEN=your_app_token
+
 # Email
 # EMAIL_HOST=smtp.example.com
 # EMAIL_PORT=465

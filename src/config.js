@@ -52,6 +52,9 @@ function applyEnvOverrides(config, rawConfig) {
     if (config.channels.email && !hasExplicitBoolean(rawConfig, ['channels', 'email', 'enabled'])) {
       config.channels.email.enabled = notificationEnabled;
     }
+    if (config.channels.gotify && !hasExplicitBoolean(rawConfig, ['channels', 'gotify', 'enabled'])) {
+      config.channels.gotify.enabled = notificationEnabled;
+    }
   }
 
   const soundEnabled = parseEnvBoolean(process.env.SOUND_ENABLED);

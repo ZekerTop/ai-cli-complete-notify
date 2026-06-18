@@ -6,6 +6,7 @@ const { notifyTelegram } = require('./notifiers/telegram');
 const { notifySound } = require('./notifiers/sound');
 const { notifyDesktopBalloon, prewarmWpf } = require('./notifiers/desktop');
 const { notifyEmail } = require('./notifiers/email');
+const { notifyGotify } = require('./notifiers/gotify');
 const { summarizeTaskDetailed } = require('./summary');
 const { focusTarget } = require('./focus');
 const { checkAndRememberNotification } = require('./state');
@@ -251,6 +252,21 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     tasks.push(
       notifyEmail({ config, title, contentText })
         .then((r) => ({ channel: 'email', ...r }))
+    );
+  }
+
+  if (isChannelEnabled(config, 'gotify', sourceName)) {
+    tasks.push(
+      notifyGotify({
+        config,
+        kind,
+        projectName,
+        sourceLabel,
+        taskInfo: effectiveTaskInfo,
+        contentText,
+        language: config?.ui?.language,
+      })
+        .then((r) => ({ channel: 'gotify', ...r }))
     );
   }
 

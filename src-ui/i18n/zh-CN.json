@@ -122,6 +122,8 @@
   "channel.sound.desc": "语音播报 / 蜂鸣",
   "channel.email": "邮件",
   "channel.email.desc": "SMTP 邮件提醒（配置在 .env）",
+  "channel.gotify": "Gotify",
+  "channel.gotify.desc": "自托管推送通知（Gotify 服务器）",
   "source.claude": "Claude",
   "source.claude.desc": "Claude Code CLI / 插件",
   "source.codex": "Codex",

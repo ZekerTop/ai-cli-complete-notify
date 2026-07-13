@@ -128,8 +128,9 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const cwdToUse = cwd || process.cwd();
   const projectName = projectNameOverride || getProjectName(cwdToUse);
   const sourceLabel = getSourceLabel(sourceName);
+  const explicitDedupeKey = String(dedupeKey || '').trim();
   const dedupeText = String(
-    dedupeKey
+    explicitDedupeKey
       || outputContent
       || (summaryContext && summaryContext.assistantMessage)
       || taskInfo
@@ -139,7 +140,10 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   if (dedupeText) {
     const duplicated = checkAndRememberNotification({
       source: sourceName,
-      cwd: cwdToUse,
+      // Explicit dedupe keys are content-scoped (e.g. Gemini hook/watch) and
+      // must ignore cwd — GUI watch cwd often differs from the project cwd in
+      // the hook payload, which would otherwise break cross-path dedupe.
+      cwd: explicitDedupeKey ? '' : cwdToUse,
       text: dedupeText,
       dedupeMs: NOTIFICATION_DEDUPE_MS,
     });

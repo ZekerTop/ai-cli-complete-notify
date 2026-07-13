@@ -264,6 +264,15 @@ function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
   };
 }
 
+function buildGeminiCompletionDedupeKey(assistantText) {
+  // Content-scoped key shared by Gemini hook and watch paths. Must not include
+  // cwd: watch often runs from the app/process cwd while hooks carry the
+  // project cwd from Gemini's AfterAgent payload.
+  const text = normalizeText(assistantText);
+  if (!text) return '';
+  return `gemini-complete:${text}`;
+}
+
 function getGeminiHookNotificationContext(hookContext, defaultTaskInfo) {
   if (!hookContext || typeof hookContext !== 'object') return null;
 
@@ -288,10 +297,12 @@ function getGeminiHookNotificationContext(hookContext, defaultTaskInfo) {
       || ''
   );
   const defaultTask = String(defaultTaskInfo || '').trim();
+  const dedupeKey = buildGeminiCompletionDedupeKey(assistantText);
 
   // Align with the Gemini watch path: task label is "Gemini 完成", and the
-  // final assistant text is used as outputContent / summaryContext so
-  // content-based dedupe can collapse hook + watch duplicates.
+  // final assistant text is used as outputContent / summaryContext / dedupeKey
+  // so content-based dedupe can collapse hook + watch duplicates even when
+  // their cwd values differ.
   return {
     taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : 'Gemini 完成',
     outputContent: assistantText,
@@ -299,12 +310,14 @@ function getGeminiHookNotificationContext(hookContext, defaultTaskInfo) {
       userMessage: userText,
       assistantMessage: assistantText,
     },
+    dedupeKey: dedupeKey || undefined,
     skipSummary: !assistantText,
     delayMs: 0,
   };
 }
 
 module.exports = {
+  buildGeminiCompletionDedupeKey,
   extractClaudeAssistantText,
   getClaudeHookNotificationContext,
   getGeminiHookNotificationContext,

@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 
 const { sendNotifications } = require('./engine');
-const { looksLikeClaudeFailure } = require('./hook-context');
+const { buildGeminiCompletionDedupeKey, looksLikeClaudeFailure } = require('./hook-context');
 
 function parseTimestamp(value) {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -2385,13 +2385,18 @@ function startGeminiWatch({ intervalMs, quietPeriodMs, log, confirmDetector }) {
 
     state.lastNotifiedGeminiAt = endAt;
     const durationMs = endAt >= startAt ? endAt - startAt : null;
+    const geminiOutput = state.lastGeminiContent || state.lastGeminiText;
     const result = await sendNotifications({
       source: 'gemini',
       taskInfo: 'Gemini 完成',
       durationMs,
       cwd: process.cwd(),
       projectNameOverride: 'Gemini',
-      outputContent: state.lastGeminiContent || state.lastGeminiText,
+      outputContent: geminiOutput,
+      // Share a cwd-independent key with the AfterAgent hook path so hybrid
+      // mode collapses the same completion even when process.cwd() differs
+      // from the project cwd carried by the hook payload.
+      dedupeKey: buildGeminiCompletionDedupeKey(geminiOutput) || undefined,
       summaryContext: {
         userMessage: state.lastUserText,
         assistantMessage: state.lastGeminiText

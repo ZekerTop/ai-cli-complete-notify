@@ -2,7 +2,10 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const { shouldSkipByNotificationMode } = require('../src/engine');
-const { getGeminiHookNotificationContext } = require('../src/hook-context');
+const {
+  buildGeminiCompletionDedupeKey,
+  getGeminiHookNotificationContext,
+} = require('../src/hook-context');
 
 test('hybrid mode keeps Codex watch and OpenCode plugin notifications', () => {
   assert.equal(
@@ -110,6 +113,7 @@ test('Gemini AfterAgent hook context extracts final prompt_response for dedupe',
       userMessage: 'summarize the diff',
       assistantMessage: 'Implemented the Gemini dedupe fix.',
     },
+    dedupeKey: buildGeminiCompletionDedupeKey('Implemented the Gemini dedupe fix.'),
     skipSummary: false,
     delayMs: 0,
   });
@@ -353,7 +357,7 @@ test('sendNotifications allows Claude watch fallback when hooks are installed', 
   }
 });
 
-test('Gemini hook and watch share content-based dedupe key', async () => {
+test('Gemini hook and watch share content-based dedupe key across cwd mismatch', async () => {
   const enginePath = require.resolve('../src/engine');
   const configPath = require.resolve('../src/config');
   const webhookPath = require.resolve('../src/notifiers/webhook');
@@ -409,6 +413,7 @@ test('Gemini hook and watch share content-based dedupe key', async () => {
     filename: statePath,
     loaded: true,
     exports: {
+      // Mirror production fingerprint shape so cwd independence is actually tested.
       checkAndRememberNotification: ({ source, cwd, text }) => {
         const key = `${source}::${cwd}::${String(text || '').trim().toLowerCase()}`;
         if (remembered.includes(key)) return true;
@@ -421,41 +426,45 @@ test('Gemini hook and watch share content-based dedupe key', async () => {
   try {
     const { sendNotifications } = require('../src/engine');
     const finalOutput = 'Implemented the Gemini dedupe fix.';
+    const sharedKey = buildGeminiCompletionDedupeKey(finalOutput);
     const hookContext = getGeminiHookNotificationContext({
       hook_event_name: 'AfterAgent',
       session_id: 'sess-1',
-      cwd: '/repo',
+      cwd: '/project/repo',
       prompt: 'fix gemini dedupe',
       prompt_response: finalOutput,
     }, '任务已完成');
+    assert.equal(hookContext.dedupeKey, sharedKey);
 
-    // Simulate Gemini AfterAgent hook path first (instant).
+    // Simulate Gemini AfterAgent hook path first (project cwd from payload).
     const hookResult = await sendNotifications({
       source: 'gemini',
       taskInfo: hookContext.taskInfo,
       durationMs: 1000,
-      cwd: '/repo',
+      cwd: '/project/repo',
       force: true,
       fromHook: true,
       skipSummary: true,
       outputContent: hookContext.outputContent,
       summaryContext: hookContext.summaryContext,
+      dedupeKey: hookContext.dedupeKey,
     });
     assert.equal(hookResult.skipped, false);
     assert.equal(calls.length, 1);
 
-    // Later Gemini watch path for the same completion must dedupe on the same
-    // final assistant text (not the default task label).
+    // Later Gemini watch path for the same completion, launched from a different
+    // process cwd (typical GUI/app watch). Must still dedupe via shared key.
     const watchResult = await sendNotifications({
       source: 'gemini',
       taskInfo: 'Gemini 完成',
       durationMs: 1000,
-      cwd: '/repo',
+      cwd: 'C:/Users/AppData/ai-cli-complete-notify',
       projectNameOverride: 'Gemini',
       force: true,
       fromHook: false,
       skipSummary: true,
       outputContent: finalOutput,
+      dedupeKey: buildGeminiCompletionDedupeKey(finalOutput),
       summaryContext: {
         userMessage: 'fix gemini dedupe',
         assistantMessage: finalOutput,
@@ -465,7 +474,7 @@ test('Gemini hook and watch share content-based dedupe key', async () => {
     assert.match(String(watchResult.reason), /duplicate notification suppressed/i);
     assert.equal(calls.length, 1);
     assert.equal(remembered.length, 1);
-    assert.match(remembered[0], /implemented the gemini dedupe fix\./i);
+    assert.equal(remembered[0], `gemini::::${sharedKey.toLowerCase()}`);
   } finally {
     if (originalEngine) require.cache[enginePath] = originalEngine;
     else delete require.cache[enginePath];

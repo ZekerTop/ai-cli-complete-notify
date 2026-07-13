@@ -370,6 +370,7 @@ async function runCli(argv) {
       summaryContext: hookNotificationContext?.summaryContext,
       skipSummary: Boolean(hookNotificationContext?.skipSummary),
       notifyKind: hookNotificationContext?.notifyKind,
+      dedupeKey: hookNotificationContext?.dedupeKey,
     });
     printResult(result);
     return { ok: true, mode: 'notify', result };

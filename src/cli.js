@@ -11,7 +11,11 @@ const {
   getWatchLogPath,
   getLatestWatchLogPath
 } = require('./paths');
-const { getClaudeHookNotificationContext, getOpenCodeHookNotificationContext } = require('./hook-context');
+const {
+  getClaudeHookNotificationContext,
+  getGeminiHookNotificationContext,
+  getOpenCodeHookNotificationContext,
+} = require('./hook-context');
 const { exec, spawn } = require('child_process');
 const path = require('path');
 
@@ -335,9 +339,11 @@ async function runCli(argv) {
     const hookNotificationContext =
       fromHook && source === 'claude'
         ? getClaudeHookNotificationContext(hookContext, effectiveTask)
-        : fromHook && source === 'opencode'
-          ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
-          : null;
+        : fromHook && source === 'gemini'
+          ? getGeminiHookNotificationContext(hookContext, effectiveTask)
+          : fromHook && source === 'opencode'
+            ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
+            : null;
 
     if (hookNotificationContext && hookNotificationContext.skip) {
       const skipped = {
@@ -364,6 +370,7 @@ async function runCli(argv) {
       summaryContext: hookNotificationContext?.summaryContext,
       skipSummary: Boolean(hookNotificationContext?.skipSummary),
       notifyKind: hookNotificationContext?.notifyKind,
+      dedupeKey: hookNotificationContext?.dedupeKey,
     });
     printResult(result);
     return { ok: true, mode: 'notify', result };

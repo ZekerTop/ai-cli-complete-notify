@@ -29,7 +29,11 @@ const DEFAULT_CONFIG = {
     confirmAlert: {
       enabled: false
     },
-    notificationMode: 'watch' // 'watch' | 'hooks'
+    // 'hooks' = hybrid: Claude/Gemini/OpenCode prefer hooks/plugins, Codex uses watch;
+//           both paths may fire and content-based dedupe collapses duplicates.
+// 'watch' = watch-only for Claude/Gemini (installed hooks are suppressed);
+//           OpenCode still uses its plugin (no watch path); Codex stays on watch.
+    notificationMode: 'hooks'
   },
   channels: {
     webhook: {

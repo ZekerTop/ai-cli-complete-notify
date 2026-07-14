@@ -29,12 +29,12 @@ const TARGETS: { key: HookTarget; title: string; descKey: string }[] = [
 ];
 
 const MODE_OPTIONS: {
-  key: 'watch' | 'hooks';
+  key: 'hooks' | 'watch';
   titleKey: string;
   descKey: string;
 }[] = [
-  { key: 'watch', titleKey: 'hooks.mode.watch', descKey: 'hooks.mode.watch.desc' },
   { key: 'hooks', titleKey: 'hooks.mode.hooks', descKey: 'hooks.mode.hooks.desc' },
+  { key: 'watch', titleKey: 'hooks.mode.watch', descKey: 'hooks.mode.watch.desc' },
 ];
 
 export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChange }: Props) {

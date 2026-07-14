@@ -67,6 +67,33 @@ function buildSummaryDiagnostics(result, skipped) {
   return diagnostics;
 }
 
+function shouldSkipByNotificationMode({ sourceName, fromHook, notificationMode }) {
+  const mode = notificationMode === 'hooks' ? 'hooks' : 'watch';
+  const hookCapable = sourceName === 'claude' || sourceName === 'gemini';
+
+  // Codex has no hooks path and always uses watch.
+  // OpenCode has no watch path and always uses plugin hooks.
+  if (sourceName === 'codex' || sourceName === 'opencode') {
+    return null;
+  }
+
+  // Watch-only mode means log polling for Claude/Gemini too: suppress their
+  // installed hooks so the mode option keeps a distinct engine meaning.
+  // Hybrid ("hooks") mode allows both paths; content-based dedupe later
+  // collapses same-completion duplicates, and watch remains a real fallback
+  // when hooks are missing or do not fire. Direct CLI notify/stop/run never
+  // set fromHook, so they stay available in either mode.
+  if (mode === 'watch' && fromHook && hookCapable) {
+    return {
+      skipped: true,
+      reason: `notificationMode is watch; hook-originated notification skipped for ${sourceName}`,
+      results: [],
+    };
+  }
+
+  return null;
+}
+
 async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNameOverride, force, summaryContext, outputContent, skipSummary, notifyKind, fromHook, dedupeKey }) {
   const config = loadConfig();
   const sourceName = source || 'claude';
@@ -77,19 +104,16 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     return { skipped: true, reason: `source ${sourceName} disabled`, results: [] };
   }
 
-  // Hooks are only supported by Claude Code and Gemini CLI.
-  // In hooks mode, keep watch-originated results as a fallback because some CLI
-  // builds may stop emitting hook events for certain responses. Cross-path
-  // duplicates are suppressed later via persistent notification dedupe.
-  const notificationMode = (config.ui && config.ui.notificationMode) || 'watch';
-  const sourceUsesHooks = sourceName === 'claude' || sourceName === 'gemini';
-  if (notificationMode === 'watch' && fromHook && sourceUsesHooks) {
-    return {
-      skipped: true,
-      reason: `notificationMode is watch; hook-originated notification skipped for ${sourceName}`,
-      results: []
-    };
-  }
+  // Hybrid ("hooks") keeps Codex on watch while Claude/Gemini/OpenCode can use
+  // hooks/plugins. Watch-only suppresses Claude/Gemini hooks so the two modes
+  // stay distinct. Cross-path duplicates still rely on content-based dedupe.
+  const notificationMode = (config.ui && config.ui.notificationMode) || 'hooks';
+  const modeSkip = shouldSkipByNotificationMode({
+    sourceName,
+    fromHook: Boolean(fromHook),
+    notificationMode
+  });
+  if (modeSkip) return modeSkip;
 
   const { should, reason } = shouldNotifyByDuration({
     minDurationMinutes: sourceConfig.minDurationMinutes,
@@ -104,8 +128,9 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   const cwdToUse = cwd || process.cwd();
   const projectName = projectNameOverride || getProjectName(cwdToUse);
   const sourceLabel = getSourceLabel(sourceName);
+  const explicitDedupeKey = String(dedupeKey || '').trim();
   const dedupeText = String(
-    dedupeKey
+    explicitDedupeKey
       || outputContent
       || (summaryContext && summaryContext.assistantMessage)
       || taskInfo
@@ -115,7 +140,10 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   if (dedupeText) {
     const duplicated = checkAndRememberNotification({
       source: sourceName,
-      cwd: cwdToUse,
+      // Explicit dedupe keys are content-scoped (e.g. Gemini hook/watch) and
+      // must ignore cwd — GUI watch cwd often differs from the project cwd in
+      // the hook payload, which would otherwise break cross-path dedupe.
+      cwd: explicitDedupeKey ? '' : cwdToUse,
       text: dedupeText,
       dedupeMs: NOTIFICATION_DEDUPE_MS,
     });
@@ -293,5 +321,6 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
 
 module.exports = {
   sendNotifications,
-  shouldNotifyByDuration
+  shouldNotifyByDuration,
+  shouldSkipByNotificationMode
 };

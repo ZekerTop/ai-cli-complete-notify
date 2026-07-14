@@ -264,9 +264,104 @@ function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
   };
 }
 
+function normalizeGeminiSessionScope(scopeInput) {
+  if (scopeInput == null) return '';
+  if (typeof scopeInput === 'string' || typeof scopeInput === 'number') {
+    const direct = String(scopeInput).trim();
+    if (!direct) return '';
+    // Bare session ids stay as-is; file paths reduce to basename so hook
+    // transcript_path and watch currentFile can share the same scope.
+    const normalized = direct.replace(/\\/g, '/');
+    const base = normalized.includes('/')
+      ? (normalized.split('/').filter(Boolean).pop() || normalized)
+      : normalized;
+    return base.toLowerCase();
+  }
+
+  if (typeof scopeInput !== 'object') return '';
+
+  // Prefer transcript/currentFile basename first so AfterAgent hooks and the
+  // Gemini watch path (which only has currentFile) share the same scope.
+  const fileScope = String(
+    scopeInput.transcriptPath
+      || scopeInput.transcript_path
+      || scopeInput.currentFile
+      || scopeInput.file
+      || ''
+  ).trim();
+  if (fileScope) return normalizeGeminiSessionScope(fileScope);
+
+  const sessionId = String(scopeInput.sessionId || scopeInput.session_id || '').trim();
+  if (sessionId) return sessionId.toLowerCase();
+  return '';
+}
+
+function buildGeminiCompletionDedupeKey(assistantText, sessionScope) {
+  // Shared by Gemini hook and watch paths. Must not include process.cwd():
+  // watch often runs from the app cwd while hooks carry the project cwd.
+  // Session scope (session_id / transcript basename / currentFile basename)
+  // keeps different projects or chats with identical output from suppressing
+  // each other, while still collapsing the same completion across paths.
+  const text = normalizeText(assistantText);
+  if (!text) return '';
+  const scope = normalizeGeminiSessionScope(sessionScope) || 'unknown';
+  return `gemini-complete:${scope}:${text}`;
+}
+
+function getGeminiHookNotificationContext(hookContext, defaultTaskInfo) {
+  if (!hookContext || typeof hookContext !== 'object') return null;
+
+  const eventName = String(hookContext.hook_event_name || '').trim();
+  // AfterAgent is the Gemini completion hook. Accept an empty event name only
+  // when prompt_response is present so older/partial payloads still work.
+  const hasPromptResponse = Object.prototype.hasOwnProperty.call(hookContext, 'prompt_response')
+    || Object.prototype.hasOwnProperty.call(hookContext, 'output_content');
+  if (eventName && eventName !== 'AfterAgent') return null;
+  if (!eventName && !hasPromptResponse) return null;
+
+  const assistantText = normalizeText(
+    hookContext.prompt_response
+      || hookContext.output_content
+      || hookContext.response
+      || hookContext.assistant_message
+      || ''
+  );
+  const userText = normalizeText(
+    hookContext.prompt
+      || hookContext.user_message
+      || ''
+  );
+  const defaultTask = String(defaultTaskInfo || '').trim();
+  // Prefer transcript basename so it can match watch currentFile; fall back to
+  // session_id when no transcript path is present.
+  const dedupeKey = buildGeminiCompletionDedupeKey(assistantText, {
+    transcriptPath: hookContext.transcript_path,
+    sessionId: hookContext.session_id,
+  });
+
+  // Align with the Gemini watch path: task label is "Gemini 完成", and the
+  // final assistant text is used as outputContent / summaryContext / dedupeKey
+  // so content-based dedupe can collapse hook + watch duplicates even when
+  // their cwd values differ.
+  return {
+    taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : 'Gemini 完成',
+    outputContent: assistantText,
+    summaryContext: {
+      userMessage: userText,
+      assistantMessage: assistantText,
+    },
+    dedupeKey: dedupeKey || undefined,
+    skipSummary: !assistantText,
+    delayMs: 0,
+  };
+}
+
 module.exports = {
+  buildGeminiCompletionDedupeKey,
   extractClaudeAssistantText,
   getClaudeHookNotificationContext,
+  getGeminiHookNotificationContext,
   getOpenCodeHookNotificationContext,
   looksLikeClaudeFailure,
+  normalizeGeminiSessionScope,
 };

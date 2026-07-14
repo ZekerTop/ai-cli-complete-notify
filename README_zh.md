@@ -51,6 +51,7 @@
 - Claude Code 往往会拆分为多个子任务，为避免每个子任务都提醒，本项目只在“整轮完成”后再通知。
 - 监听模式依赖日志变化，需要一个去抖静默时间确认结束，因此提醒不是即时触发（默认有工具调用时 60 秒、无工具调用时 15 秒）。
 - 如果想要更快、更干净的提醒：Claude Code / Gemini CLI 优先使用 Hook，OpenCode 优先使用全局插件；Codex 或其他兜底场景继续使用 Watch。
+- Watch 与 Hooks **在混合模式下可以同时开启**。推荐混合：Codex 用 Watch，Claude Code / Gemini / OpenCode 用 Hooks 或插件；同一来源若两条路径都触发，会按内容去重，只提醒一次。**仅 Watch** 模式会屏蔽 Claude/Gemini 已安装的 hooks，使两种模式语义保持区分。
 
 ## Hooks 与 Watch 的区别
 

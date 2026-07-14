@@ -16,8 +16,13 @@ export default function TestPanel({ config }: Props) {
   const [task, setTask] = useState(t('test.defaultTask'));
   const [log, setLog] = useState('');
   const [sending, setSending] = useState(false);
+  // Prefer the hook path for sources that support hooks/plugins when hybrid
+  // (hooks) mode is selected. In pure watch mode, exercise the watch path so
+  // the UI can validate watch fallback for Claude/Gemini.
+  // OpenCode has no watch path, so it always simulates the plugin/hook callback.
   const useHookSimulation =
-    source === 'opencode' || (config.ui.notificationMode === 'hooks' && (source === 'claude' || source === 'gemini'));
+    source === 'opencode'
+    || (config.ui.notificationMode === 'hooks' && (source === 'claude' || source === 'gemini'));
 
   const handleSend = async () => {
     setSending(true);

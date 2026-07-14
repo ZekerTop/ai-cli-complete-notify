@@ -50,6 +50,7 @@ Benefits:
 - Claude Code often splits a request into sub-tasks. To avoid spam, this tool only notifies after the whole turn completes.
 - Log monitoring relies on a quiet period to confirm completion, so notifications are not instant (default 60s with tool calls, 15s without).
 - For the fastest and cleanest alerts, prefer Hooks for Claude Code / Gemini CLI and the global plugin for OpenCode; keep Watch for Codex or as a general fallback mode.
+- Watch and Hooks **can run together in hybrid mode**. Recommended hybrid setup: Codex uses Watch; Claude Code / Gemini / OpenCode use Hooks or plugins. If both paths fire for the same source, content-based dedupe keeps only one alert. **Watch-only** mode suppresses Claude/Gemini installed hooks so the two options stay distinct.
 
 ## Hooks vs Watch
 
@@ -436,7 +437,7 @@ macOS notes:
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
 - 💡 **EXE starts with Watch enabled by default**: toggle it in the top bar if you don?t need it.
-- 🪝 **Hooks / plugin mode** is the preferred choice for Claude Code / Gemini CLI / OpenCode because it uses explicit completion events; when enabled, Watch mainly remains for Codex.
+- 🪝 **Hooks / plugin mode** is the preferred choice for Claude Code / Gemini CLI / OpenCode because it uses explicit completion events. Hybrid mode is recommended: keep Watch on for Codex while Claude / Gemini / OpenCode use hooks or plugins.
 - ✅ **Confirm prompt toggle guidance (default: OFF)**: turn it on if AI often asks “confirm/approve/continue”; keep it off if you only want final completion alerts without intermediate interruptions. Note: if you set `CODEX_COMPLETION_ONLY=1` in `.env`, Codex confirm alerts are disabled (set it to `0` or remove it).
 - 🧭 **Click to return** is more reliable but still best-effort due to OS focus rules; for VSCode extensions choose the VSCode target and ensure VSCode is not minimized
 

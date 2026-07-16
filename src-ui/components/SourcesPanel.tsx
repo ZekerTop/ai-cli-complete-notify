@@ -48,6 +48,19 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
     }));
   };
 
+  const toggleClaudeOnlyInteractive = () => {
+    onUpdate((c) => ({
+      ...c,
+      sources: {
+        ...c.sources,
+        claude: {
+          ...c.sources.claude,
+          onlyInteractive: c.sources.claude.onlyInteractive === false,
+        },
+      },
+    }));
+  };
+
   return (
     <Panel title={t('section.sources.title')} subtitle={t('section.sources.sub')}>
       <div className="flex flex-col gap-4">
@@ -81,6 +94,20 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
                   <Switch checked={s.enabled} onChange={() => toggleSource(src.key)} />
                 </div>
               </div>
+
+              {src.key === 'claude' && (
+                <div className="mt-4 flex items-center justify-between gap-4 border-t border-white/[0.08] pt-4">
+                  <div className="min-w-0">
+                    <div className="text-[13px] text-[rgba(232,239,255,0.9)]">{t('sources.claude.onlyInteractive')}</div>
+                    <div className="mt-1 text-[12px] leading-relaxed text-muted">{t('sources.claude.onlyInteractive.desc')}</div>
+                  </div>
+                  <Switch
+                    checked={s.onlyInteractive !== false}
+                    onChange={toggleClaudeOnlyInteractive}
+                    disabled={!s.enabled}
+                  />
+                </div>
+              )}
 
               {/* Channel grid */}
               <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">

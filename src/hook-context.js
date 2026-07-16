@@ -160,6 +160,59 @@ function readTailUtf8(filePath, maxBytes) {
   }
 }
 
+function readHeadUtf8(filePath, maxBytes) {
+  try {
+    const stat = fs.statSync(filePath);
+    if (!stat.isFile()) return '';
+
+    const headBytes = Math.max(1024, parsePositiveInt(maxBytes, 64 * 1024));
+    const size = Math.min(stat.size, headBytes);
+    const fd = fs.openSync(filePath, 'r');
+
+    try {
+      const buffer = Buffer.alloc(size);
+      const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, 0);
+      return buffer.slice(0, bytesRead).toString('utf8');
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch (_error) {
+    return '';
+  }
+}
+
+function classifyClaudeSessionOrigin(value) {
+  if (!value || typeof value !== 'object') return 'unknown';
+  const entrypoint = String(value.entrypoint || '').trim().toLowerCase();
+  const promptSource = String(value.promptSource || '').trim().toLowerCase();
+
+  if (entrypoint === 'sdk-cli' || promptSource === 'sdk') return 'sdk';
+  if (entrypoint === 'cli' || promptSource === 'typed') return 'interactive';
+  return 'unknown';
+}
+
+function getClaudeSessionOrigin(hookContext) {
+  const directOrigin = classifyClaudeSessionOrigin(hookContext);
+  if (directOrigin !== 'unknown') return directOrigin;
+
+  const transcriptPath = String(hookContext && hookContext.transcript_path || '').trim();
+  if (!transcriptPath) return 'unknown';
+
+  const head = readHeadUtf8(transcriptPath, 64 * 1024);
+  if (!head) return 'unknown';
+
+  const lines = head.split(/\r?\n/);
+  if (head.length >= 64 * 1024) lines.pop();
+
+  for (const line of lines) {
+    const record = safeJsonParse(String(line || '').trim());
+    const origin = classifyClaudeSessionOrigin(record);
+    if (origin !== 'unknown') return origin;
+  }
+
+  return 'unknown';
+}
+
 function extractClaudeAssistantTextFromTranscript(transcriptPath) {
   const filePath = String(transcriptPath || '').trim();
   if (!filePath) return '';
@@ -190,8 +243,15 @@ function resolveClaudeAssistantText(hookContext) {
   return extractClaudeAssistantTextFromTranscript(hookContext && hookContext.transcript_path);
 }
 
-function getClaudeHookNotificationContext(hookContext, defaultTaskInfo) {
+function getClaudeHookNotificationContext(hookContext, defaultTaskInfo, options = {}) {
   if (!hookContext || hookContext.hook_event_name !== 'Stop') return null;
+
+  if (options.onlyInteractive !== false && getClaudeSessionOrigin(hookContext) === 'sdk') {
+    return {
+      skip: true,
+      reason: 'Claude SDK-derived session skipped by onlyInteractive',
+    };
+  }
 
   const assistantText = resolveClaudeAssistantText(hookContext);
   const failureSummary = looksLikeClaudeFailure(assistantText);
@@ -359,6 +419,7 @@ function getGeminiHookNotificationContext(hookContext, defaultTaskInfo) {
 module.exports = {
   buildGeminiCompletionDedupeKey,
   extractClaudeAssistantText,
+  getClaudeSessionOrigin,
   getClaudeHookNotificationContext,
   getGeminiHookNotificationContext,
   getOpenCodeHookNotificationContext,

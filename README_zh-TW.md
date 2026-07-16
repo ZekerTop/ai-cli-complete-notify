@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.10.0)
+# AI CLI Complete Notify (v2.11.0)
 
-![Version](https://img.shields.io/badge/version-2.10.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.11.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -263,6 +263,14 @@ macOS 建議：
 <summary>展開 / 收合版本歷史</summary>
 
 > `v2.x` 是目前的 Tauri 桌面版本線；`v1.x` 是舊 Electron 版本線。完整舊版本歷史可參考 [English](README.md) 或 [简体中文](README_zh.md)。
+
+### 2.11.0
+
+- 修復 [Issue #24](https://github.com/ZekerTop/ai-cli-complete-notify/issues/24)：Claude 來源新增預設開啟的「僅提醒互動式工作階段」選項，過濾 Agent Team、Workflow、worktree、背景 Agent 與 `claude -p` 等 SDK 衍生工作階段造成的錯誤完成提醒。
+- Claude Stop Hook 與 Claude Watch 共用受限的 transcript 來源解析器，透過 `entrypoint: "sdk-cli"` / `promptSource: "sdk"` 識別 SDK 工作階段，並保留 `entrypoint: "cli"` / `promptSource: "typed"` 互動式工作階段的正常提醒。
+- transcript 遺失、無法讀取或來源未知時仍沿用原本提醒流程，避免誤判；需要 `claude -p` 完成提醒時可關閉此選項。
+- 保留原有 Claude 最終回覆擷取、失敗提醒、Hook 延遲、Watch 備援、摘要、通道與去重邏輯，並加入 Claude 雙路徑及既有 Gemini 修復的回歸測試。
+- 「關於專案」新增 GitHub Release 更新檢查：進入頁面時自動檢查，也可手動重新檢查；顯示目前版本與最新公開版本，Windows 與 macOS 均前往 GitHub Releases 自行選擇安裝套件。
 
 ### 2.10.0
 

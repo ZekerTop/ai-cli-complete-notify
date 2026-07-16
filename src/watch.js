@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 
 const { sendNotifications } = require('./engine');
-const { buildGeminiCompletionDedupeKey, looksLikeClaudeFailure } = require('./hook-context');
+const { buildGeminiCompletionDedupeKey, getClaudeSessionOrigin, looksLikeClaudeFailure } = require('./hook-context');
 
 function parseTimestamp(value) {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -600,7 +600,7 @@ async function maybeNotifyConfirm({
   return true;
 }
 
-function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confirmDetector }) {
+function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confirmDetector, onlyInteractive }) {
   const logger = makeLogger(log);
   const root = path.join(os.homedir(), '.claude', 'projects');
   const follower = new JsonlFollower({ seedBytes: 256 * 1024 });
@@ -619,13 +619,20 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
     lastAssistantHadToolUse: false,
     lastUserText: '',
     lastAssistantText: '',
+    sessionOrigin: 'unknown',
     lastConfirmKey: '',
     lastConfirmAt: 0
   };
 
   const quietMs = Math.max(500, claudeQuietMs || quietPeriodMs || 60000);
 
+  function shouldSkipCurrentSession() {
+    const enabled = typeof onlyInteractive === 'function' ? onlyInteractive() : onlyInteractive;
+    return enabled !== false && state.sessionOrigin === 'sdk';
+  }
+
   async function maybeNotify(ts) {
+    if (shouldSkipCurrentSession()) return;
     if (state.lastAssistantAt == null || state.lastUserTextAt == null) return;
     if (state.lastNotifiedAt === state.lastAssistantAt) return;
     if (state.notifiedForTurn) return;
@@ -657,6 +664,7 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
   }
 
   function scheduleSeedNotifyIfNeeded() {
+    if (shouldSkipCurrentSession()) return;
     if (state.lastAssistantAt == null || state.lastUserTextAt == null) return;
     if (state.lastAssistantAt < state.lastUserTextAt) return;
     if (state.notifiedForTurn || state.confirmNotifiedForTurn) return;
@@ -675,6 +683,16 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
   async function processObject(obj, { seed }) {
     if (!obj || typeof obj !== 'object') return;
     if (obj.isSidechain === true) return;
+
+    const recordOrigin = getClaudeSessionOrigin(obj);
+    if (recordOrigin === 'sdk' || state.sessionOrigin === 'unknown') {
+      state.sessionOrigin = recordOrigin;
+    }
+    if (shouldSkipCurrentSession()) {
+      if (state.pendingTimer) clearTimeout(state.pendingTimer);
+      state.pendingTimer = null;
+      return;
+    }
 
     const ts = parseTimestamp(obj.timestamp);
     if (typeof obj.cwd === 'string') state.lastCwd = obj.cwd;
@@ -774,12 +792,16 @@ function startClaudeWatch({ intervalMs, quietPeriodMs, log, claudeQuietMs, confi
         state.lastAssistantText = '';
         state.lastAssistantContent = null;
         state.lastAssistantHadToolUse = false;
+        state.sessionOrigin = getClaudeSessionOrigin({ transcript_path: latest.path });
         if (state.pendingTimer) clearTimeout(state.pendingTimer);
         state.pendingTimer = null;
         follower.attach(latest.path, (obj, meta) => {
           void processObject(obj, meta);
         });
         logger(`[watch][claude] following ${latest.path}`);
+        if (shouldSkipCurrentSession()) {
+          logger(`[watch][claude] SDK-derived session ignored: ${latest.path}`);
+        }
         scheduleSeedNotifyIfNeeded();
       }
       follower.poll((obj, meta) => {
@@ -2600,13 +2622,20 @@ function normalizeSources(input) {
   return [...new Set(parts)];
 }
 
-function startWatch({ sources, intervalMs, geminiQuietMs, claudeQuietMs, log, confirmAlert }) {
+function startWatch({ sources, intervalMs, geminiQuietMs, claudeQuietMs, claudeOnlyInteractive, log, confirmAlert }) {
   const normalizedSources = normalizeSources(sources);
   const stops = [];
   const confirmDetector = createConfirmDetectorDynamic(confirmAlert || {});
 
   if (normalizedSources.includes('claude')) {
-    stops.push(startClaudeWatch({ intervalMs, quietPeriodMs: geminiQuietMs, claudeQuietMs, log, confirmDetector }));
+    stops.push(startClaudeWatch({
+      intervalMs,
+      quietPeriodMs: geminiQuietMs,
+      claudeQuietMs,
+      log,
+      confirmDetector,
+      onlyInteractive: claudeOnlyInteractive,
+    }));
   }
   if (normalizedSources.includes('codex')) {
     stops.push(startCodexWatch({ intervalMs, log, confirmDetector }));

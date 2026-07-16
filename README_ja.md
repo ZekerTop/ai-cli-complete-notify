@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.10.0)
+# AI CLI Complete Notify (v2.11.0)
 
-![Version](https://img.shields.io/badge/version-2.10.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.11.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -263,6 +263,14 @@ macOS の注意:
 <summary>バージョン履歴を表示</summary>
 
 > `v2.x` は現在の Tauri ベースのデスクトップラインで、`v1.x` は旧 Electron ラインです。過去の完全な履歴は [English](README.md) または [简体中文](README_zh.md) を参照してください。
+
+### 2.11.0
+
+- [Issue #24](https://github.com/ZekerTop/ai-cli-complete-notify/issues/24) を修正し、Claude ソースにデフォルト有効の「対話セッションのみ」オプションを追加して、Agent Team、Workflow、worktree、バックグラウンド Agent、`claude -p` などの SDK 派生セッションによる誤った完了通知を抑制しました。
+- Claude Stop Hook と Claude Watch は、制限付きの共通 transcript 解析を使用し、`entrypoint: "sdk-cli"` / `promptSource: "sdk"` を SDK セッション、`entrypoint: "cli"` / `promptSource: "typed"` を対話セッションとして判定します。
+- transcript が存在しない、読み取れない、または判定不能な場合は従来の通知経路を維持します。`claude -p` の完了通知が必要な場合は、このオプションを無効にできます。
+- 既存の Claude 最終応答抽出、失敗通知、Hook 遅延、Watch フォールバック、要約、チャンネル、重複排除を維持し、Claude の両経路と既存 Gemini 修正の回帰テストを追加しました。
+- 「プロジェクトについて」に GitHub Release の更新確認を追加しました。ページを開いた際の自動確認と手動での再確認に対応し、現在のバージョンと最新公開バージョンを表示します。Windows と macOS のどちらでも GitHub Releases を開き、インストールパッケージを選択できます。
 
 ### 2.10.0
 

@@ -102,6 +102,7 @@ const DEFAULT_CONFIG = {
     claude: {
       enabled: true,
       minDurationMinutes: 0,
+      onlyInteractive: true,
       channels: {
         webhook: true,
         telegram: false,

@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.10.0)
+# AI CLI Complete Notify (v2.11.0)
 
-![Version](https://img.shields.io/badge/version-2.10.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.11.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 
@@ -447,6 +447,14 @@ macOS notes:
 <summary>View version history</summary>
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
+
+### 2.11.0
+
+- Fixed [Issue #24](https://github.com/ZekerTop/ai-cli-complete-notify/issues/24) by adding a default-on Claude `Interactive sessions only` source option to suppress false completion alerts from SDK-derived Agent Team, Workflow, worktree, background Agent, and `claude -p` sessions.
+- Claude Stop Hooks and Claude Watch now share the same bounded transcript-origin parser, using `entrypoint: "sdk-cli"` / `promptSource: "sdk"` for SDK sessions and preserving normal notifications for `entrypoint: "cli"` / `promptSource: "typed"` sessions.
+- Unknown or unreadable transcript metadata continues through the existing notification path to avoid false suppression. Disable the option when headless `claude -p` completion alerts are required.
+- Preserved existing Claude final-response extraction, failure alerts, Hook delay, Watch fallback, summaries, channels, and deduplication, with regression coverage for both Claude paths and the existing Gemini fixes.
+- Added a GitHub Release update check to About Project. It checks automatically when the page opens, supports manual rechecks, displays the current and latest public versions, and sends both Windows and macOS users to GitHub Releases to choose their package.
 
 ### 2.10.0
 

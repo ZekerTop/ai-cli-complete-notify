@@ -256,6 +256,16 @@ async function runCli(argv) {
       const latestConfig = loadConfig();
       return latestConfig && latestConfig.ui ? latestConfig.ui.confirmAlert : null;
     };
+    let claudeOnlyInteractiveValue = config?.sources?.claude?.onlyInteractive !== false;
+    let claudeOnlyInteractiveReadAt = Date.now();
+    const claudeOnlyInteractive = () => {
+      const now = Date.now();
+      if (now - claudeOnlyInteractiveReadAt >= 1000) {
+        claudeOnlyInteractiveValue = loadConfig()?.sources?.claude?.onlyInteractive !== false;
+        claudeOnlyInteractiveReadAt = now;
+      }
+      return claudeOnlyInteractiveValue;
+    };
     const { createWatchLogWriter } = require('./watch-log');
     const logWriter = createWatchLogWriter(config && config.ui ? config.ui.watchLogRetentionDays : 7);
     const writeWatchLog = (line) => {
@@ -273,6 +283,7 @@ async function runCli(argv) {
       intervalMs,
       geminiQuietMs,
       claudeQuietMs,
+      claudeOnlyInteractive,
       confirmAlert,
       log: writeWatchLog
     });
@@ -343,9 +354,12 @@ async function runCli(argv) {
 
       const effectiveCwd = (hookContext && hookContext.cwd) || cwd;
       const effectiveTask = (hookContext && hookContext.task_info) || taskInfo;
+      const claudeOnlyInteractive = source === 'claude'
+        ? loadConfig()?.sources?.claude?.onlyInteractive !== false
+        : false;
       const hookNotificationContext =
         fromHook && source === 'claude'
-          ? getClaudeHookNotificationContext(hookContext, effectiveTask)
+          ? getClaudeHookNotificationContext(hookContext, effectiveTask, { onlyInteractive: claudeOnlyInteractive })
           : fromHook && source === 'gemini'
             ? getGeminiHookNotificationContext(hookContext, effectiveTask)
             : fromHook && source === 'opencode'

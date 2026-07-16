@@ -1,5 +1,11 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-shell';
+import {
+  checkLatestRelease,
+  RELEASES_URL,
+  type UpdateCheckResult,
+} from '@/lib/update-check.mts';
 import Panel from './ui/Panel';
 import alipayRewardQr from '@/assets/author/alipay-reward.jpg';
 import wechatPayRewardQr from '@/assets/author/wechat-pay-reward.jpg';
@@ -7,8 +13,72 @@ import wechatContactQr from '@/assets/author/wechat-contact.jpg';
 
 const PROJECT_URL = 'https://github.com/ZekerTop/ai-cli-complete-notify';
 
-export default function AboutProjectPanel() {
+interface Props {
+  currentVersion: string;
+}
+
+type UpdateViewState = { status: 'checking' | 'error' } | UpdateCheckResult;
+
+function displayVersion(value: string) {
+  const normalized = String(value || '').trim().replace(/^v/i, '');
+  return `v${normalized}`;
+}
+
+export default function AboutProjectPanel({ currentVersion }: Props) {
   const { t } = useTranslation();
+  const [updateState, setUpdateState] = useState<UpdateViewState>({ status: 'checking' });
+  const activeRequestRef = useRef(0);
+  const checkingRef = useRef(false);
+
+  const runUpdateCheck = useCallback(async () => {
+    if (checkingRef.current) return;
+
+    checkingRef.current = true;
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
+    setUpdateState({ status: 'checking' });
+
+    try {
+      const result = await checkLatestRelease(currentVersion);
+      if (activeRequestRef.current === requestId) setUpdateState(result);
+    } catch (_error) {
+      if (activeRequestRef.current === requestId) setUpdateState({ status: 'error' });
+    } finally {
+      if (activeRequestRef.current === requestId) checkingRef.current = false;
+    }
+  }, [currentVersion]);
+
+  useEffect(() => {
+    void runUpdateCheck();
+
+    return () => {
+      activeRequestRef.current += 1;
+      checkingRef.current = false;
+    };
+  }, [runUpdateCheck]);
+
+  const isChecking = updateState.status === 'checking';
+  const latestVersion = 'latestVersion' in updateState ? updateState.latestVersion : '';
+  const statusText =
+    updateState.status === 'checking'
+      ? t('aboutProject.update.checking')
+      : updateState.status === 'update-available'
+        ? t('aboutProject.update.available', { version: displayVersion(updateState.latestVersion) })
+        : updateState.status === 'up-to-date'
+          ? t('aboutProject.update.upToDate')
+          : updateState.status === 'ahead'
+            ? t('aboutProject.update.ahead')
+            : t('aboutProject.update.error');
+  const statusClass =
+    updateState.status === 'update-available'
+      ? 'text-[rgba(178,188,255,0.96)]'
+      : updateState.status === 'up-to-date'
+        ? 'text-emerald-300'
+        : updateState.status === 'ahead'
+          ? 'text-cyan-300'
+          : updateState.status === 'error'
+            ? 'text-rose-300'
+            : 'text-muted';
 
   return (
     <Panel
@@ -51,14 +121,72 @@ export default function AboutProjectPanel() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => open(PROJECT_URL)}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[rgba(110,123,255,0.32)] bg-[rgba(110,123,255,0.12)] px-4 py-2.5 text-sm font-medium text-[var(--text)] transition-colors hover:border-[rgba(110,123,255,0.52)] hover:bg-[rgba(110,123,255,0.18)]"
-              >
-                <GitHubLogo />
-                <span>{t('aboutProject.openProject')}</span>
-              </button>
+              <div className="border-t border-white/[0.08] pt-5" data-testid="update-check">
+                <div>
+                  <p className="sidebar-kicker">{t('aboutProject.update.label')}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                    <span className="text-muted">
+                      {t('aboutProject.update.currentVersion')}
+                      <span className="ml-2 font-mono font-semibold text-[var(--text)]">
+                        {displayVersion(currentVersion)}
+                      </span>
+                    </span>
+                    {latestVersion && (
+                      <span className="text-muted">
+                        {t('aboutProject.update.latestVersion')}
+                        <span className="ml-2 font-mono font-semibold text-[var(--text)]">
+                          {displayVersion(latestVersion)}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                  <p className={`mt-2 min-h-5 text-sm leading-relaxed ${statusClass}`}>{statusText}</p>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void runUpdateCheck()}
+                    disabled={isChecking}
+                    className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.05] px-4 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:border-white/[0.24] hover:bg-white/[0.09] disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    {isChecking
+                      ? t('aboutProject.update.checkingAction')
+                      : t('aboutProject.update.recheck')}
+                  </button>
+
+                  {updateState.status === 'update-available' && (
+                    <button
+                      type="button"
+                      onClick={() => void open(updateState.releaseUrl)}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[rgba(110,123,255,0.36)] bg-[rgba(110,123,255,0.14)] px-4 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:border-[rgba(110,123,255,0.58)] hover:bg-[rgba(110,123,255,0.2)]"
+                    >
+                      <GitHubLogo />
+                      <span>{t('aboutProject.update.viewRelease')}</span>
+                    </button>
+                  )}
+
+                  {updateState.status === 'error' && (
+                    <button
+                      type="button"
+                      onClick={() => void open(RELEASES_URL)}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[rgba(110,123,255,0.36)] bg-[rgba(110,123,255,0.14)] px-4 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:border-[rgba(110,123,255,0.58)] hover:bg-[rgba(110,123,255,0.2)]"
+                    >
+                      <GitHubLogo />
+                      <span>{t('aboutProject.update.viewReleases')}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => void open(PROJECT_URL)}
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-white/[0.12] px-4 py-2 text-sm font-medium text-[var(--text)] transition-colors hover:border-white/[0.24] hover:bg-white/[0.05]"
+                  >
+                    <GitHubLogo />
+                    <span>{t('aboutProject.openProject')}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

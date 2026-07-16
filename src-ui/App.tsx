@@ -387,7 +387,7 @@ export default function App() {
             />
           )}
           {activePanel === 'about-project' && (
-            <AboutProjectPanel />
+            <AboutProjectPanel currentVersion={VERSION} />
           )}
         </div>
       </main>

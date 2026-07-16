@@ -92,6 +92,7 @@ export interface AppConfig {
     {
       enabled: boolean;
       minDurationMinutes: number;
+      onlyInteractive?: boolean;
       channels: Record<string, boolean>;
     }
   >;

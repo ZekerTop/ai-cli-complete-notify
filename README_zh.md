@@ -617,10 +617,7 @@ macOS 说明：
 ## 📈 项目统计
 
 <a href="https://www.star-history.com/?repos=ZekerTop%2Fai-cli-complete-notify&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="assets/star-history/star-history-dark.svg" />
-   <img alt="Star History Chart" src="assets/star-history/star-history-light.svg" />
- </picture>
+ <img alt="Star History Chart" src="assets/star-history/star-history.png" />
 </a>
 
 ---

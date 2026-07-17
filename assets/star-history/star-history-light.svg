@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520" role="img" aria-labelledby="title description">
+  <title id="title">Star History for ZekerTop/ai-cli-complete-notify</title>
+  <desc id="description">ZekerTop/ai-cli-complete-notify has 371 stars as of 2026-07-17.</desc>
+  <rect width="800" height="520" rx="8" fill="#ffffff" stroke="#d0d7de" />
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <text x="72" y="38" fill="#1f2328" font-size="24" font-weight="600">Star History</text>
+    <text x="72" y="62" fill="#656d76" font-size="14">ZekerTop/ai-cli-complete-notify</text>
+    <text x="758" y="40" text-anchor="end" fill="#0969da" font-size="26" font-weight="700">371</text>
+    <text x="758" y="61" text-anchor="end" fill="#656d76" font-size="12">stars</text>
+
+      <line x1="72" y1="446" x2="758" y2="446" stroke="#d8dee4" stroke-width="1" />
+      <text x="60" y="450" text-anchor="end" fill="#656d76" font-size="12">0</text>
+      <line x1="72" y1="373.2" x2="758" y2="373.2" stroke="#d8dee4" stroke-width="1" />
+      <text x="60" y="377.2" text-anchor="end" fill="#656d76" font-size="12">100</text>
+      <line x1="72" y1="300.4" x2="758" y2="300.4" stroke="#d8dee4" stroke-width="1" />
+      <text x="60" y="304.4" text-anchor="end" fill="#656d76" font-size="12">200</text>
+      <line x1="72" y1="227.6" x2="758" y2="227.6" stroke="#d8dee4" stroke-width="1" />
+      <text x="60" y="231.6" text-anchor="end" fill="#656d76" font-size="12">300</text>
+      <line x1="72" y1="154.8" x2="758" y2="154.8" stroke="#d8dee4" stroke-width="1" />
+      <text x="60" y="158.8" text-anchor="end" fill="#656d76" font-size="12">400</text>
+      <line x1="72" y1="82" x2="758" y2="82" stroke="#d8dee4" stroke-width="1" />
+      <text x="60" y="86" text-anchor="end" fill="#656d76" font-size="12">500</text>
+
+      <line x1="72" y1="82" x2="72" y2="446" stroke="#d8dee4" stroke-width="1" stroke-dasharray="3 5" />
+      <text x="72" y="474" text-anchor="start" fill="#656d76" font-size="12">2026-01</text>
+      <line x1="209.20000000000002" y1="82" x2="209.20000000000002" y2="446" stroke="#d8dee4" stroke-width="1" stroke-dasharray="3 5" />
+      <text x="209.20000000000002" y="474" text-anchor="middle" fill="#656d76" font-size="12">2026-02</text>
+      <line x1="346.40000000000003" y1="82" x2="346.40000000000003" y2="446" stroke="#d8dee4" stroke-width="1" stroke-dasharray="3 5" />
+      <text x="346.40000000000003" y="474" text-anchor="middle" fill="#656d76" font-size="12">2026-03</text>
+      <line x1="483.59999999999997" y1="82" x2="483.59999999999997" y2="446" stroke="#d8dee4" stroke-width="1" stroke-dasharray="3 5" />
+      <text x="483.59999999999997" y="474" text-anchor="middle" fill="#656d76" font-size="12">2026-04</text>
+      <line x1="620.8000000000001" y1="82" x2="620.8000000000001" y2="446" stroke="#d8dee4" stroke-width="1" stroke-dasharray="3 5" />
+      <text x="620.8000000000001" y="474" text-anchor="middle" fill="#656d76" font-size="12">2026-06</text>
+      <line x1="758" y1="82" x2="758" y2="446" stroke="#d8dee4" stroke-width="1" stroke-dasharray="3 5" />
+      <text x="758" y="474" text-anchor="end" fill="#656d76" font-size="12">2026-07</text>
+    <path d="M 72.00 432.90 L 179.95 424.16 L 277.45 413.97 L 385.40 404.50 L 489.87 402.32 L 597.82 400.86 L 758.00 175.91 L 758.00 446.00 L 72.00 446.00 Z" fill="#0969da" opacity="0.12" />
+    <path d="M 72.00 432.90 L 179.95 424.16 L 277.45 413.97 L 385.40 404.50 L 489.87 402.32 L 597.82 400.86 L 758.00 175.91" fill="none" stroke="#0969da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="758" cy="175.91199999999998" r="5" fill="#ffffff" stroke="#0969da" stroke-width="3" />
+    <text x="72" y="498" fill="#656d76" font-size="11">Source: OSS Insight and GitHub</text>
+    <text x="758" y="498" text-anchor="end" fill="#656d76" font-size="11">Updated 2026-07-17 UTC</text>
+  </g>
+</svg>

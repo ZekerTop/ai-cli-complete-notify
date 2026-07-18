@@ -318,6 +318,14 @@ macOS の注意:
 
 Issue と Pull Request を歓迎します。
 
+## コントリビューター
+
+コード、ドキュメント、フィードバック、アイデアを通じてプロジェクトに参加してくださった皆さんに感謝します。
+
+<a href="https://github.com/ZekerTop/ai-cli-complete-notify/graphs/contributors">
+ <img alt="コントリビューター" src="https://contrib.rocks/image?repo=ZekerTop/ai-cli-complete-notify&max=100&columns=12&anon=0" />
+</a>
+
 ## 🔗 リンク
 
 - [LINUX DO](https://linux.do/)

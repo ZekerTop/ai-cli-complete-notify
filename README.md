@@ -608,6 +608,14 @@ macOS notes:
 
 Issues and Pull Requests are welcome!
 
+## Contributors
+
+Thanks to everyone who has contributed to this project through code, documentation, feedback, and ideas.
+
+<a href="https://github.com/ZekerTop/ai-cli-complete-notify/graphs/contributors">
+ <img alt="Contributors" src="https://contrib.rocks/image?repo=ZekerTop/ai-cli-complete-notify&max=100&columns=12&anon=0" />
+</a>
+
 ## 🔗 Links
 
 - [LINUX DO](https://linux.do/)

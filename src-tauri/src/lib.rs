@@ -213,10 +213,14 @@ fn hide_to_tray(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-#[allow(unused_variables)]
-fn set_dock_hidden(hidden: bool) -> Result<(), String> {
+fn set_dock_hidden(app: tauri::AppHandle, hidden: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
-    apply_dock_policy(hidden);
+    {
+        app.run_on_main_thread(move || apply_dock_policy(hidden))
+            .map_err(|error| error.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, hidden);
     Ok(())
 }
 

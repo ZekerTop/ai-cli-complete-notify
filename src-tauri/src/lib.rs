@@ -132,6 +132,7 @@ fn read_silent_start_setting() -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(target_os = "macos")]
 fn read_hide_dock_icon_setting() -> bool {
     let settings_path = get_data_dir().join("settings.json");
     let bytes = match fs::read(&settings_path) {
@@ -212,6 +213,7 @@ fn hide_to_tray(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+#[allow(unused_variables)]
 fn set_dock_hidden(hidden: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     apply_dock_policy(hidden);
@@ -246,6 +248,7 @@ pub fn run() {
             let should_stay_hidden =
                 launch_state.silent_start_requested || read_silent_start_setting();
 
+            #[cfg(target_os = "macos")]
             let hide_dock = read_hide_dock_icon_setting();
             #[cfg(target_os = "macos")]
             apply_dock_policy(hide_dock);

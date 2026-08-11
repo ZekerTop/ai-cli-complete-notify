@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { AppConfig } from '@/lib/types';
+import { setDockHidden } from '@/lib/window';
 import Panel from './ui/Panel';
 
 interface Props {
@@ -106,6 +107,27 @@ export default function AdvancedPanel({
               <span className="text-sm leading-relaxed">{t('advanced.silentStart')}</span>
             </label>
             <div className="pl-[30px] text-xs text-muted leading-relaxed">{t('advanced.silentStartHint')}</div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.ui.hideDockIcon}
+                onChange={() =>
+                  onUpdate((c) => {
+                    const next = { ...c, ui: { ...c.ui, hideDockIcon: !c.ui.hideDockIcon } };
+                    void setDockHidden(next.ui.hideDockIcon);
+                    return next;
+                  })
+                }
+                className={checkboxClass}
+              />
+              <span className="text-sm leading-relaxed">{t('advanced.hideDockIcon')}</span>
+            </label>
+            <div className="pl-[30px] text-xs text-muted leading-relaxed">
+              {t('advanced.hideDockIconHint')}
+            </div>
           </div>
         </div>
 

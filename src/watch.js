@@ -258,6 +258,82 @@ function findLatestFiles(rootDir, isCandidate, limit) {
   return latest;
 }
 
+function getCodexTurnIdFromObject(obj) {
+  if (!obj || typeof obj !== 'object') return '';
+  const payload = obj.payload && typeof obj.payload === 'object' ? obj.payload : {};
+  return String(
+    payload.turn_id
+    || payload.turnId
+    || obj.turn_id
+    || obj.turnId
+    || ''
+  ).trim();
+}
+
+function findCodexSessionFileById(rootDir, sessionId, excludePath) {
+  const needle = String(sessionId || '').trim().toLowerCase();
+  if (!needle) return '';
+  let found = '';
+
+  function walk(dir) {
+    if (found) return;
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (_error) {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (found) return;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+      if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.jsonl')) continue;
+      if (excludePath && path.resolve(fullPath) === path.resolve(excludePath)) continue;
+      if (entry.name.toLowerCase().includes(needle)) found = fullPath;
+    }
+  }
+
+  walk(rootDir);
+  return found;
+}
+
+function collectCodexTurnIds(filePath) {
+  const ids = new Set();
+  const fd = fs.openSync(filePath, 'r');
+  const buffer = Buffer.alloc(256 * 1024);
+  let position = 0;
+  let partial = '';
+
+  try {
+    while (true) {
+      const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, position);
+      if (bytesRead <= 0) break;
+      position += bytesRead;
+
+      const parts = `${partial}${buffer.slice(0, bytesRead).toString('utf8')}`.split(/\r?\n/);
+      partial = parts.pop() || '';
+      for (const line of parts) {
+        if (!line) continue;
+        const turnId = getCodexTurnIdFromObject(safeJsonParse(line));
+        if (turnId) ids.add(turnId);
+      }
+    }
+
+    if (partial) {
+      const turnId = getCodexTurnIdFromObject(safeJsonParse(partial));
+      if (turnId) ids.add(turnId);
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  return ids;
+}
+
 class JsonlFollower {
   constructor({ seedBytes }) {
     this.seedBytes = Number.isFinite(seedBytes) ? seedBytes : 256 * 1024;
@@ -977,6 +1053,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
   // as completion. Keep this window short to reduce perceived latency, but long enough to avoid false positives.
   const emptyPhaseQuietMs = Math.max(3000, Number(process.env.CODEX_EMPTY_PHASE_QUIET_MS || 15000));
   const followTopN = Math.max(1, Number(process.env.CODEX_FOLLOW_TOP_N || 5));
+  const pollIntervalMs = Math.max(500, intervalMs || 1000);
   // When we attach to a just-created session, its first turn may already be fully written.
   // Re-scan the seed window and treat recent lines as "live" so confirm/complete notifications are not missed.
   const seedCatchupMs = Math.max(0, Number(process.env.CODEX_SEED_CATCHUP_MS || 30000));
@@ -1130,7 +1207,13 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       lastNotifiedAssistantAt: null,
       lastTaskStartedAt: null,
       currentTurnId: null,
+      sessionMetaSeen: false,
       sessionId: null,
+      // Fork history may be copied with fresh timestamps, so it stays muted until a new user turn begins.
+      forkedFromId: '',
+      forkPhase: 'normal',
+      forkInheritedTurnIds: new Set(),
+      forkSourceLoaded: false,
       threadSource: '',
       parentThreadId: '',
       agentNickname: '',
@@ -1176,6 +1259,62 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       failureContext.lastAssistantText = assistantText;
       failureContext.lastStartedAt = startedAt;
       failureContext.lastUpdatedAt = Date.now();
+    }
+
+    function setForkPhase(nextPhase, reason) {
+      if (!state.forkedFromId || state.forkPhase === nextPhase) return;
+      state.forkPhase = nextPhase;
+      logger(`[watch][codex] fork state=${nextPhase}${reason ? ` (${reason})` : ''}`);
+    }
+
+    function loadForkInheritedTurnIds() {
+      if (!state.forkedFromId || state.forkSourceLoaded) return;
+      const sourceFile = findCodexSessionFileById(root, state.forkedFromId, filePath);
+      if (!sourceFile) return;
+      try {
+        state.forkInheritedTurnIds = collectCodexTurnIds(sourceFile);
+        state.forkSourceLoaded = true;
+        logger(`[watch][codex] fork source turns=${state.forkInheritedTurnIds.size}`);
+      } catch (_error) {
+        // Keep the fork muted until an explicit child-session boundary appears.
+      }
+    }
+
+    function isForkBoundaryObject(obj) {
+      if (!obj || obj.type !== 'event_msg' || !obj.payload || typeof obj.payload !== 'object') {
+        return false;
+      }
+      if (obj.payload.type !== 'thread_settings_applied') return false;
+      const threadId = String(obj.payload.thread_id || obj.payload.threadId || '').trim();
+      return Boolean(threadId && state.sessionId && threadId === state.sessionId);
+    }
+
+    function isForkUserObject(obj) {
+      if (!obj || typeof obj !== 'object') return false;
+      if (
+        obj.type === 'response_item'
+        && obj.payload
+        && obj.payload.type === 'message'
+        && obj.payload.role === 'user'
+      ) {
+        return true;
+      }
+      return Boolean(
+        obj.type === 'event_msg'
+        && obj.payload
+        && obj.payload.type === 'user_message'
+      );
+    }
+
+    function isForkTurnStartObject(obj) {
+      if (!obj || typeof obj !== 'object') return false;
+      if (obj.type === 'turn_context') return Boolean(getCodexTurnIdFromObject(obj));
+      return Boolean(
+        obj.type === 'event_msg'
+        && obj.payload
+        && obj.payload.type === 'task_started'
+        && getCodexTurnIdFromObject(obj)
+      );
     }
 
     function clearPendingCompletion() {
@@ -1299,9 +1438,46 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
 
     function enqueueObject(obj, meta) {
       processingChain = processingChain
-        .then(() => processObject(obj, meta))
+        .then(() => processObservedObject(obj, meta))
         .catch(() => {});
       return processingChain;
+    }
+
+    async function processObservedObject(obj, meta = {}) {
+      const seed = Boolean(meta.seed);
+      if (!state.forkedFromId || state.forkPhase === 'normal' || state.forkPhase === 'live') {
+        return processObject(obj, { seed });
+      }
+
+      if (state.forkPhase === 'copying_history') {
+        const boundary = isForkBoundaryObject(obj);
+        const turnId = getCodexTurnIdFromObject(obj);
+        const startsNewTurn =
+          !seed
+          && isForkTurnStartObject(obj)
+          && state.forkSourceLoaded
+          && state.forkInheritedTurnIds.size > 0
+          && !state.forkInheritedTurnIds.has(turnId);
+
+        if (startsNewTurn) {
+          setForkPhase('live', 'new fork turn');
+          await processObject(obj, { seed: false });
+          return;
+        }
+
+        await processObject(obj, { seed: true });
+        if (boundary) setForkPhase('waiting_for_new_user', 'thread settings applied');
+        return;
+      }
+
+      if (state.forkPhase === 'waiting_for_new_user') {
+        if (!seed && isForkUserObject(obj)) {
+          setForkPhase('live', 'new user message');
+          await processObject(obj, { seed: false });
+          return;
+        }
+        await processObject(obj, { seed: true });
+      }
     }
 
     async function processObject(obj, { seed }) {
@@ -1314,6 +1490,17 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
 
       if (obj.type === 'session_meta' && obj.payload && typeof obj.payload === 'object') {
         const meta = obj.payload;
+        const isFirstSessionMeta = !state.sessionMetaSeen;
+        if (isFirstSessionMeta) {
+          state.sessionMetaSeen = true;
+          const forkedFromId = String(meta.forked_from_id || meta.forkedFromId || '').trim();
+          if (forkedFromId) {
+            state.forkedFromId = forkedFromId;
+            state.forkPhase = 'copying_history';
+          }
+        } else if (state.forkedFromId) {
+          return;
+        }
         if (typeof meta.cwd === 'string' && meta.cwd.trim()) {
           state.lastCwd = meta.cwd;
           syncFailureContext({ cwd: meta.cwd });
@@ -1346,6 +1533,9 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
 
         if (isCodexSubagentSessionMeta(meta)) {
           state.isSubagentSession = true;
+        }
+        if (isFirstSessionMeta && state.forkedFromId) {
+          loadForkInheritedTurnIds();
         }
         return;
       }
@@ -1776,6 +1966,11 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       const start = Math.max(0, stat.size - follower.seedBytes);
       const seedText = readFileSliceUtf8(filePath, start, stat.size - start);
       let lines = seedText.split(/\r?\n/);
+      if (state.forkedFromId) {
+        const seedPartial = /\r?\n$/.test(seedText) ? '' : (lines.pop() || '');
+        follower.position = stat.size;
+        follower.partial = seedPartial;
+      }
       if (start > 0) lines = lines.slice(1);
 
       const objects = [];
@@ -1787,17 +1982,41 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
 
       // Pass 1: update state without sending notifications.
       for (const obj of objects) {
-        await processObject(obj, { seed: true });
+        await processObservedObject(obj, { seed: true });
       }
 
       // Pass 2: treat recent seed lines as "live" to avoid missing quick turns.
       const since = Date.now() - Math.max(0, Number(windowMs));
+      if (state.forkedFromId) {
+        const boundaryIndex = objects.findIndex((obj) => isForkBoundaryObject(obj));
+        let liveIndex = boundaryIndex >= 0
+          ? objects.findIndex((obj, index) => index > boundaryIndex && isForkUserObject(obj))
+          : -1;
+
+        if (liveIndex < 0 && state.forkSourceLoaded && state.forkInheritedTurnIds.size > 0) {
+          liveIndex = objects.findIndex((obj, index) => {
+            if (boundaryIndex >= 0 && index <= boundaryIndex) return false;
+            const turnId = getCodexTurnIdFromObject(obj);
+            return isForkTurnStartObject(obj) && turnId && !state.forkInheritedTurnIds.has(turnId);
+          });
+        }
+
+        if (liveIndex < 0) return;
+
+        const liveTs = parseTimestamp(objects[liveIndex] && objects[liveIndex].timestamp);
+        if (liveTs == null || liveTs < since) return;
+
+        setForkPhase('live', 'recent seed fork turn');
+        for (let index = liveIndex; index < objects.length; index += 1) {
+          await processObject(objects[index], { seed: false });
+        }
+        return;
+      }
+
       const fileBornAt = Number.isFinite(Number(stat.birthtimeMs)) ? Number(stat.birthtimeMs) : 0;
       const catchupFloor = fileBornAt > 0 ? Math.max(since, fileBornAt) : since;
       for (const obj of objects) {
         const ts = parseTimestamp(obj && obj.timestamp);
-        // Forked Codex chats copy old events into a newly created session file.
-        // Keep copied history as seed state only; replay only events born with this file.
         if (ts == null || ts < catchupFloor) continue;
         await processObject(obj, { seed: false });
       }
@@ -1878,7 +2097,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
   }
 
   tick();
-  const timer = setInterval(tick, Math.max(500, intervalMs || 1000));
+  const timer = setInterval(tick, pollIntervalMs);
   return () => {
     clearInterval(timer);
     for (const session of sessions.values()) {

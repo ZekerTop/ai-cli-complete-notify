@@ -469,6 +469,11 @@ macOS notes:
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
 
+### 2.15.0
+
+- Fixed Codex Desktop forked chats replaying historical completion notifications. Fork-copied history stays muted until initialization finishes and the user sends a new message; only new branch turns can notify.
+- Added regression coverage for rewritten fork timestamps, history appended after Watch attaches, inherited turn detection without an explicit boundary, attach/seed races, and a different workspace `cwd`.
+
 ### 2.14.0
 
 - Added the visible `AI提醒` marker to every Webhook payload and to the default test message, so DingTalk custom robots can use one keyword consistently for manual tests and real CLI completion alerts.

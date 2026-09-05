@@ -410,7 +410,7 @@ test('codex watch only notifies after an active goal stops', async (t) => {
   assert.equal(notifications[2].outputContent, 'Goal 已阻塞');
 });
 
-test('codex watch suppresses Codex Desktop subagent completions from session metadata', async (t) => {
+test('codex watch suppresses Codex Desktop subagent and guardian completions from session metadata', async (t) => {
   const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-reminder-codex-home-'));
   const previousEnv = {
     CODEX_WATCH_BACKEND: process.env.CODEX_WATCH_BACKEND,
@@ -468,7 +468,8 @@ test('codex watch suppresses Codex Desktop subagent completions from session met
   fs.mkdirSync(sessionDir, { recursive: true });
   const parentFile = path.join(sessionDir, 'parent.jsonl');
   const childFile = path.join(sessionDir, 'child.jsonl');
-  for (const filePath of [parentFile, childFile]) {
+  const guardianFile = path.join(sessionDir, 'guardian.jsonl');
+  for (const filePath of [parentFile, childFile, guardianFile]) {
     fs.writeFileSync(filePath, '', 'utf8');
   }
 
@@ -527,10 +528,36 @@ test('codex watch suppresses Codex Desktop subagent completions from session met
   await sleep(650);
   assert.equal(notifications.length, 0, `subagent completion should not notify:\n${logs.join('\n')}`);
 
+  appendJsonl(guardianFile, [
+    {
+      timestamp: 6,
+      type: 'session_meta',
+      payload: {
+        id: 'guardian-thread',
+        session_id: 'parent-thread',
+        parent_thread_id: 'parent-thread',
+        cwd: '/workspace/app',
+        originator: 'codex_vscode',
+        thread_source: 'guardian_review',
+        source: { subagent: { other: 'guardian' } },
+      },
+    },
+    { timestamp: 7, type: 'event_msg', payload: { type: 'task_started', turn_id: 'guardian-turn' } },
+    { timestamp: 8, type: 'event_msg', payload: { type: 'agent_message', content: '{"outcome":"allow"}' } },
+    {
+      timestamp: 9,
+      type: 'event_msg',
+      payload: { type: 'task_complete', turn_id: 'guardian-turn', last_agent_message: '{"outcome":"allow"}' },
+    },
+  ]);
+
+  await sleep(650);
+  assert.equal(notifications.length, 0, `guardian completion should not notify:\n${logs.join('\n')}`);
+
   appendJsonl(parentFile, [
-    { timestamp: 6, type: 'event_msg', payload: { type: 'task_started', turn_id: 'parent-turn' } },
-    { timestamp: 7, type: 'event_msg', payload: { type: 'agent_message', content: 'parent done' } },
-    { timestamp: 8, type: 'event_msg', payload: { type: 'task_complete', turn_id: 'parent-turn', last_agent_message: 'parent done' } },
+    { timestamp: 10, type: 'event_msg', payload: { type: 'task_started', turn_id: 'parent-turn' } },
+    { timestamp: 11, type: 'event_msg', payload: { type: 'agent_message', content: 'parent done' } },
+    { timestamp: 12, type: 'event_msg', payload: { type: 'task_complete', turn_id: 'parent-turn', last_agent_message: 'parent done' } },
   ]);
 
   await waitFor(() => notifications.length === 1);

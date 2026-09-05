@@ -1009,7 +1009,8 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       : '';
     if (threadSource === 'subagent') return true;
     if (typeof payload.source === 'string' && payload.source.trim().toLowerCase() === 'subagent') return true;
-    return Boolean(getCodexSubagentThreadSpawn(payload.source));
+    const subagent = payload.source && typeof payload.source === 'object' ? payload.source.subagent : null;
+    return Boolean(subagent && typeof subagent === 'object');
   }
 
   function extractRequestUserInputText(payload) {

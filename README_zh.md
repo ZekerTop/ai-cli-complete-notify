@@ -353,6 +353,8 @@ NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
 # Telegram Bot
+# Token 必须保密；若 Telegram 返回 Unauthorized，请通过 @BotFather 重新生成
+# 若 Token 曾出现在公开截图、Issue 或日志中，请立即撤销旧 Token
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 

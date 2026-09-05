@@ -3,6 +3,7 @@ const http = require('http');
 const { URL } = require('url');
 
 const REQUEST_TIMEOUT_MS = 10000;
+const UNAUTHORIZED_ERROR = 'Telegram Bot Token is invalid or revoked (Unauthorized). Regenerate it with @BotFather; if it was exposed publicly, revoke the old token immediately.';
 
 function firstEnvValue(candidates) {
   for (const name of candidates) {
@@ -106,10 +107,24 @@ function handleResponse(res, resolve) {
   let responseData = '';
   res.on('data', (chunk) => (responseData += chunk));
   res.on('end', () => {
+    if (res.statusCode === 401) {
+      resolve({ ok: false, error: UNAUTHORIZED_ERROR });
+      return;
+    }
     try {
       const result = JSON.parse(responseData);
-      if (result && result.ok) resolve({ ok: true, error: null });
-      else resolve({ ok: false, error: result && result.description ? String(result.description) : 'Telegram 返回错误' });
+      if (Number(result && result.error_code) === 401) {
+        resolve({ ok: false, error: UNAUTHORIZED_ERROR });
+      } else if (result && result.ok) {
+        resolve({ ok: true, error: null });
+      } else {
+        const description = result && result.description ? String(result.description) : '';
+        if (description.toLowerCase() === 'unauthorized') {
+          resolve({ ok: false, error: UNAUTHORIZED_ERROR });
+          return;
+        }
+        resolve({ ok: false, error: description || 'Telegram 返回错误' });
+      }
     } catch (error) {
       resolve({ ok: false, error: '无法解析 Telegram 响应' });
     }

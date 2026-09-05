@@ -351,6 +351,8 @@ NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
 # Telegram Bot
+# Keep the token private. If Telegram returns Unauthorized, regenerate it with @BotFather.
+# Revoke it immediately if it appeared in a public screenshot, issue, or log.
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 

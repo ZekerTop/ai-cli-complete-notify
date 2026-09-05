@@ -33,7 +33,8 @@ const DEFAULT_CONFIG = {
 //           both paths may fire and content-based dedupe collapses duplicates.
 // 'watch' = watch-only for Claude/Gemini (installed hooks are suppressed);
 //           OpenCode still uses its plugin (no watch path); Codex stays on watch.
-    notificationMode: 'hooks'
+    notificationMode: 'hooks',
+    hideDockIcon: false,
   },
   channels: {
     webhook: {

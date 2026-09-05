@@ -132,6 +132,45 @@ fn read_silent_start_setting() -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(target_os = "macos")]
+fn read_hide_dock_icon_setting() -> bool {
+    let settings_path = get_data_dir().join("settings.json");
+    let bytes = match fs::read(&settings_path) {
+        Ok(bytes) => bytes,
+        Err(_) => return false,
+    };
+
+    let parsed: serde_json::Value = match serde_json::from_slice(&bytes) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+
+    parsed
+        .get("ui")
+        .and_then(|ui| ui.get("hideDockIcon"))
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false)
+}
+
+#[cfg(target_os = "macos")]
+fn apply_dock_policy(hidden: bool) {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
+
+    let Some(marker) = MainThreadMarker::new() else {
+        eprintln!("apply_dock_policy: not on main thread, skipping");
+        return;
+    };
+
+    let app = NSApplication::sharedApplication(marker);
+    let policy = if hidden {
+        NSApplicationActivationPolicy::Accessory
+    } else {
+        NSApplicationActivationPolicy::Regular
+    };
+    app.setActivationPolicy(policy);
+}
+
 fn build_startup_status(app: &tauri::AppHandle, launch_state: LaunchState) -> StartupStatus {
     match app.autolaunch().is_enabled() {
         Ok(enabled) => StartupStatus {
@@ -173,6 +212,18 @@ fn hide_to_tray(app: tauri::AppHandle) -> Result<(), String> {
     hide_main_window_to_tray(&app)
 }
 
+#[tauri::command]
+fn set_dock_hidden(app: tauri::AppHandle, hidden: bool) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        app.run_on_main_thread(move || apply_dock_policy(hidden))
+            .map_err(|error| error.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, hidden);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -191,7 +242,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_startup_status,
             set_autostart_enabled,
-            hide_to_tray
+            hide_to_tray,
+            set_dock_hidden,
         ])
         .setup(|app| {
             let launch_state = LaunchState {
@@ -199,6 +251,11 @@ pub fn run() {
             };
             let should_stay_hidden =
                 launch_state.silent_start_requested || read_silent_start_setting();
+
+            #[cfg(target_os = "macos")]
+            let hide_dock = read_hide_dock_icon_setting();
+            #[cfg(target_os = "macos")]
+            apply_dock_policy(hide_dock);
 
             app.manage(launch_state);
 

@@ -23,6 +23,7 @@ export interface AppConfig {
     focusTarget: 'auto' | 'vscode' | 'terminal';
     confirmAlert: { enabled: boolean };
     notificationMode: 'watch' | 'hooks';
+    hideDockIcon: boolean;
   };
   channels: {
     webhook: {

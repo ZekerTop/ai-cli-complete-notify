@@ -141,6 +141,8 @@
   "advanced.autostartHint": "Supported on Windows/macOS; Linux requires manual setup.",
   "advanced.silentStart": "Silent start (hide to tray on launch)",
   "advanced.silentStartHint": "Takes effect next launch and skips the tray balloon.",
+  "advanced.hideDockIcon": "Hide from Dock (show only in macOS menu bar)",
+  "advanced.hideDockIconHint": "When hidden, the app will not appear in the Dock. Use the menu bar icon to access it. (macOS only)",
   "close.message": "Close the app?",
   "close.detail": "Minimize to the tray/menu bar to keep running, or quit to stop watchers.",
   "close.hide": "Minimize to tray",

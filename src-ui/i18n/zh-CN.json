@@ -141,6 +141,8 @@
   "advanced.autostartHint": "Windows / macOS 支持开机自启动；Linux 需自行配置。",
   "advanced.silentStart": "无感启动（启动后自动隐藏到托盘）",
   "advanced.silentStartHint": "开启后下次启动会直接隐藏到托盘且不弹出提示。",
+  "advanced.hideDockIcon": "在程序坞中隐藏（仅在 macOS 菜单栏显示图标）",
+  "advanced.hideDockIconHint": "隐藏后应用不再出现在程序坞中，仅通过菜单栏图标操作。（仅 macOS 有效）",
   "close.message": "关闭应用？",
   "close.detail": "可选择隐藏到托盘/菜单栏继续运行，或直接退出并停止监听。",
   "close.hide": "隐藏到托盘",

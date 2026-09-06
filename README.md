@@ -473,7 +473,7 @@ macOS notes:
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
 
-### 2.15.0 (Unreleased)
+### 2.15.0
 
 - Fixed Codex Desktop forked chats replaying historical completion notifications. Fork-copied history stays muted until initialization finishes and the user sends a new message; only new branch turns can notify.
 - Fixed Codex Watch treating Guardian approval-review sessions as completed user tasks. Object-valued `source.subagent` metadata, including `other: "guardian"`, now uses the existing subagent filter; normal parent-session completion notifications remain enabled. Thanks to [Bbbbqsh](https://github.com/Bbbbqsh) for [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34).

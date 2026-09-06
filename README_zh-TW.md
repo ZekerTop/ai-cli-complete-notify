@@ -291,7 +291,7 @@ macOS 建議：
 
 > `v2.x` 是目前的 Tauri 桌面版本線；`v1.x` 是舊 Electron 版本線。完整舊版本歷史可參考 [English](README.md) 或 [简体中文](README_zh.md)。
 
-### 2.15.0（尚未發布）
+### 2.15.0
 
 - 修復 Codex Desktop Fork 新對話重播歷史完成提醒的問題。Fork 複製的歷史在初始化完成且使用者發出新訊息前一直保持靜默，只有新分支輪次會傳送提醒。
 - 修復 Codex Watch 將 Guardian 內部審批工作階段誤判為使用者任務完成的問題。物件形式的 `source.subagent` 中繼資料（包括 `other: "guardian"`）現在統一使用既有的子工作階段過濾邏輯，父工作階段的正常完成提醒仍然保留。感謝 [Bbbbqsh](https://github.com/Bbbbqsh) 貢獻 [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)。

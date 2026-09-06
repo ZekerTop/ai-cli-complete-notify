@@ -291,7 +291,7 @@ macOS 참고:
 
 > `v2.x`는 현재 Tauri 기반 데스크톱 라인이고, `v1.x`는 이전 Electron 라인입니다. 전체 이전 버전 이력은 [English](README.md) 또는 [简体中文](README_zh.md)를 참고하세요.
 
-### 2.15.0(미출시)
+### 2.15.0
 
 - Codex Desktop에서 Fork한 새 대화가 이전 완료 알림을 다시 재생하는 문제를 수정했습니다. Fork로 복사된 기록은 초기화가 끝나고 사용자가 새 메시지를 보낼 때까지 알림을 보내지 않으며, 새 브랜치의 turn만 알림을 보냅니다.
 - Codex Watch가 Guardian 내부 승인 검토 세션을 사용자 작업 완료로 잘못 판단하는 문제를 수정했습니다. `other: "guardian"`을 포함한 객체 형식의 `source.subagent` 메타데이터에 기존 하위 세션 필터를 적용하며, 상위 세션의 정상 완료 알림은 유지합니다. [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)를 기여해 주신 [Bbbbqsh](https://github.com/Bbbbqsh) 님께 감사드립니다.

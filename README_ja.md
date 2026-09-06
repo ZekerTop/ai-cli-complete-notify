@@ -291,7 +291,7 @@ macOS の注意:
 
 > `v2.x` は現在の Tauri ベースのデスクトップラインで、`v1.x` は旧 Electron ラインです。過去の完全な履歴は [English](README.md) または [简体中文](README_zh.md) を参照してください。
 
-### 2.15.0（未リリース）
+### 2.15.0
 
 - Codex Desktop で Fork した新しいチャットが、過去の完了通知を再生する問題を修正しました。Fork で複製された履歴は、初期化完了後にユーザーが新しいメッセージを送るまでミュートされ、新しいブランチのターンだけが通知されます。
 - Codex Watch が Guardian の内部承認レビューセッションをユーザータスクの完了と誤認する問題を修正しました。`other: "guardian"` を含むオブジェクト形式の `source.subagent` メタデータに既存のサブセッションフィルターを適用し、親セッションの通常の完了通知は維持します。[PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34) を提供してくださった [Bbbbqsh](https://github.com/Bbbbqsh) さんに感謝します。

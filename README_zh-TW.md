@@ -120,7 +120,7 @@ npm run dist:mac:dmg
 - **監聽設定**：設定輪詢間隔與去抖時間。
 - **確認提醒（預設關閉）**：僅在 Codex 出現需要選擇 / 提交的互動提示時提醒。
 - **AI 摘要**：設定 API URL、Key、模型與逾時回退。
-- **進階選項**：標題前綴、關閉行為、開機自啟、無感啟動、點擊通知切回。
+- **進階選項**：標題前綴、關閉行為、開機自啟、無感啟動、隱藏 Dock 圖示（僅 macOS）、點擊通知切回。
 
 ### 介面預覽
 
@@ -130,6 +130,12 @@ npm run dist:mac:dmg
 ![Hook Integration](docs/images/Hook集成.png)
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
+
+### 托盤與選單列
+
+選擇「隱藏到托盤」後，應用程式會隱藏視窗並繼續執行。Windows 圖示可能位於工作列的 ^ 摺疊區域；macOS 可透過選單列圖示重新開啟視窗。開啟「無感啟動」後，啟動時即隱藏視窗，且不彈出提示。
+
+macOS 可在 **Advanced → Hide from Dock (show only in macOS menu bar)** 隱藏 Dock 圖示。此選項預設關閉，儲存為 `ui.hideDockIcon`，與「無感啟動」及「關閉行為」獨立。隱藏後，點擊選單列圖示或在其選單中選擇 **Show** 即可重新開啟視窗。如果使用 Ice 等選單列管理工具卻找不到圖示，請檢查隱藏區域及選單列可用空間，並重新整理管理工具的配置。
 
 ## 💻 命令列使用
 
@@ -285,10 +291,14 @@ macOS 建議：
 
 > `v2.x` 是目前的 Tauri 桌面版本線；`v1.x` 是舊 Electron 版本線。完整舊版本歷史可參考 [English](README.md) 或 [简体中文](README_zh.md)。
 
-### 2.15.0
+### 2.15.0（尚未發布）
 
 - 修復 Codex Desktop Fork 新對話重播歷史完成提醒的問題。Fork 複製的歷史在初始化完成且使用者發出新訊息前一直保持靜默，只有新分支輪次會傳送提醒。
-- 增加 Fork 時間戳重寫、Watch 附著後分批複製、無明確邊界時的繼承輪次識別、attach/seed 競態和不同工作區 `cwd` 的回歸測試。
+- 修復 Codex Watch 將 Guardian 內部審批工作階段誤判為使用者任務完成的問題。物件形式的 `source.subagent` 中繼資料（包括 `other: "guardian"`）現在統一使用既有的子工作階段過濾邏輯，父工作階段的正常完成提醒仍然保留。感謝 [Bbbbqsh](https://github.com/Bbbbqsh) 貢獻 [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)。
+- 新增 macOS **隱藏 Dock 圖示**開關，預設關閉，啟動時套用已儲存的設定。隱藏 Dock 圖示後仍可透過選單列圖示操作。感謝 [8liang](https://github.com/8liang) 貢獻 [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31)。
+- 改善 Telegram `401 / Unauthorized` 錯誤診斷：提示透過 `@BotFather` 重新產生無效或已撤銷的 Bot Token，並撤銷已洩漏的 Token。此變更改善錯誤提示，不會自動修復無效憑證（[Issue #33](https://github.com/ZekerTop/ai-cli-complete-notify/issues/33)）。
+- 補齊 Vite 用戶端型別宣告，解決 TypeScript 無法辨識 JPG 資源匯入的問題，不改變介面。
+- 增加 Fork 時間戳重寫、Watch 附著後分批複製、無明確邊界時的繼承輪次識別、attach/seed 競態、不同工作區 `cwd`、Guardian 過濾且父工作階段正常完成，以及 Telegram 認證錯誤診斷的回歸測試。
 
 ### 2.14.0
 

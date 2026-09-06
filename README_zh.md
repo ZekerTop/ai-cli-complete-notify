@@ -129,7 +129,7 @@ npm run dist:mac:dmg
 - **监听日志**：本地持久化，可一键打开，并支持保留天数设置。
 - **测试功能**：测试各通知渠道是否正常工作
 - **AI 摘要**：配置 API URL / Key / 模型 与超时回退
-- **高级选项**：标题前缀、关闭行为、开机自启动、无感启动、点击通知切回编辑器/终端（受系统焦点限制）
+- **高级选项**：标题前缀、关闭行为、开机自启动、无感启动、在程序坞中隐藏图标（仅 macOS）、点击通知切回编辑器/终端（受系统焦点限制）
 
 ### 界面预览
 
@@ -142,8 +142,10 @@ npm run dist:mac:dmg
 
 ### 托盘功能
 
-选择"隐藏到托盘"后，应用会最小化到系统托盘。图标可能在任务栏的 ^ 折叠区域中。
+选择“隐藏到托盘”后，应用会隐藏窗口并继续运行。Windows 图标可能在任务栏的 ^ 折叠区域中；macOS 可通过菜单栏图标重新打开窗口。
 开启“无感启动”后，启动即隐藏到托盘且不弹出提示。
+
+macOS 可在 **高级 → 在程序坞中隐藏（仅在 macOS 菜单栏显示图标）** 开启 Dock 图标隐藏。此选项默认关闭，保存为 `ui.hideDockIcon`，与“无感启动”和“关闭行为”独立。隐藏后，点击菜单栏图标或在其菜单中选择 **Show** 即可重新打开窗口。如果使用 Ice 等菜单栏管理工具却找不到图标，请检查隐藏分区及菜单栏可用空间，并刷新管理工具的布局。
 
 ## 💻 命令行使用
 
@@ -472,10 +474,14 @@ macOS 说明：
 
 > `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
 
-### 2.15.0
+### 2.15.0（尚未发布）
 
 - 修复 Codex Desktop Fork 新对话重放历史完成提醒的问题。Fork 复制的历史在初始化完成且用户发出新消息前一直保持静默，只有新分支轮次会发送提醒。
-- 增加 Fork 时间戳重写、Watch 附着后分批复制、无明确边界时的继承轮次识别、attach/seed 竞态和不同工作区 `cwd` 的回归测试。
+- 修复 Codex Watch 将 Guardian 内部审批会话误判为用户任务完成的问题。对象形式的 `source.subagent` 元数据（包括 `other: "guardian"`）现在统一走已有子会话过滤逻辑，父会话的正常完成提醒仍然保留。感谢 [Bbbbqsh](https://github.com/Bbbbqsh) 贡献 [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)。
+- 新增 macOS **在程序坞中隐藏**开关，默认关闭，启动时恢复已保存的设置。隐藏 Dock 图标后仍可通过菜单栏图标操作。感谢 [8liang](https://github.com/8liang) 贡献 [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31)。
+- 改进 Telegram `401 / Unauthorized` 错误诊断：提示通过 `@BotFather` 重新生成无效或已撤销的 Bot Token，并撤销已泄露的 Token。此改动改善错误提示，不会自动修复无效凭证（[Issue #33](https://github.com/ZekerTop/ai-cli-complete-notify/issues/33)）。
+- 补齐 Vite 客户端类型声明，解决 TypeScript 无法识别 JPG 资源导入的问题，不改变界面。
+- 增加 Fork 时间戳重写、Watch 附着后分批复制、无明确边界时的继承轮次识别、attach/seed 竞态、不同工作区 `cwd`、Guardian 过滤且父会话正常完成，以及 Telegram 认证错误诊断的回归测试。
 
 ### 2.14.0
 

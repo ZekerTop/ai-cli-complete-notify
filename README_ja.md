@@ -120,7 +120,7 @@ npm run dist:mac:dmg
 - **監視設定**: ポーリング間隔とデバウンス時間を設定。
 - **確認通知（デフォルト OFF）**: Codex が選択 / 送信を必要とする対話プロンプトを表示した場合のみ通知します。
 - **AI Summary**: API URL、Key、モデル、タイムアウト fallback を設定。
-- **詳細設定**: タイトル接頭辞、閉じる動作、自動起動、サイレント起動、通知クリックで戻る。
+- **詳細設定**: タイトル接頭辞、閉じる動作、自動起動、サイレント起動、Dock アイコンの非表示（macOS のみ）、通知クリックで戻る。
 
 ### 画面プレビュー
 
@@ -130,6 +130,12 @@ npm run dist:mac:dmg
 ![Hook Integration](docs/images/Hook集成.png)
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
+
+### トレイとメニューバー
+
+「トレイに隠す」を選択すると、ウィンドウを非表示にしてアプリの実行を継続します。Windows ではアイコンがタスクバーの ^ 内に格納される場合があります。macOS ではメニューバーのアイコンからウィンドウを再表示できます。サイレント起動を有効にすると、起動時からウィンドウを非表示にし、ポップアップも表示しません。
+
+macOS では **Advanced → Hide from Dock (show only in macOS menu bar)** で Dock アイコンを非表示にできます。デフォルトは OFF で、設定は `ui.hideDockIcon` に保存されます。サイレント起動やウィンドウを閉じる動作とは独立した設定です。非表示にした後は、メニューバーのアイコンをクリックするか、そのメニューで **Show** を選択してウィンドウを再表示します。Ice などのメニューバー管理ツールを使用していてアイコンが見つからない場合は、非表示セクションとメニューバーの空きスペースを確認し、管理ツールのレイアウトを更新してください。
 
 ## 💻 CLI の使い方
 
@@ -285,10 +291,14 @@ macOS の注意:
 
 > `v2.x` は現在の Tauri ベースのデスクトップラインで、`v1.x` は旧 Electron ラインです。過去の完全な履歴は [English](README.md) または [简体中文](README_zh.md) を参照してください。
 
-### 2.15.0
+### 2.15.0（未リリース）
 
 - Codex Desktop で Fork した新しいチャットが、過去の完了通知を再生する問題を修正しました。Fork で複製された履歴は、初期化完了後にユーザーが新しいメッセージを送るまでミュートされ、新しいブランチのターンだけが通知されます。
-- Fork タイムスタンプの書き換え、Watch 接続後の分割コピー、明確な境界がない場合の継承ターン識別、attach/seed 競合、異なるワークスペース `cwd` の回帰テストを追加しました。
+- Codex Watch が Guardian の内部承認レビューセッションをユーザータスクの完了と誤認する問題を修正しました。`other: "guardian"` を含むオブジェクト形式の `source.subagent` メタデータに既存のサブセッションフィルターを適用し、親セッションの通常の完了通知は維持します。[PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34) を提供してくださった [Bbbbqsh](https://github.com/Bbbbqsh) さんに感謝します。
+- macOS に **Dock アイコンを非表示にする**設定を追加しました。デフォルトは OFF で、起動時に保存済みの設定を適用します。Dock アイコンを非表示にしても、メニューバーのアイコンから操作できます。[PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31) を提供してくださった [8liang](https://github.com/8liang) さんに感謝します。
+- Telegram の `401 / Unauthorized` エラー診断を改善し、無効または失効した Bot Token を `@BotFather` で再生成し、漏えいした Token を失効させるよう案内します。エラー表示の改善であり、無効な認証情報を自動修復するものではありません（[Issue #33](https://github.com/ZekerTop/ai-cli-complete-notify/issues/33)）。
+- Vite クライアントの型宣言を追加し、TypeScript が JPG リソースのインポートを認識できない問題を解消しました。画面の変更はありません。
+- Fork タイムスタンプの書き換え、Watch 接続後の分割コピー、明確な境界がない場合の継承ターン識別、attach/seed 競合、異なるワークスペース `cwd`、Guardian のフィルタリングと親セッションの正常な完了通知、Telegram の認証エラー診断に関する回帰テストを追加しました。
 
 ### 2.14.0
 

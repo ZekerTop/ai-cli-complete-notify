@@ -120,7 +120,7 @@ npm run dist:mac:dmg
 - **감시 설정**: 폴링 간격과 디바운스 시간 설정.
 - **확인 알림(기본 OFF)**: Codex가 선택/제출이 필요한 대화형 프롬프트를 표시할 때만 알림을 보냅니다.
 - **AI 요약**: API URL, Key, 모델, 타임아웃 fallback 설정.
-- **고급 옵션**: 제목 접두어, 닫기 동작, 자동 시작, 조용한 시작, 알림 클릭 후 돌아가기.
+- **고급 옵션**: 제목 접두어, 닫기 동작, 자동 시작, 조용한 시작, Dock 아이콘 숨기기(macOS 전용), 알림 클릭 후 돌아가기.
 
 ### 화면 미리보기
 
@@ -130,6 +130,12 @@ npm run dist:mac:dmg
 ![Hook Integration](docs/images/Hook集成.png)
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
+
+### 트레이와 메뉴 막대
+
+"트레이로 숨기기"를 선택하면 창을 숨기고 앱은 계속 실행됩니다. Windows에서는 아이콘이 작업 표시줄의 ^ 영역에 있을 수 있으며, macOS에서는 메뉴 막대 아이콘으로 창을 다시 열 수 있습니다. 조용한 시작을 켜면 실행 시 창을 숨기고 팝업도 표시하지 않습니다.
+
+macOS에서는 **Advanced → Hide from Dock (show only in macOS menu bar)** 에서 Dock 아이콘을 숨길 수 있습니다. 기본값은 OFF이며, 설정은 `ui.hideDockIcon`에 저장됩니다. 조용한 시작 및 창 닫기 동작과는 별개입니다. 숨긴 뒤에는 메뉴 막대 아이콘을 클릭하거나 해당 메뉴에서 **Show**를 선택하여 창을 다시 열 수 있습니다. Ice 같은 메뉴 막대 관리 도구를 사용 중인데 아이콘이 보이지 않으면 숨김 영역과 메뉴 막대의 여유 공간을 확인하고 관리 도구의 레이아웃을 새로 고치세요.
 
 ## 💻 CLI 사용법
 
@@ -285,10 +291,14 @@ macOS 참고:
 
 > `v2.x`는 현재 Tauri 기반 데스크톱 라인이고, `v1.x`는 이전 Electron 라인입니다. 전체 이전 버전 이력은 [English](README.md) 또는 [简体中文](README_zh.md)를 참고하세요.
 
-### 2.15.0
+### 2.15.0(미출시)
 
 - Codex Desktop에서 Fork한 새 대화가 이전 완료 알림을 다시 재생하는 문제를 수정했습니다. Fork로 복사된 기록은 초기화가 끝나고 사용자가 새 메시지를 보낼 때까지 알림을 보내지 않으며, 새 브랜치의 turn만 알림을 보냅니다.
-- Fork 타임스탬프 재작성, Watch 연결 후 분할 복사, 명확한 경계가 없을 때의 상속 turn 식별, attach/seed 경쟁, 서로 다른 작업 공간 `cwd`를 대상으로 하는 회귀 테스트를 추가했습니다.
+- Codex Watch가 Guardian 내부 승인 검토 세션을 사용자 작업 완료로 잘못 판단하는 문제를 수정했습니다. `other: "guardian"`을 포함한 객체 형식의 `source.subagent` 메타데이터에 기존 하위 세션 필터를 적용하며, 상위 세션의 정상 완료 알림은 유지합니다. [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)를 기여해 주신 [Bbbbqsh](https://github.com/Bbbbqsh) 님께 감사드립니다.
+- macOS에 **Dock 아이콘 숨기기** 옵션을 추가했습니다. 기본값은 OFF이며, 시작할 때 저장된 설정을 적용합니다. Dock 아이콘을 숨겨도 메뉴 막대 아이콘으로 앱을 사용할 수 있습니다. [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31)를 기여해 주신 [8liang](https://github.com/8liang) 님께 감사드립니다.
+- Telegram `401 / Unauthorized` 오류 진단을 개선하여 유효하지 않거나 폐기된 Bot Token을 `@BotFather`에서 재발급하고, 노출된 Token은 폐기하도록 안내합니다. 오류 안내를 개선한 것으로, 유효하지 않은 인증 정보를 자동으로 복구하지는 않습니다([Issue #33](https://github.com/ZekerTop/ai-cli-complete-notify/issues/33)).
+- Vite 클라이언트 타입 선언을 추가하여 TypeScript가 JPG 리소스 가져오기를 인식하지 못하는 문제를 해결했습니다. 화면은 변경하지 않았습니다.
+- Fork 타임스탬프 재작성, Watch 연결 후 분할 복사, 명확한 경계가 없을 때의 상속 turn 식별, attach/seed 경쟁, 서로 다른 작업 공간 `cwd`, Guardian 필터링과 상위 세션의 정상 완료 알림, Telegram 인증 오류 진단에 대한 회귀 테스트를 추가했습니다.
 
 ### 2.14.0
 

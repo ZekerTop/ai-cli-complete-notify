@@ -128,7 +128,7 @@ npm run dist:mac:dmg
 - **Watch logs**: Persisted locally with one-click open and retention days.
 - **Test Function**: Test whether each notification channel works properly
 - **AI Summary**: Configure API URL / Key / Model and timeout fallback
-- **Advanced Options**: Title prefix, close behavior, auto-start on boot, silent start (hide to tray on launch), click notification to return (best-effort; OS focus rules may block)
+- **Advanced Options**: Title prefix, close behavior, auto-start on boot, silent start (hide to tray on launch), hide the Dock icon (macOS only), click notification to return (best-effort; OS focus rules may block)
 
 ### Interface Preview
 
@@ -141,8 +141,10 @@ npm run dist:mac:dmg
 
 ### Tray Function
 
-After selecting "Hide to tray", the application minimizes to the system tray. The icon may be in the ^ collapsed area of the taskbar.
+After selecting "Hide to tray", the application hides its window and keeps running. On Windows, the icon may be in the taskbar's ^ collapsed area; on macOS, use the menu bar icon to reopen the window.
 With silent start enabled, the app launches hidden in the tray without a balloon.
+
+On macOS, enable **Advanced → Hide from Dock (show only in macOS menu bar)** to hide the Dock icon. This setting is off by default and is saved as `ui.hideDockIcon`; it is separate from silent start and close behavior. Click the menu bar icon, or choose **Show** from its menu, to reopen the window. If you use Ice or another menu bar manager and cannot find the icon, check its hidden sections and available menu bar space, then refresh the manager's layout.
 
 ## 💻 Command Line Usage
 
@@ -471,10 +473,14 @@ macOS notes:
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
 
-### 2.15.0
+### 2.15.0 (Unreleased)
 
 - Fixed Codex Desktop forked chats replaying historical completion notifications. Fork-copied history stays muted until initialization finishes and the user sends a new message; only new branch turns can notify.
-- Added regression coverage for rewritten fork timestamps, history appended after Watch attaches, inherited turn detection without an explicit boundary, attach/seed races, and a different workspace `cwd`.
+- Fixed Codex Watch treating Guardian approval-review sessions as completed user tasks. Object-valued `source.subagent` metadata, including `other: "guardian"`, now uses the existing subagent filter; normal parent-session completion notifications remain enabled. Thanks to [Bbbbqsh](https://github.com/Bbbbqsh) for [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34).
+- Added the macOS **Hide from Dock** option, off by default, with the saved preference applied at startup. The menu bar icon remains the entry point when the Dock icon is hidden. Thanks to [8liang](https://github.com/8liang) for [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31).
+- Improved Telegram `401 / Unauthorized` diagnostics with guidance to regenerate invalid or revoked Bot Tokens through `@BotFather` and revoke exposed tokens. This improves error reporting; it does not repair invalid credentials automatically ([Issue #33](https://github.com/ZekerTop/ai-cli-complete-notify/issues/33)).
+- Added Vite client type declarations so TypeScript recognizes imported JPG assets without changing the interface.
+- Added regression coverage for rewritten fork timestamps, history appended after Watch attaches, inherited turn detection without an explicit boundary, attach/seed races, a different workspace `cwd`, Guardian filtering with normal parent completion, and Telegram authentication diagnostics.
 
 ### 2.14.0
 

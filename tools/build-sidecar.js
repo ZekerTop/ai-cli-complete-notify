@@ -187,6 +187,9 @@ function main() {
   }
 
   if (platform === 'darwin') {
+    if (process.platform !== 'darwin' || process.arch !== arch) {
+      throw new Error(`macOS sidecar ${arch} requires macOS Node.js ${arch}; current runtime is ${process.platform}/${process.arch}. Use a matching Node.js runtime before packaging.`);
+    }
     fs.mkdirSync(binariesDir, { recursive: true });
     buildMacSidecar(rootDir, output);
     console.log(`[sidecar] ${platform}:${arch} -> ${path.relative(rootDir, output)}`);

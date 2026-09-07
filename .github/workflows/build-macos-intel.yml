@@ -1,0 +1,60 @@
+name: Build Intel macOS app
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    env:
+      RUSTUP_TOOLCHAIN: 1.96.0
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.16.0
+          architecture: x64
+          cache: npm
+      - name: Prepare native Intel toolchain
+        run: |
+          test "$(uname -m)" = x86_64
+          node -e "require('node:assert/strict').equal(process.arch, 'x64')"
+          rustup toolchain install 1.96.0 --profile minimal --no-self-update
+          rustc -vV | grep -q '^host: x86_64-apple-darwin$'
+          npm ci
+      - name: Test and build
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/src-tauri/target/test-tmp" "$GITHUB_WORKSPACE/src-tauri/target/test-home"
+          touch "$GITHUB_WORKSPACE/src-tauri/target/test-home/.env"
+          env -i PATH="$PATH" HOME="$GITHUB_WORKSPACE/src-tauri/target/test-home" USERPROFILE="$GITHUB_WORKSPACE/src-tauri/target/test-home" TMPDIR="$GITHUB_WORKSPACE/src-tauri/target/test-tmp" AI_CLI_COMPLETE_NOTIFY_ENV_PATH="$GITHUB_WORKSPACE/src-tauri/target/test-home/.env" node --test tests/*.test.js
+          node node_modules/typescript/bin/tsc --noEmit
+          npm run dist:mac:app
+      - name: Verify and archive Intel app
+        run: |
+          APP="$GITHUB_WORKSPACE/src-tauri/target/release/bundle/macos/ai-cli-complete-notify.app"
+          NODE="$APP/Contents/Resources/resources/node/bin/node"
+          test "$(lipo -archs "$APP/Contents/MacOS/ai-cli-complete-notify")" = x86_64
+          test "$(lipo -archs "$NODE")" = x86_64
+          "$NODE" -e "require('node:assert/strict').equal(process.arch, 'x64')"
+          diff -qr src "$APP/Contents/Resources/resources/ai-reminder/src"
+          cmp package.json "$APP/Contents/Resources/resources/ai-reminder/package.json"
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --strict "$APP"
+          BUNDLE_TESTS="$GITHUB_WORKSPACE/src-tauri/target/bundle-tests"
+          mkdir -p "$BUNDLE_TESTS/tests"
+          cp tests/watch-codex-multi-session.test.js tests/watch-codex-tui-failure.test.js tests/telegram-notification.test.js "$BUNDLE_TESTS/tests/"
+          ln -s "$APP/Contents/Resources/resources/ai-reminder/src" "$BUNDLE_TESTS/src"
+          env -i PATH="$PATH" HOME="$GITHUB_WORKSPACE/src-tauri/target/test-home" TMPDIR="$GITHUB_WORKSPACE/src-tauri/target/test-tmp" AI_CLI_COMPLETE_NOTIFY_ENV_PATH="$GITHUB_WORKSPACE/src-tauri/target/test-home/.env" "$NODE" --test "$BUNDLE_TESTS/tests/"*.test.js
+          env -i PATH="$PATH" HOME="$GITHUB_WORKSPACE/src-tauri/target/test-home" TMPDIR="$GITHUB_WORKSPACE/src-tauri/target/test-tmp" AI_CLI_COMPLETE_NOTIFY_ENV_PATH="$GITHUB_WORKSPACE/src-tauri/target/test-home/.env" "$APP/Contents/MacOS/ai-reminder" help
+          tar -czf "$RUNNER_TEMP/ai-cli-complete-notify_x86_64.app.tar.gz" -C "$(dirname "$APP")" "$(basename "$APP")"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: macos-intel-app
+          path: ${{ runner.temp }}/ai-cli-complete-notify_x86_64.app.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

@@ -2,8 +2,30 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
+const { spawnSync } = require('node:child_process');
 
 const root = path.join(__dirname, '..');
+
+test('macOS sidecar rejects mismatched runtimes before writing build output', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-notify-sidecar-arch-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(fixture, 'tools'));
+  const script = path.join(fixture, 'tools', 'build-sidecar.js');
+  fs.copyFileSync(path.join(root, 'tools', 'build-sidecar.js'), script);
+  const arch = process.arch === 'x64' ? 'arm64' : 'x64';
+  const args = [script, '--platform', 'darwin', '--arch', arch];
+
+  const result = spawnSync(process.execPath, args, { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /requires macOS Node\.js/);
+  assert.equal(fs.existsSync(path.join(fixture, 'src-tauri')), false);
+
+  const dryRun = spawnSync(process.execPath, [...args, '--dry-run'], { encoding: 'utf8' });
+  assert.equal(dryRun.status, 0, dryRun.stderr);
+  assert.match(dryRun.stdout, /dry-run/);
+  assert.equal(fs.existsSync(path.join(fixture, 'src-tauri')), false);
+});
 
 test('macOS sidecar can emit desktop notifications as Tauri stdout events', () => {
   const {

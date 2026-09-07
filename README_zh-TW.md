@@ -70,16 +70,18 @@ AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任�
 
 #### macOS：直接安裝 DMG（建議）
 
-1. Apple Silicon Mac 使用者可從 [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest) 下載最新的 `ai-cli-complete-notify_<版本號>_aarch64.dmg`。
+1. 從 [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest) 下載符合 Mac 晶片架構的安裝包：
+   - Apple Silicon（M 系列）：`ai-cli-complete-notify_<版本號>_aarch64.dmg`
+   - Intel：`ai-cli-complete-notify_<版本號>_x86_64.dmg`
 2. 開啟 DMG，將 `ai-cli-complete-notify.app` 拖入「應用程式（Applications）」。
 3. 首次啟動時，如果 macOS 提示無法驗證開發者，請右鍵應用程式並選擇「開啟」。
 4. 打包版會從 `~/.ai-cli-complete-notify/.env` 讀取通知設定；首次啟動發現設定缺失時，會在該目錄建立 `.env.example`。
 
-> 目前 Release DMG 適用於 Apple Silicon（`arm64`）。Intel Mac 使用者可以依照下方步驟從原始碼建置。
+> 需要 macOS 13.5 或更新版本（內建 Node.js 執行環境的最低要求）。可在「關於這台 Mac」查看晶片或處理器。這是兩個獨立架構的安裝包，並非 Universal 通用包。兩者均內建 Node.js，安裝 DMG 不需額外安裝 Node.js/npm 或 Rust/Cargo。
 
 #### 從原始碼執行（macOS / Linux）
 
-以下步驟僅適用於 Linux、Intel Mac、開發除錯或希望自行建置的使用者。原始碼 / 開發模式需要 Node.js/npm 和 Rust/Cargo。Tauri 執行 `npm run dev` 時會呼叫 `cargo`；如果 `cargo --version` 失敗，請先從 [Rust 官方安裝頁面](https://www.rust-lang.org/tools/install) 安裝 Rust。
+以下步驟僅適用於 Linux、開發除錯或希望自行建置的使用者。原始碼 / 開發模式需要 Node.js/npm 和 Rust/Cargo。Tauri 執行 `npm run dev` 時會呼叫 `cargo`；如果 `cargo --version` 失敗，請先從 [Rust 官方安裝頁面](https://www.rust-lang.org/tools/install) 安裝 Rust。
 
 ```bash
 # 複製專案
@@ -273,6 +275,7 @@ npm run dist:mac:dmg
 
 macOS 建議：
 
+- 建置時，Node.js 與 Rust 的目標架構必須一致。sidecar 打包器會拒絕架構不符的 Node.js；僅指定 `--arch x64` 不會將 ARM 執行環境轉換為 Intel。維護者可執行 **Actions → Build Intel macOS app**，在 Intel 建置機上完成原生建置、架構檢查與回歸測試。
 - 日常使用請從 `.dmg` 拖到 `/Applications` 後執行。
 - 不建議長期直接從 Desktop 或 Downloads 執行 `.app`，否則 macOS 可能反覆提示允許存取桌面 / 下載資料夾。
 - 正式公開分發時，可能還需要 Apple Developer 簽名與 notarization 公證。
@@ -293,6 +296,7 @@ macOS 建議：
 
 ### 2.15.0
 
+- 補充獨立 Intel Mac 安裝包 `ai-cli-complete-notify_2.15.0_x86_64.dmg`，現有 Apple Silicon `_aarch64.dmg` 保持不變。新增 Intel 原生建置工作流程與執行環境架構檢查，避免產生混合架構的安裝包。
 - 修復 Codex Desktop Fork 新對話重播歷史完成提醒的問題。Fork 複製的歷史在初始化完成且使用者發出新訊息前一直保持靜默，只有新分支輪次會傳送提醒。
 - 修復 Codex Watch 將 Guardian 內部審批工作階段誤判為使用者任務完成的問題。物件形式的 `source.subagent` 中繼資料（包括 `other: "guardian"`）現在統一使用既有的子工作階段過濾邏輯，父工作階段的正常完成提醒仍然保留。感謝 [Bbbbqsh](https://github.com/Bbbbqsh) 貢獻 [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)。
 - 新增 macOS **隱藏 Dock 圖示**開關，預設關閉，啟動時套用已儲存的設定。隱藏 Dock 圖示後仍可透過選單列圖示操作。感謝 [8liang](https://github.com/8liang) 貢獻 [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31)。

@@ -76,16 +76,18 @@ Benefits:
 
 #### macOS: Install the DMG (Recommended)
 
-1. On an Apple Silicon Mac, download the latest `ai-cli-complete-notify_<version>_aarch64.dmg` from [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest).
+1. Download the DMG matching your Mac from [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest):
+   - Apple Silicon (M-series): `ai-cli-complete-notify_<version>_aarch64.dmg`
+   - Intel: `ai-cli-complete-notify_<version>_x86_64.dmg`
 2. Open the DMG and drag `ai-cli-complete-notify.app` into `Applications`.
 3. On first launch, if macOS says the developer cannot be verified, right-click the app and choose **Open**.
 4. The packaged app reads notification settings from `~/.ai-cli-complete-notify/.env`. On first launch it creates `.env.example` there when configuration is missing.
 
-> The current Release DMG targets Apple Silicon (`arm64`). Intel Mac users can build from source using the steps below.
+> Requires macOS 13.5 or later (the bundled Node.js runtime's minimum). Check **About This Mac** to identify your chip or processor. These are separate architecture-specific packages, not Universal binaries. Both include Node.js; installing the DMG does not require Node.js/npm or Rust/Cargo.
 
 #### Run from Source (macOS / Linux)
 
-The following steps are only needed for Linux, Intel Mac, development, or users who prefer to build from source. Source/dev mode requires Node.js/npm and Rust/Cargo. Tauri calls `cargo` when running `npm run dev`; if `cargo --version` fails, install Rust from the [official Rust installation page](https://www.rust-lang.org/tools/install) first.
+The following steps are only needed for Linux, development, or users who prefer to build from source. Source/dev mode requires Node.js/npm and Rust/Cargo. Tauri calls `cargo` when running `npm run dev`; if `cargo --version` fails, install Rust from the [official Rust installation page](https://www.rust-lang.org/tools/install) first.
 
 ```bash
 # Clone repository
@@ -446,6 +448,7 @@ Windows notes:
 
 macOS notes:
 
+- Build with Node.js and Rust targeting the same architecture. The sidecar builder rejects a mismatched Node.js runtime; `--arch x64` alone does not cross-compile an ARM runtime. Maintainers can run **Actions → Build Intel macOS app** for native Intel builds, architecture checks, and regression tests.
 - `npm run build:sidecar` generates the Tauri sidecar for the current Mac architecture, for example `src-tauri/binaries/ai-reminder-aarch64-apple-darwin` on Apple Silicon.
 - `npm run dist:mac:app` outputs a double-clickable `.app`.
 - `npm run dist:mac:dmg` outputs a `.dmg` for distribution.
@@ -475,6 +478,7 @@ macOS notes:
 
 ### 2.15.0
 
+- Added a separate Intel Mac DMG named `ai-cli-complete-notify_2.15.0_x86_64.dmg`; the existing Apple Silicon `_aarch64.dmg` is unchanged. Added a native Intel build workflow and a runtime-architecture guard to prevent mixed-architecture packages.
 - Fixed Codex Desktop forked chats replaying historical completion notifications. Fork-copied history stays muted until initialization finishes and the user sends a new message; only new branch turns can notify.
 - Fixed Codex Watch treating Guardian approval-review sessions as completed user tasks. Object-valued `source.subagent` metadata, including `other: "guardian"`, now uses the existing subagent filter; normal parent-session completion notifications remain enabled. Thanks to [Bbbbqsh](https://github.com/Bbbbqsh) for [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34).
 - Added the macOS **Hide from Dock** option, off by default, with the saved preference applied at startup. The menu bar icon remains the entry point when the Dock icon is hidden. Thanks to [8liang](https://github.com/8liang) for [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31).

@@ -70,16 +70,18 @@ AI CLI Complete Notify は、Claude Code / Codex / OpenCode / Gemini 向けの�
 
 #### macOS: DMG を直接インストール（推奨）
 
-1. Apple Silicon Mac では、[GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest) から最新の `ai-cli-complete-notify_<version>_aarch64.dmg` をダウンロードします。
+1. [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest) から、お使いの Mac に合った DMG をダウンロードします。
+   - Apple Silicon（M シリーズ）: `ai-cli-complete-notify_<version>_aarch64.dmg`
+   - Intel: `ai-cli-complete-notify_<version>_x86_64.dmg`
 2. DMG を開き、`ai-cli-complete-notify.app` を「Applications」にドラッグします。
 3. 初回起動時に開発元を確認できないと表示された場合は、アプリを右クリックして「開く」を選択します。
 4. パッケージ版は `~/.ai-cli-complete-notify/.env` から通知設定を読み込みます。初回起動時に設定がない場合は、同じディレクトリに `.env.example` が作成されます。
 
-> 現在の Release DMG は Apple Silicon（`arm64`）向けです。Intel Mac では、以下の手順でソースからビルドできます。
+> macOS 13.5 以降が必要です（同梱の Node.js ランタイムの最低要件）。「この Mac について」でチップまたはプロセッサを確認できます。アーキテクチャ別の独立したパッケージであり、Universal バイナリではありません。どちらも Node.js を同梱しているため、DMG のインストールに Node.js/npm や Rust/Cargo の追加インストールは不要です。
 
 #### ソースから実行（macOS / Linux）
 
-以下の手順は、Linux、Intel Mac、開発、またはソースからビルドしたい場合にのみ必要です。ソース / 開発モードには Node.js/npm と Rust/Cargo が必要です。Tauri は `npm run dev` の実行中に `cargo` を呼び出します。`cargo --version` が失敗する場合は、先に [Rust 公式インストールページ](https://www.rust-lang.org/tools/install) から Rust をインストールしてください。
+以下の手順は、Linux、開発、またはソースからビルドしたい場合にのみ必要です。ソース / 開発モードには Node.js/npm と Rust/Cargo が必要です。Tauri は `npm run dev` の実行中に `cargo` を呼び出します。`cargo --version` が失敗する場合は、先に [Rust 公式インストールページ](https://www.rust-lang.org/tools/install) から Rust をインストールしてください。
 
 ```bash
 # リポジトリを clone
@@ -273,6 +275,7 @@ npm run dist:mac:dmg
 
 macOS の注意:
 
+- Node.js と Rust の対象アーキテクチャを揃えてビルドしてください。sidecar ビルダーはアーキテクチャが一致しない Node.js を拒否します。`--arch x64` だけでは ARM ランタイムを Intel 向けに変換できません。メンテナーは **Actions → Build Intel macOS app** で Intel マシン上のネイティブビルド、アーキテクチャ確認、回帰テストを実行できます。
 - 通常利用では `.dmg` から `/Applications` にドラッグして実行してください。
 - Desktop や Downloads から `.app` を長期的に直接実行すると、macOS がフォルダアクセス権限を繰り返し求めることがあります。
 - 公開配布には Apple Developer 署名と notarization が必要になる場合があります。
@@ -293,6 +296,7 @@ macOS の注意:
 
 ### 2.15.0
 
+- Intel Mac 向けに独立した `ai-cli-complete-notify_2.15.0_x86_64.dmg` を追加しました。既存の Apple Silicon 用 `_aarch64.dmg` は変更していません。Intel ネイティブビルドのワークフローとランタイムのアーキテクチャチェックを追加し、異なるアーキテクチャが混在するパッケージの生成を防ぎます。
 - Codex Desktop で Fork した新しいチャットが、過去の完了通知を再生する問題を修正しました。Fork で複製された履歴は、初期化完了後にユーザーが新しいメッセージを送るまでミュートされ、新しいブランチのターンだけが通知されます。
 - Codex Watch が Guardian の内部承認レビューセッションをユーザータスクの完了と誤認する問題を修正しました。`other: "guardian"` を含むオブジェクト形式の `source.subagent` メタデータに既存のサブセッションフィルターを適用し、親セッションの通常の完了通知は維持します。[PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34) を提供してくださった [Bbbbqsh](https://github.com/Bbbbqsh) さんに感謝します。
 - macOS に **Dock アイコンを非表示にする**設定を追加しました。デフォルトは OFF で、起動時に保存済みの設定を適用します。Dock アイコンを非表示にしても、メニューバーのアイコンから操作できます。[PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31) を提供してくださった [8liang](https://github.com/8liang) さんに感謝します。

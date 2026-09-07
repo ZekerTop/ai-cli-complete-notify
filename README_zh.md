@@ -77,16 +77,18 @@
 
 #### macOS：直接安装 DMG（推荐）
 
-1. Apple Silicon Mac 用户从 [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest) 下载最新的 `ai-cli-complete-notify_<版本号>_aarch64.dmg`。
+1. 从 [GitHub Releases](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest) 下载与你的 Mac 芯片对应的安装包：
+   - Apple Silicon（M 系列）：`ai-cli-complete-notify_<版本号>_aarch64.dmg`
+   - Intel：`ai-cli-complete-notify_<版本号>_x86_64.dmg`
 2. 打开 DMG，将 `ai-cli-complete-notify.app` 拖入“应用程序（Applications）”。
 3. 首次启动时，如果 macOS 提示无法验证开发者，请右键应用并选择“打开”。
 4. 打包版从 `~/.ai-cli-complete-notify/.env` 读取通知配置；首次启动发现配置缺失时，会在该目录创建 `.env.example`。
 
-> 当前 Release DMG 适用于 Apple Silicon（`arm64`）。Intel Mac 用户可以按照下面的步骤从源码构建。
+> 需要 macOS 13.5 或更新版本（内置 Node.js 运行时的最低要求）。可在“关于本机”查看芯片或处理器。这是两个独立架构的安装包，不是 Universal 通用包。两者均内置 Node.js，安装 DMG 无需额外安装 Node.js/npm 或 Rust/Cargo。
 
 #### 从源码运行（macOS / Linux）
 
-以下步骤仅适用于 Linux、Intel Mac、开发调试或希望自行构建的用户。源码 / 开发模式需要 Node.js/npm 和 Rust/Cargo。Tauri 在执行 `npm run dev` 时会调用 `cargo`；如果 `cargo --version` 失败，请先从 [Rust 官方安装页面](https://www.rust-lang.org/tools/install) 安装 Rust。
+以下步骤仅适用于 Linux、开发调试或希望自行构建的用户。源码 / 开发模式需要 Node.js/npm 和 Rust/Cargo。Tauri 在执行 `npm run dev` 时会调用 `cargo`；如果 `cargo --version` 失败，请先从 [Rust 官方安装页面](https://www.rust-lang.org/tools/install) 安装 Rust。
 
 ```bash
 # 克隆仓库
@@ -447,6 +449,7 @@ Windows 说明：
 
 macOS 说明：
 
+- 构建时，Node.js 和 Rust 的目标架构必须一致。sidecar 打包器会拒绝架构不匹配的 Node.js；仅传入 `--arch x64` 不会把 ARM 运行时转换为 Intel。维护者可运行 **Actions → Build Intel macOS app**，在 Intel 构建机上完成原生构建、架构校验和回归测试。
 - `npm run build:sidecar` 会按当前 Mac 架构生成 Tauri sidecar，例如 Apple Silicon 为 `src-tauri/binaries/ai-reminder-aarch64-apple-darwin`。
 - `npm run dist:mac:app` 输出可直接双击运行的 `.app`。
 - `npm run dist:mac:dmg` 输出 `.dmg`，适合发布给其他用户安装。
@@ -476,6 +479,7 @@ macOS 说明：
 
 ### 2.15.0
 
+- 补充独立 Intel Mac 安装包 `ai-cli-complete-notify_2.15.0_x86_64.dmg`，现有 Apple Silicon `_aarch64.dmg` 保持不变。新增 Intel 原生构建工作流和运行时架构检查，避免生成混合架构的安装包。
 - 修复 Codex Desktop Fork 新对话重放历史完成提醒的问题。Fork 复制的历史在初始化完成且用户发出新消息前一直保持静默，只有新分支轮次会发送提醒。
 - 修复 Codex Watch 将 Guardian 内部审批会话误判为用户任务完成的问题。对象形式的 `source.subagent` 元数据（包括 `other: "guardian"`）现在统一走已有子会话过滤逻辑，父会话的正常完成提醒仍然保留。感谢 [Bbbbqsh](https://github.com/Bbbbqsh) 贡献 [PR #34](https://github.com/ZekerTop/ai-cli-complete-notify/pull/34)。
 - 新增 macOS **在程序坞中隐藏**开关，默认关闭，启动时恢复已保存的设置。隐藏 Dock 图标后仍可通过菜单栏图标操作。感谢 [8liang](https://github.com/8liang) 贡献 [PR #31](https://github.com/ZekerTop/ai-cli-complete-notify/pull/31)。

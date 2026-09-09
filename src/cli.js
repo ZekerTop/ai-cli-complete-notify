@@ -14,6 +14,7 @@ const {
 const {
   getClaudeHookNotificationContext,
   getGeminiHookNotificationContext,
+  getHerdrHookNotificationContext,
   getOpenCodeHookNotificationContext,
 } = require('./hook-context');
 const { exec, spawn } = require('child_process');
@@ -39,9 +40,9 @@ function printHelp() {
   ${invoke} paths
   ${invoke} env-status [--create-example]
   ${invoke} hooks  status
-  ${invoke} hooks  install   --target claude|gemini|opencode
-  ${invoke} hooks  uninstall --target claude|gemini|opencode
-  ${invoke} hooks  preview   --target claude|gemini|opencode
+  ${invoke} hooks  install   --target claude|gemini|opencode|herdr
+  ${invoke} hooks  uninstall --target claude|gemini|opencode|herdr
+  ${invoke} hooks  preview   --target claude|gemini|opencode|herdr
   ${invoke} config
 
 说明:
@@ -49,7 +50,7 @@ function printHelp() {
   - 阈值提醒建议使用 start/stop（自动计算耗时）
   - 最省事的接入方式是 run：由 ${PRODUCT_NAME} 负责计时并在命令结束后提醒
   - 交互式 / VSCode 插件场景建议使用 watch：自动监听本机日志并在每次回复完成后提醒（Claude / Codex / Gemini）
-  - hooks：Claude Code / Gemini CLI 使用原生 hooks；OpenCode 通过全局 plugin 接收 session.status idle / session.idle / session.error 事件
+  - hooks：Claude Code / Gemini CLI 使用原生 hooks；OpenCode 通过全局 plugin 接收 session.status idle / session.idle / session.error 事件；Herdr 通过 herdr plugin install 安装 herdr-ai-notify 插件并写入 AI_REMINDER_PATH 配置
 
 配置:
   - settings: ${getConfigPath()}
@@ -73,7 +74,7 @@ function sleep(ms) {
 }
 
 function isValidHookTarget(target) {
-  return target === 'claude' || target === 'gemini' || target === 'opencode';
+  return target === 'claude' || target === 'gemini' || target === 'opencode' || target === 'herdr';
 }
 
 async function runCli(argv) {
@@ -216,7 +217,7 @@ async function runCli(argv) {
 
     if (subCommand === 'install') {
       if (!isValidHookTarget(target)) {
-        console.error('请指定 --target claude / gemini / opencode');
+        console.error('请指定 --target claude / gemini / opencode / herdr');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = installHook(target);
@@ -226,7 +227,7 @@ async function runCli(argv) {
 
     if (subCommand === 'uninstall') {
       if (!isValidHookTarget(target)) {
-        console.error('请指定 --target claude / gemini / opencode');
+        console.error('请指定 --target claude / gemini / opencode / herdr');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = uninstallHook(target);
@@ -364,7 +365,9 @@ async function runCli(argv) {
             ? getGeminiHookNotificationContext(hookContext, effectiveTask)
             : fromHook && source === 'opencode'
               ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
-              : null;
+              : fromHook && source === 'herdr'
+                ? getHerdrHookNotificationContext(hookContext, effectiveTask)
+                : null;
 
       if (hookNotificationContext && hookNotificationContext.skip) {
         const skipped = {

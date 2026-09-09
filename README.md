@@ -232,7 +232,7 @@ Notes:
 node ai-reminder.js notify --source claude --task "Task completed"
 ```
 
-### Native Hooks / Plugin Mode (Recommended for Claude Code / Gemini CLI / OpenCode)
+### Native Hooks / Plugin Mode (Recommended for Claude Code / Gemini CLI / OpenCode / Herdr)
 
 ```bash
 # Check current hook status
@@ -247,17 +247,22 @@ node ai-reminder.js hooks install --target gemini
 # Install OpenCode global plugin
 node ai-reminder.js hooks install --target opencode
 
+# Install the Herdr plugin (herdr-ai-notify) and auto-configure it
+node ai-reminder.js hooks install --target herdr
+
 # Preview the hook / plugin file that will be written
 node ai-reminder.js hooks preview --target opencode
 
-# Remove a hook
+# Remove a hook / plugin
 node ai-reminder.js hooks uninstall --target claude
+node ai-reminder.js hooks uninstall --target herdr
 ```
 
 Notes:
 - Claude Code currently uses the native `Stop` hook event.
 - Gemini CLI currently uses the native `AfterAgent` hook event.
 - OpenCode currently uses a global plugin and listens to `session.status` idle / `session.idle` / `session.error`.
+- Herdr installs the [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) plugin through `herdr plugin install`, listens to `pane.agent_status_changed` (`done` / `blocked`), and writes `AI_REMINDER_PATH` into the plugin's `config.env` (auto-detected from the current executable path). Herdr notifications use their own `herdr` source, so titles are prefixed `[Herdr]` and its channels/thresholds are configured separately (see `sources.herdr`).
 - In the current integration, Codex completion reminders are still handled mainly through Watch mode.
 
 ### Log Monitoring Mode (Recommended)

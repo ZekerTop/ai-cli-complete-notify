@@ -1,12 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { spawnSync } = require('child_process');
 
 const HOOK_MARKER = 'ai-cli-complete-notify';
 const HOOK_MARKER_ALT = 'ai-reminder';
 const HOOK_FLAG = '--from-hook';
 const OPENCODE_PLUGIN_FILE = 'ai-cli-complete-notify.js';
 const OPENCODE_PLUGIN_MARKER = `${HOOK_MARKER}:opencode-plugin`;
+const HERDR_PLUGIN_REPO = '8liang/herdr-ai-notify';
+const HERDR_PLUGIN_ID = '8liang.herdr-ai-notify';
+const HERDR_CONFIG_ENV_FILE = 'config.env';
 
 function getExePath() {
   try {
@@ -601,11 +605,224 @@ function getOpenCodeHookStatus() {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Herdr plugin mode
+// ---------------------------------------------------------------------------
+
+function getHerdrBin() {
+  const override = String(process.env.HERDR_BIN_PATH || '').trim();
+  if (override) return override;
+
+  if (process.platform === 'win32') {
+    // herdr.exe may be available via PATH on Windows
+    return 'herdr.exe';
+  }
+  return 'herdr';
+}
+
+function runHerdrCommand(args, options = {}) {
+  const bin = getHerdrBin();
+  try {
+    const result = spawnSync(bin, args, {
+      encoding: 'utf8',
+      env: { ...process.env },
+      timeout: options.timeout || 60000,
+      windowsHide: true,
+    });
+    if (result.error) {
+      return {
+        ok: false,
+        error: result.error && result.error.message
+          ? `Failed to run \`${bin}\`: ${result.error.message}`
+          : `Failed to run \`${bin}\``,
+        status: result.status,
+        stdout: String(result.stdout || ''),
+        stderr: String(result.stderr || ''),
+      };
+    }
+    return {
+      ok: result.status === 0,
+      status: result.status,
+      stdout: String(result.stdout || ''),
+      stderr: String(result.stderr || ''),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: `Failed to run \`${bin}\`: ${error && error.message ? error.message : String(error)}`,
+      stdout: '',
+      stderr: '',
+    };
+  }
+}
+
+function getHerdrPluginDir() {
+  const base = process.env.HERDR_CONFIG_DIR
+    ? path.join(String(process.env.HERDR_CONFIG_DIR).trim(), 'plugins', 'config')
+    : path.join(os.homedir(), '.config', 'herdr', 'plugins', 'config');
+  return path.join(base, HERDR_PLUGIN_ID);
+}
+
+function buildHerdrConfigEnv(exePath) {
+  const lines = [];
+  lines.push('# Herdr AI Notify - ai-cli-complete-notify bridge configuration');
+  lines.push('# Managed by ai-cli-complete-notify \`hooks install --target herdr\`.');
+  lines.push('#');
+  lines.push('# Absolute path to ai-reminder.js / ai-reminder executable.');
+  lines.push(`AI_REMINDER_PATH=${exePath}`);
+  lines.push('');
+  lines.push('# Also show a Herdr in-app toast notification (true/false).');
+  lines.push('# ALSO_HERDR_NOTIFY=false');
+  lines.push('');
+  lines.push('# Python interpreter used to parse HERDR_PLUGIN_EVENT_JSON.');
+  lines.push('# PYTHON_BIN=python3');
+  return lines.join('\n') + '\n';
+}
+
+function parseHerdrPluginList(raw) {
+  // `herdr plugin list --json` returns {"id":"cli:plugin","result":{"plugins":[...]}}
+  try {
+    const parsed = JSON.parse(raw);
+    const payload = parsed && parsed.result && typeof parsed.result === 'object'
+      ? parsed.result
+      : parsed;
+    const plugins = Array.isArray(payload && payload.plugins) ? payload.plugins : [];
+    return plugins.find((plugin) => plugin && plugin.plugin_id === HERDR_PLUGIN_ID) || null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function getHerdrHookStatus() {
+  const bin = getHerdrBin();
+  const run = runHerdrCommand(['plugin', 'list', '--json']);
+  let installed = false;
+  let enabled = false;
+  let plugin = null;
+
+  if (run.ok) {
+    plugin = parseHerdrPluginList(run.stdout);
+    if (plugin) {
+      installed = true;
+      enabled = Boolean(plugin.enabled);
+    }
+  }
+
+  return {
+    installed,
+    enabled,
+    herdrBin: bin,
+    available: !run.error,
+    settingsPath: path.join(getHerdrPluginDir(), HERDR_CONFIG_ENV_FILE),
+    plugin,
+  };
+}
+
+function installHerdrHook(exePath) {
+  const bin = getHerdrBin();
+
+  // 1. Install the plugin from GitHub (non-interactive).
+  const installResult = runHerdrCommand(['plugin', 'install', HERDR_PLUGIN_REPO, '--yes']);
+  if (!installResult.ok) {
+    const detail = installResult.stderr || installResult.stdout || installResult.error || '';
+    return {
+      ok: false,
+      error: `herdr plugin install failed: ${String(detail).trim()}`,
+      herdrBin: bin,
+      step: 'install',
+    };
+  }
+
+  // 2. Resolve the plugin config directory and write config.env with the
+  //    detected ai-reminder path so notify.sh knows where to find us.
+  const configDirResult = runHerdrCommand(['plugin', 'config-dir', HERDR_PLUGIN_ID]);
+  let configPath = path.join(getHerdrPluginDir(), HERDR_CONFIG_ENV_FILE);
+  if (configDirResult.ok) {
+    const resolved = String(configDirResult.stdout || '').trim();
+    if (resolved) {
+      configPath = path.join(resolved, HERDR_CONFIG_ENV_FILE);
+    }
+  }
+  try {
+    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    fs.writeFileSync(configPath, buildHerdrConfigEnv(exePath), 'utf8');
+  } catch (error) {
+    return {
+      ok: false,
+      error: `Failed to write herdr plugin config: ${error && error.message ? error.message : String(error)}`,
+      herdrBin: bin,
+      step: 'config',
+    };
+  }
+
+  // 3. Make sure the plugin is enabled.
+  const enableResult = runHerdrCommand(['plugin', 'enable', HERDR_PLUGIN_ID]);
+  if (!enableResult.ok) {
+    const detail = enableResult.stderr || enableResult.stdout || enableResult.error || '';
+    return {
+      ok: false,
+      error: `herdr plugin enable failed: ${String(detail).trim()}`,
+      herdrBin: bin,
+      settingsPath: configPath,
+      step: 'enable',
+    };
+  }
+
+  return {
+    ok: true,
+    herdrBin: bin,
+    settingsPath: configPath,
+    pluginId: HERDR_PLUGIN_ID,
+    pluginRepo: HERDR_PLUGIN_REPO,
+  };
+}
+
+function uninstallHerdrHook() {
+  const bin = getHerdrBin();
+  const uninstallResult = runHerdrCommand(['plugin', 'uninstall', HERDR_PLUGIN_REPO]);
+  if (!uninstallResult.ok) {
+    const detail = uninstallResult.stderr || uninstallResult.stdout || uninstallResult.error || '';
+    return {
+      ok: false,
+      error: `herdr plugin uninstall failed: ${String(detail).trim()}`,
+      herdrBin: bin,
+    };
+  }
+
+  return {
+    ok: true,
+    herdrBin: bin,
+    pluginId: HERDR_PLUGIN_ID,
+    pluginRepo: HERDR_PLUGIN_REPO,
+  };
+}
+
+function getHerdrConfigPreview(exePath) {
+  const bin = getHerdrBin();
+  const configPath = path.join(getHerdrPluginDir(), HERDR_CONFIG_ENV_FILE);
+  const lines = [];
+  lines.push(`# Herdr plugin integration preview`);
+  lines.push(`# plugin repo : ${HERDR_PLUGIN_REPO}`);
+  lines.push(`# plugin id   : ${HERDR_PLUGIN_ID}`);
+  lines.push(`# herdr binary: ${bin}`);
+  lines.push(`# config path : ${configPath}`);
+  lines.push('');
+  lines.push('# Commands that will be run on install:');
+  lines.push(`#   ${bin} plugin install ${HERDR_PLUGIN_REPO} --yes`);
+  lines.push(`#   ${bin} plugin config-dir ${HERDR_PLUGIN_ID}`);
+  lines.push(`#   ${bin} plugin enable ${HERDR_PLUGIN_ID}`);
+  lines.push('');
+  lines.push('# config.env that will be written:');
+  lines.push(buildHerdrConfigEnv(exePath));
+  return lines.join('\n');
+}
+
 function getHookStatus() {
   return {
     claude: getClaudeHookStatus(),
     gemini: getGeminiHookStatus(),
-    opencode: getOpenCodeHookStatus()
+    opencode: getOpenCodeHookStatus(),
+    herdr: getHerdrHookStatus()
   };
 }
 
@@ -614,6 +831,7 @@ function installHook(target) {
   if (target === 'claude') return installClaudeHook(exePath);
   if (target === 'gemini') return installGeminiHook(exePath);
   if (target === 'opencode') return installOpenCodeHook(exePath);
+  if (target === 'herdr') return installHerdrHook(exePath);
   return { ok: false, error: `Unknown target: ${target}` };
 }
 
@@ -621,6 +839,7 @@ function uninstallHook(target) {
   if (target === 'claude') return uninstallClaudeHook();
   if (target === 'gemini') return uninstallGeminiHook();
   if (target === 'opencode') return uninstallOpenCodeHook();
+  if (target === 'herdr') return uninstallHerdrHook();
   return { ok: false, error: `Unknown target: ${target}` };
 }
 
@@ -636,6 +855,9 @@ function getHookConfigPreview(target) {
   }
   if (target === 'opencode') {
     return buildOpenCodePlugin(exePath);
+  }
+  if (target === 'herdr') {
+    return getHerdrConfigPreview(exePath);
   }
   return '';
 }

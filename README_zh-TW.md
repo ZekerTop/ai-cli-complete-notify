@@ -176,6 +176,9 @@ node ai-reminder.js hooks install --target gemini
 
 # 安裝 OpenCode 全域插件
 node ai-reminder.js hooks install --target opencode
+
+# 安裝 Herdr 插件（herdr-ai-notify）並自動寫入設定
+node ai-reminder.js hooks install --target herdr
 ```
 
 ### Watch 日誌監聽

@@ -617,6 +617,24 @@ function getHerdrBin() {
     // herdr.exe may be available via PATH on Windows
     return 'herdr.exe';
   }
+  if (process.platform === 'darwin') {
+    // Finder-launched apps do not inherit the terminal's PATH.
+    const directories = [
+      ...(process.env.PATH || '').split(path.delimiter).filter(Boolean),
+      path.join(os.homedir(), '.local', 'bin'),
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+    ];
+    for (const directory of directories) {
+      const candidate = path.join(directory, 'herdr');
+      try {
+        fs.accessSync(candidate, fs.constants.X_OK);
+        if (fs.statSync(candidate).isFile()) return candidate;
+      } catch (_error) {
+        // Try the next install location.
+      }
+    }
+  }
   return 'herdr';
 }
 

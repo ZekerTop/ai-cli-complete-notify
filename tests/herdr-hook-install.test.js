@@ -308,3 +308,23 @@ test('watch hook reminders ignore optional Herdr without external discovery', (t
   assert.deepEqual(JSON.parse(result.stdout).uninstalled,[]);
   assert.deepEqual(readCalls(sb.logFile),[]);
 });
+
+test('macOS GUI PATH discovers ~/.local/bin/herdr for status and installation', { skip: process.platform !== 'darwin' }, (t) => {
+  const sb = createSandbox(t);
+  const localBin = path.join(sb.home, '.local', 'bin');
+  fs.mkdirSync(localBin, {recursive:true});
+  const executable = path.join(localBin, 'herdr');
+  const mock = fs.readFileSync(sb.env.HERDR_BIN_PATH, 'utf8')
+    .replace('#!/usr/bin/env node', `#!${process.execPath}`);
+  fs.writeFileSync(executable, mock, {mode:0o755});
+  const env = {...sb.env, PATH:'/usr/bin:/bin', HERDR_BIN_PATH:''};
+  const status = JSON.parse(runHooks(env, 'status', '--target', 'herdr').stdout).herdr;
+  assert.equal(status.available, true);
+  assert.equal(status.herdrBin, executable);
+  assert.equal(runHooks(env, 'install', '--target', 'herdr').status, 0);
+  assert.ok(readCalls(sb.logFile).some(call => call[1] === 'install'));
+  const explicit = JSON.parse(runHooks({...env, HERDR_BIN_PATH:sb.env.HERDR_BIN_PATH}, 'status', '--target', 'herdr').stdout).herdr;
+  assert.equal(explicit.herdrBin, sb.env.HERDR_BIN_PATH, 'manual override must retain priority');
+  const fromPath = JSON.parse(runHooks({...env, PATH:path.dirname(sb.env.HERDR_BIN_PATH)+':'+sb.env.PATH}, 'status', '--target', 'herdr').stdout).herdr;
+  assert.equal(fromPath.herdrBin, sb.env.HERDR_BIN_PATH, 'PATH must retain priority');
+});

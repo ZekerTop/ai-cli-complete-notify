@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.15.0)
+# AI CLI Complete Notify (v2.16.0)
 
-![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![macOS DMG 다운로드](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -181,6 +181,19 @@ node ai-reminder.js hooks install --target opencode
 node ai-reminder.js hooks install --target herdr
 ```
 
+### 선택적 타사 도구 (Herdr)
+
+**Third-party tools → Herdr**를 엽니다. 알림은 기본적으로 꺼져 있습니다. 의존성을 확인하고 설정을 승인한 다음 알림을 별도로 켜세요. Herdr ≥ 0.7.0, Bash, Python 3가 필요하며 macOS 앱은 내장 Node를 사용합니다. 플러그인의 사용자 설정을 보존하고 일반 시작 및 watch에서는 Herdr를 호출하지 않습니다. 이 소스에서 선택한 활성 채널만 사용하며 기존 AI 연동은 변경하지 않습니다. 같은 작업에 기본 연동과 Herdr를 함께 사용하면 중복 알림이 발생할 수 있습니다. 커뮤니티 플러그인: [8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify).
+
+```bash
+# Explicit plugin status (ordinary hooks status does not run Herdr)
+node ai-reminder.js hooks status --target herdr
+# Configuration does not enable this app's Herdr notifications
+node ai-reminder.js hooks install --target herdr
+# Enable only after reviewing duplicate-notification risks
+node ai-reminder.js config --set '{"sources":{"herdr":{"enabled":true}}}'
+```
+
 ### Watch 로그 감시 모드
 
 ```bash
@@ -296,6 +309,10 @@ macOS 참고:
 <summary>버전 이력 보기</summary>
 
 > `v2.x`는 현재 Tauri 기반 데스크톱 라인이고, `v1.x`는 이전 Electron 라인입니다. 전체 이전 버전 이력은 [English](README.md) 또는 [简体中文](README_zh.md)를 참고하세요.
+
+### 2.16.0
+
+- 기본적으로 꺼진 Herdr 전용 페이지, 개별 채널 선택 및 중복 알림 확인을 추가했습니다. 설정 경로 인용, 사용자 설정 보존 및 내장 런타임 호출을 수정했습니다. Herdr 상태 확인을 수동으로 분리하여 시작 및 watch 지연을 방지합니다. 로컬 Apple Silicon 빌드이며 새 GitHub Release는 아직 게시하지 않았습니다.
 
 ### 2.15.0
 

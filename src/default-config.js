@@ -141,7 +141,7 @@ const DEFAULT_CONFIG = {
       }
     },
     herdr: {
-      enabled: true,
+      enabled: false,
       minDurationMinutes: 0,
       webhookUrls: [],
       channels: {

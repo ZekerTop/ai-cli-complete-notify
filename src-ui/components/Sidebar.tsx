@@ -4,9 +4,10 @@ const NAV_ITEMS = [
   { id: 'notifications', key: 'nav.notifications', index: '01' },
   { id: 'sources', key: 'nav.sources', index: '02' },
   { id: 'integrations', key: 'nav.integrations', index: '03' },
-  { id: 'summary', key: 'nav.summary', index: '04' },
-  { id: 'system', key: 'nav.system', index: '05' },
-  { id: 'about-project', key: 'nav.aboutProject', index: '06' },
+  { id: 'third-party', key: 'nav.thirdParty', index: '04' },
+  { id: 'summary', key: 'nav.summary', index: '05' },
+  { id: 'system', key: 'nav.system', index: '06' },
+  { id: 'about-project', key: 'nav.aboutProject', index: '07' },
 ];
 
 interface SidebarProps {

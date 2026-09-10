@@ -138,7 +138,7 @@ function checkAndRemindHooks(sources, options = {}) {
     if (source === 'codex') continue; // Codex doesn't support hooks
 
     const status = hookStatus[source];
-    if (status && !status.installed) {
+    if (status && status.installed === false) {
       uninstalledSources.push(source);
     }
   }

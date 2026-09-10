@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.15.0)
+# AI CLI Complete Notify (v2.16.0)
 
-![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![macOS DMG をダウンロード](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -181,6 +181,19 @@ node ai-reminder.js hooks install --target opencode
 node ai-reminder.js hooks install --target herdr
 ```
 
+### オプションのサードパーティーツール（Herdr）
+
+**Third-party tools → Herdr** を開きます。通知は初期状態で無効です。依存関係の確認と設定の承認後、通知を別途有効にしてください。Herdr ≥ 0.7.0、Bash、Python 3 が必要です。macOS アプリは同梱 Node を使用します。プラグインのカスタム設定を保持し、通常の起動や watch では Herdr を呼び出しません。このソースで選択した有効な通知チャネルのみを使用し、既存の AI 連携は変更しません。同じタスクでネイティブ連携と併用すると通知が重複する場合があります。コミュニティプラグイン：[8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)。
+
+```bash
+# Explicit plugin status (ordinary hooks status does not run Herdr)
+node ai-reminder.js hooks status --target herdr
+# Configuration does not enable this app's Herdr notifications
+node ai-reminder.js hooks install --target herdr
+# Enable only after reviewing duplicate-notification risks
+node ai-reminder.js config --set '{"sources":{"herdr":{"enabled":true}}}'
+```
+
 ### Watch ログ監視
 
 ```bash
@@ -296,6 +309,10 @@ macOS の注意:
 <summary>バージョン履歴を表示</summary>
 
 > `v2.x` は現在の Tauri ベースのデスクトップラインで、`v1.x` は旧 Electron ラインです。過去の完全な履歴は [English](README.md) または [简体中文](README_zh.md) を参照してください。
+
+### 2.16.0
+
+- 初期状態で無効な Herdr 専用ページ、チャネル選択、重複通知の確認を追加。設定パスの引用、カスタム設定の保持、同梱ランタイムの呼び出しを修正。Herdr の状態確認を手動に分離し、起動や watch の遅延を防止。この版はローカル Apple Silicon ビルドで、新しい GitHub Release は未公開です。
 
 ### 2.15.0
 

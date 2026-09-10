@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.15.0)
+# AI CLI Complete Notify (v2.16.0)
 
-![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![下載 macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -181,6 +181,19 @@ node ai-reminder.js hooks install --target opencode
 node ai-reminder.js hooks install --target herdr
 ```
 
+### 可選第三方工具（Herdr）
+
+開啟 **第三方工具 → Herdr**。通知預設關閉；檢查依賴並確認設定後，再單獨啟用。需要 Herdr ≥ 0.7.0、Bash 與 Python 3；macOS 應用使用內建 Node。保留外掛自訂設定，正常啟動與 watch 不探測 Herdr。僅使用該來源選取且已啟用的通知管道，不改變既有 AI 整合。同一任務同時使用 Herdr 與原生整合可能重複通知。社群外掛：[8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)。
+
+```bash
+# Explicit plugin status (ordinary hooks status does not run Herdr)
+node ai-reminder.js hooks status --target herdr
+# Configuration does not enable this app's Herdr notifications
+node ai-reminder.js hooks install --target herdr
+# Enable only after reviewing duplicate-notification risks
+node ai-reminder.js config --set '{"sources":{"herdr":{"enabled":true}}}'
+```
+
 ### Watch 日誌監聽
 
 ```bash
@@ -296,6 +309,10 @@ macOS 建議：
 <summary>展開 / 收合版本歷史</summary>
 
 > `v2.x` 是目前的 Tauri 桌面版本線；`v1.x` 是舊 Electron 版本線。完整舊版本歷史可參考 [English](README.md) 或 [简体中文](README_zh.md)。
+
+### 2.16.0
+
+- 新增獨立、預設關閉的 Herdr 頁面，提供管道選擇與重複通知風險確認。修正路徑引用、自訂設定保留及內建執行環境；Herdr 改為手動檢查，避免阻塞啟動與 watch。本次為本機 Apple Silicon 建置，尚未發佈新 GitHub Release。
 
 ### 2.15.0
 

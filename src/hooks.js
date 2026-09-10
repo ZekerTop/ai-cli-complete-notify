@@ -663,20 +663,22 @@ function getHerdrPluginDir() {
   return path.join(base, HERDR_PLUGIN_ID);
 }
 
-function buildHerdrConfigEnv(exePath) {
-  const lines = [];
-  lines.push('# Herdr AI Notify - ai-cli-complete-notify bridge configuration');
-  lines.push('# Managed by ai-cli-complete-notify \`hooks install --target herdr\`.');
-  lines.push('#');
-  lines.push('# Absolute path to ai-reminder.js / ai-reminder executable.');
-  lines.push(`AI_REMINDER_PATH=${exePath}`);
-  lines.push('');
-  lines.push('# Also show a Herdr in-app toast notification (true/false).');
-  lines.push('# ALSO_HERDR_NOTIFY=false');
-  lines.push('');
-  lines.push('# Python interpreter used to parse HERDR_PLUGIN_EVENT_JSON.');
-  lines.push('# PYTHON_BIN=python3');
-  return lines.join('\n') + '\n';
+function buildHerdrConfigEnv(bridgePath, previous = '') {
+  if (/[\r\n\0]/.test(bridgePath)) throw new Error('Invalid bridge path');
+  // Herdr sources this file with Bash, including on Windows.
+  const assignment = `AI_REMINDER_PATH='${bridgePath.replace(/'/g, "'\\''")}'`;
+  const pattern = /^[ \t]*(?:export[ \t]+)?AI_REMINDER_PATH[ \t]*=.*$/gm;
+  if (pattern.test(previous)) return previous.replace(pattern, () => assignment);
+  return previous + (previous && !previous.endsWith('\n') ? '\n' : '') + assignment + '\n';
+}
+
+function buildHerdrBridge(exePath) {
+  const quote = (value) => `'${value.replace(/'/g, "'\\''")}'`;
+  const command = exePath.endsWith('.js')
+    ? `${quote(process.execPath)} ${quote(exePath)}` : quote(exePath);
+  return '#!/bin/sh\nset -eu\nunset AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT\n'
+    + (process.env.AI_CLI_COMPLETE_NOTIFY_PACKAGED === '1' ? 'export AI_CLI_COMPLETE_NOTIFY_PACKAGED=1\n' : '')
+    + `exec ${command} "$@"\n`;
 }
 
 function parseHerdrPluginList(raw) {
@@ -686,34 +688,64 @@ function parseHerdrPluginList(raw) {
     const payload = parsed && parsed.result && typeof parsed.result === 'object'
       ? parsed.result
       : parsed;
-    const plugins = Array.isArray(payload && payload.plugins) ? payload.plugins : [];
+    if (!Array.isArray(payload && payload.plugins)) throw new Error('Invalid Herdr plugin list');
+    const plugins = payload.plugins;
     return plugins.find((plugin) => plugin && plugin.plugin_id === HERDR_PLUGIN_ID) || null;
   } catch (_error) {
-    return null;
+    throw new Error('Invalid Herdr plugin list');
   }
 }
 
 function getHerdrHookStatus() {
   const bin = getHerdrBin();
-  const run = runHerdrCommand(['plugin', 'list', '--json']);
+  const run = runHerdrCommand(['plugin', 'list', '--json'], { timeout: 5000 });
   let installed = false;
   let enabled = false;
   let plugin = null;
 
   if (run.ok) {
-    plugin = parseHerdrPluginList(run.stdout);
+    try {
+      plugin = parseHerdrPluginList(run.stdout);
+    } catch (error) {
+      run.ok = false;
+      run.error = error.message;
+    }
     if (plugin) {
       installed = true;
       enabled = Boolean(plugin.enabled);
     }
   }
 
+  let configured = false;
+  let settingsPath = path.join(getHerdrPluginDir(), HERDR_CONFIG_ENV_FILE);
+  if (installed) {
+    const configDir = runHerdrCommand(['plugin', 'config-dir', HERDR_PLUGIN_ID], { timeout: 5000 });
+    const resolved = String(configDir.stdout || '').replace(/\r?\n$/, '');
+    if (configDir.ok && path.isAbsolute(resolved)) {
+      settingsPath = path.join(resolved, HERDR_CONFIG_ENV_FILE);
+      try {
+        const bridgePath = path.join(resolved, 'ai-cli-complete-notify-bridge');
+        const env = fs.readFileSync(settingsPath, 'utf8');
+        configured = env === buildHerdrConfigEnv(bridgePath, env)
+          && fs.readFileSync(bridgePath, 'utf8') === buildHerdrBridge(getExePath());
+      } catch (_error) {
+        configured = false;
+      }
+    }
+  }
+
   return {
     installed,
     enabled,
+    configured,
     herdrBin: bin,
-    available: !run.error,
-    settingsPath: path.join(getHerdrPluginDir(), HERDR_CONFIG_ENV_FILE),
+    dependencies: Object.fromEntries(['bash', 'python3'].map((name) => {
+      const check = spawnSync(name, ['--version'], { timeout: 5000, encoding: 'utf8', windowsHide: true });
+      return [name, check.status === 0];
+    })),
+    available: run.ok,
+    error: run.ok ? null : (run.error || `Herdr status failed (${run.status})`),
+    settingsPath,
     plugin,
   };
 }
@@ -736,16 +768,19 @@ function installHerdrHook(exePath) {
   // 2. Resolve the plugin config directory and write config.env with the
   //    detected ai-reminder path so notify.sh knows where to find us.
   const configDirResult = runHerdrCommand(['plugin', 'config-dir', HERDR_PLUGIN_ID]);
-  let configPath = path.join(getHerdrPluginDir(), HERDR_CONFIG_ENV_FILE);
-  if (configDirResult.ok) {
-    const resolved = String(configDirResult.stdout || '').trim();
-    if (resolved) {
-      configPath = path.join(resolved, HERDR_CONFIG_ENV_FILE);
-    }
+  const resolved = String(configDirResult.stdout || '').replace(/\r?\n$/, '');
+  if (!configDirResult.ok || !path.isAbsolute(resolved)) {
+    return { ok: false, error: 'Herdr did not return an absolute config directory', step: 'config' };
   }
+  const configPath = path.join(resolved, HERDR_CONFIG_ENV_FILE);
+  const bridgePath = path.join(resolved, 'ai-cli-complete-notify-bridge');
   try {
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, buildHerdrConfigEnv(exePath), 'utf8');
+    fs.mkdirSync(resolved, { recursive: true });
+    const previous = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf8') : '';
+    const next = buildHerdrConfigEnv(bridgePath, previous);
+    fs.writeFileSync(bridgePath, buildHerdrBridge(exePath), { mode: 0o700 });
+    fs.chmodSync(bridgePath, 0o700);
+    fs.writeFileSync(configPath, next, { mode: 0o600 });
   } catch (error) {
     return {
       ok: false,
@@ -755,7 +790,7 @@ function installHerdrHook(exePath) {
     };
   }
 
-  // 3. Make sure the plugin is enabled.
+  // Plugin delivery is separate from sources.herdr.enabled; configuration never changes that switch.
   const enableResult = runHerdrCommand(['plugin', 'enable', HERDR_PLUGIN_ID]);
   if (!enableResult.ok) {
     const detail = enableResult.stderr || enableResult.stdout || enableResult.error || '';
@@ -813,16 +848,19 @@ function getHerdrConfigPreview(exePath) {
   lines.push(`#   ${bin} plugin enable ${HERDR_PLUGIN_ID}`);
   lines.push('');
   lines.push('# config.env that will be written:');
-  lines.push(buildHerdrConfigEnv(exePath));
+  lines.push(buildHerdrConfigEnv(path.join(getHerdrPluginDir(), 'ai-cli-complete-notify-bridge')));
+  lines.push('# Bridge uses the current runtime; Herdr notifications must be enabled separately.');
+  lines.push(buildHerdrBridge(exePath));
   return lines.join('\n');
 }
 
-function getHookStatus() {
+function getHookStatus(target) {
+  if (target === 'herdr') return { herdr: getHerdrHookStatus() };
   return {
     claude: getClaudeHookStatus(),
     gemini: getGeminiHookStatus(),
     opencode: getOpenCodeHookStatus(),
-    herdr: getHerdrHookStatus()
+    herdr: { supported: true }
   };
 }
 

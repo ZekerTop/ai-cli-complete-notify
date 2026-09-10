@@ -14,6 +14,7 @@ import Sidebar from '@/components/Sidebar';
 import ChannelsPanel from '@/components/ChannelsPanel';
 import SoundPanel from '@/components/SoundPanel';
 import SourcesPanel from '@/components/SourcesPanel';
+import ThirdPartyPanel from '@/components/ThirdPartyPanel';
 import WatchPanel from '@/components/WatchPanel';
 import HooksPanel from '@/components/HooksPanel';
 import TestPanel from '@/components/TestPanel';
@@ -371,6 +372,9 @@ export default function App() {
               <WatchPanel config={config} onUpdate={update} watch={watch} />
               <TestPanel />
             </>
+          )}
+          {activePanel === 'third-party' && (
+            <ThirdPartyPanel config={config} onSave={save} />
           )}
           {activePanel === 'summary' && (
             <SummaryPanel config={config} onUpdate={update} />

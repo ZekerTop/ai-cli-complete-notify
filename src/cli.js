@@ -39,14 +39,14 @@ function printHelp() {
   ${invoke} watch  [--sources all] [--interval-ms 1000] [--gemini-quiet-ms 3000] [--claude-quiet-ms 60000] [--quiet]
   ${invoke} paths
   ${invoke} env-status [--create-example]
-  ${invoke} hooks  status
+  ${invoke} hooks  status    [--target herdr]
   ${invoke} hooks  install   --target claude|gemini|opencode|herdr
   ${invoke} hooks  uninstall --target claude|gemini|opencode|herdr
   ${invoke} hooks  preview   --target claude|gemini|opencode|herdr
   ${invoke} config
 
 说明:
-  - source 支持: claude / codex / opencode / gemini
+  - source 支持: claude / codex / opencode / gemini / herdr
   - 阈值提醒建议使用 start/stop（自动计算耗时）
   - 最省事的接入方式是 run：由 ${PRODUCT_NAME} 负责计时并在命令结束后提醒
   - 交互式 / VSCode 插件场景建议使用 watch：自动监听本机日志并在每次回复完成后提醒（Claude / Codex / Gemini）
@@ -210,7 +210,7 @@ async function runCli(argv) {
     const target = String(flags.target || flags.t || '');
 
     if (subCommand === 'status') {
-      const status = getHookStatus();
+      const status = getHookStatus(target);
       console.log(JSON.stringify(status, null, 2));
       return { ok: true, mode: 'hooks', subCommand: 'status', result: status };
     }

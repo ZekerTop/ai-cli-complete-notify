@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.15.0)
+# AI CLI Complete Notify (v2.16.0)
 
-![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![Download macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -232,7 +232,7 @@ Notes:
 node ai-reminder.js notify --source claude --task "Task completed"
 ```
 
-### Native Hooks / Plugin Mode (Recommended for Claude Code / Gemini CLI / OpenCode / Herdr)
+### Native Hooks / Plugin Mode (Recommended for Claude Code / Gemini CLI / OpenCode)
 
 ```bash
 # Check current hook status
@@ -262,8 +262,21 @@ Notes:
 - Claude Code currently uses the native `Stop` hook event.
 - Gemini CLI currently uses the native `AfterAgent` hook event.
 - OpenCode currently uses a global plugin and listens to `session.status` idle / `session.idle` / `session.error`.
-- Herdr installs the [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) plugin through `herdr plugin install`, listens to `pane.agent_status_changed` (`done` / `blocked`), and writes `AI_REMINDER_PATH` into the plugin's `config.env` (auto-detected from the current executable path). Herdr notifications use their own `herdr` source, so titles are prefixed `[Herdr]` and its channels/thresholds are configured separately (see `sources.herdr`).
+- Herdr installs the [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) plugin through `herdr plugin install`, listens to `pane.agent_status_changed` (`done` / `blocked`), and writes `AI_REMINDER_PATH` into the plugin's `config.env` (auto-detected from the current executable path). Herdr notifications use their own `herdr` source, so titles are prefixed `[Herdr]` and its channels are configured separately (see `sources.herdr`). The community plugin forces delivery, so duration thresholds do not filter these events.
 - In the current integration, Codex completion reminders are still handled mainly through Watch mode.
+
+### Optional third-party tools (Herdr)
+
+Open **Third-party tools → Herdr**. Notifications are off by default. Check dependencies, confirm configuration, then enable notifications separately. Requires Herdr ≥ 0.7.0, Bash and Python 3; the macOS app uses its bundled Node runtime. Configuration preserves custom plugin settings. Normal startup/watch never probes Herdr. Only this source’s selected, globally enabled channels are used; existing AI integrations are unchanged. Enabling both Herdr and a native integration for the same task can produce duplicate notifications. Community plugin: [8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify).
+
+```bash
+# Explicit plugin status (ordinary hooks status does not run Herdr)
+node ai-reminder.js hooks status --target herdr
+# Configuration does not enable this app's Herdr notifications
+node ai-reminder.js hooks install --target herdr
+# Enable only after reviewing duplicate-notification risks
+node ai-reminder.js config --set '{"sources":{"herdr":{"enabled":true}}}'
+```
 
 ### Log Monitoring Mode (Recommended)
 
@@ -480,6 +493,10 @@ macOS notes:
 <summary>View version history</summary>
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
+
+### 2.16.0
+
+- Added a separate, opt-in Herdr page with independent notification controls and duplicate-risk confirmation. Fixed configuration path quoting/preservation and bundled-runtime delivery. Herdr status discovery is now explicit, avoiding startup/watch delays. Local Apple Silicon build; no new GitHub release yet.
 
 ### 2.15.0
 

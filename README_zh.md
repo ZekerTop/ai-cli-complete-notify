@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.15.0)
+# AI CLI Complete Notify (v2.16.0)
 
-![Version](https://img.shields.io/badge/version-2.15.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![下载 macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -263,8 +263,21 @@ node ai-reminder.js hooks uninstall --target herdr
 - Claude Code 当前使用原生 `Stop` Hook 事件。
 - Gemini CLI 当前使用原生 `AfterAgent` Hook 事件。
 - OpenCode 当前使用全局插件，监听 `session.status` idle / `session.idle` / `session.error` 事件。
-- Herdr 通过 `herdr plugin install` 安装 [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) 插件，监听 `pane.agent_status_changed`（`done` / `blocked`），并自动把当前可执行文件路径写入插件配置目录下的 `config.env`（`AI_REMINDER_PATH`）。Herdr 通知使用独立的 `herdr` 源，标题前缀显示 `[Herdr]`，其通道与阈值可在 `sources.herdr` 中单独配置。
+- Herdr 通过 `herdr plugin install` 安装 [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) 插件，监听 `pane.agent_status_changed`（`done` / `blocked`），并自动把当前可执行文件路径写入插件配置目录下的 `config.env`（`AI_REMINDER_PATH`）。Herdr 通知使用独立的 `herdr` 源，标题前缀显示 `[Herdr]`，其通道可在 `sources.herdr` 中单独配置。社区插件强制发送事件，耗时阈值不会过滤这些提醒。
 - 当前集成下，Codex 的任务完成提醒仍主要通过 Watch 模式处理。
+
+### 可选第三方工具（Herdr）
+
+打开 **第三方工具 → Herdr**。通知默认关闭；检查依赖、确认配置后，再单独启用通知。需要 Herdr ≥ 0.7.0、Bash 和 Python 3，macOS 应用使用内置 Node。配置时保留插件自定义设置；正常启动和 watch 不探测 Herdr。仅使用该来源选中的已启用渠道，不改变现有 AI 集成。同一任务同时接入 Herdr 与原生集成可能重复提醒。社区插件：[8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)。
+
+```bash
+# Explicit plugin status (ordinary hooks status does not run Herdr)
+node ai-reminder.js hooks status --target herdr
+# Configuration does not enable this app's Herdr notifications
+node ai-reminder.js hooks install --target herdr
+# Enable only after reviewing duplicate-notification risks
+node ai-reminder.js config --set '{"sources":{"herdr":{"enabled":true}}}'
+```
 
 ### 日志监听模式（推荐）
 
@@ -481,6 +494,10 @@ macOS 说明：
 <summary>展开 / 收起版本历史</summary>
 
 > `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
+
+### 2.16.0
+
+- 新增独立、默认关闭的 Herdr 第三方工具页面，支持独立渠道与重复通知风险确认。修复配置路径引用、自定义配置保留和内置运行时调用；Herdr 状态改为显式检查，避免阻塞启动和 watch。本次为本地 Apple Silicon 构建，尚未发布新 GitHub Release。
 
 ### 2.15.0
 

@@ -6,7 +6,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
-const cliPath = path.join(projectRoot, 'ai-reminder.js');
+const cliPath = process.env.HERDR_TEST_CLI || path.join(projectRoot, 'ai-reminder.js');
 
 const PLUGIN_ID = '8liang.herdr-ai-notify';
 const PLUGIN_REPO = '8liang/herdr-ai-notify';
@@ -128,13 +128,18 @@ test('herdr hooks install installs the plugin and writes config.env', (t) => {
   const configPath = path.join(sb.configDir, 'config.env');
   assert.equal(fs.existsSync(configPath), true);
   const configText = fs.readFileSync(configPath, 'utf8');
-  assert.match(configText, new RegExp(`AI_REMINDER_PATH=${cliPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  assert.ok(configText.includes("AI_REMINDER_PATH='"));
+  assert.ok(configText.includes('ai-cli-complete-notify-bridge'));
+  const bridge = fs.readFileSync(path.join(sb.configDir, 'ai-cli-complete-notify-bridge'), 'utf8');
+  assert.ok(bridge.includes(process.execPath));
+  assert.ok(bridge.includes(fs.realpathSync(cliPath)));
+  assert.match(bridge, /unset AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT/);
 });
 
 test('herdr hooks status reports installed + enabled after install', (t) => {
   const sb = createSandbox(t);
 
-  const before = runHooks(sb.env, 'status');
+  const before = runHooks(sb.env, 'status', '--target', 'herdr');
   assert.equal(before.status, 0, before.stderr || before.stdout);
   const beforeStatus = JSON.parse(before.stdout);
   assert.equal(beforeStatus.herdr.installed, false);
@@ -144,10 +149,11 @@ test('herdr hooks status reports installed + enabled after install', (t) => {
   const install = runHooks(sb.env, 'install', '--target', 'herdr');
   assert.equal(install.status, 0, install.stderr || install.stdout);
 
-  const after = runHooks(sb.env, 'status');
+  const after = runHooks(sb.env, 'status', '--target', 'herdr');
   assert.equal(after.status, 0, after.stderr || after.stdout);
   const afterStatus = JSON.parse(after.stdout);
   assert.equal(afterStatus.herdr.installed, true);
+  assert.equal(afterStatus.herdr.configured, true);
   assert.equal(afterStatus.herdr.enabled, true);
   assert.equal(afterStatus.herdr.plugin.plugin_id, PLUGIN_ID);
 });
@@ -198,9 +204,107 @@ test('herdr hooks status reports unavailable when herdr cannot run', (t) => {
   const sb = createSandbox(t);
   const env = { ...sb.env, HERDR_BIN_PATH: path.join(sb.home, 'no-herdr-here') };
 
-  const result = runHooks(env, 'status');
+  const result = runHooks(env, 'status', '--target', 'herdr');
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const status = JSON.parse(result.stdout);
   assert.equal(status.herdr.installed, false);
   assert.equal(status.herdr.available, false);
+});
+
+test('ordinary hooks status never executes Herdr and retains a capability marker', (t) => {
+  const sb = createSandbox(t);
+  const result = runHooks(sb.env, 'status');
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout).herdr, { supported: true });
+  assert.deepEqual(readCalls(sb.logFile), []);
+});
+
+test('configuration preserves custom values, quotes paths, and uses bundled runtime without PATH node', (t) => {
+  const sb = createSandbox(t);
+  const configDir = path.join(sb.configDir, "space ' $() `value` ");
+  fs.mkdirSync(configDir);
+  const configPath = path.join(configDir, 'config.env');
+  const custom = '# custom settings\nALSO_HERDR_NOTIFY=true\nPYTHON_BIN=python3\n';
+  fs.writeFileSync(configPath, custom + 'export AI_REMINDER_PATH="old"\n');
+  const env = { ...sb.env, MOCK_HERDR_CONFIG_DIR: configDir,
+    AI_CLI_COMPLETE_NOTIFY_DATA_DIR: path.join(sb.home, 'app-data'),
+    AI_CLI_COMPLETE_NOTIFY_PACKAGED: '1', AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT: '1' };
+  const install = runHooks(env, 'install', '--target', 'herdr');
+  assert.equal(install.status, 0, install.stdout + install.stderr);
+  const configured = fs.readFileSync(configPath, 'utf8');
+  assert.ok(configured.startsWith(custom));
+  const readPath = spawnSync('/bin/bash', ['-c', 'source "$1"; printf "%s" "$AI_REMINDER_PATH"', '_', configPath], { env, encoding: 'utf8' });
+  assert.equal(readPath.status, 0, readPath.stderr);
+  assert.equal(readPath.stdout, path.join(configDir, 'ai-cli-complete-notify-bridge'));
+  const bridge = spawnSync(readPath.stdout, ['hooks', 'status'], { env: { ...env, PATH: '/usr/bin:/bin' }, encoding: 'utf8' });
+  assert.equal(bridge.status, 0, bridge.stderr);
+  assert.deepEqual(JSON.parse(bridge.stdout).herdr, { supported: true });
+  const notify = spawnSync(readPath.stdout, ['notify', '--source', 'herdr', '--force', '--skip-dedupe', '--from-hook'], { env, encoding: 'utf8', input: '{}' });
+  assert.equal(notify.status, 0, notify.stderr);
+  assert.match(notify.stdout, /source herdr disabled/);
+  const again = runHooks(env, 'install', '--target', 'herdr');
+  assert.equal(again.status, 0);
+  assert.equal(fs.readFileSync(configPath, 'utf8'), configured);
+});
+
+test('invalid Herdr status is not reported as available', (t) => {
+  const sb = createSandbox(t);
+  fs.writeFileSync(sb.env.HERDR_BIN_PATH, '#!/bin/sh\necho not-json\n');
+  const result = runHooks(sb.env, 'status', '--target', 'herdr');
+  assert.equal(result.status, 0);
+  assert.equal(JSON.parse(result.stdout).herdr.available, false);
+});
+
+test('explicit Herdr status times out while ordinary status stays independent', (t) => {
+  const sb = createSandbox(t);
+  fs.writeFileSync(sb.env.HERDR_BIN_PATH, '#!/bin/sh\nexec sleep 30\n');
+  const start = Date.now();
+  const result = runHooks(sb.env, 'status', '--target', 'herdr');
+  assert.equal(result.status, 0);
+  assert.equal(JSON.parse(result.stdout).herdr.available, false);
+  assert.ok(Date.now() - start < 10000, 'explicit status must have a bounded wait');
+});
+
+test('Herdr bridge dispatches desktop notifications outside Tauri stdout without changing native sources', (t) => {
+  const sb = createSandbox(t);
+  const dataDir = path.join(sb.home, 'notify-data');
+  fs.mkdirSync(dataDir);
+  const desktopLog = path.join(dataDir, 'desktop.log');
+  const osascript = path.join(path.dirname(sb.env.HERDR_BIN_PATH), 'osascript');
+  fs.writeFileSync(osascript, '#!/bin/sh\nprintf "%s\\n" "$@" >> "$MOCK_DESKTOP_LOG"\n', {mode:0o755});
+  const env = {...sb.env, PATH:path.dirname(osascript) + path.delimiter + sb.env.PATH,
+    AI_CLI_COMPLETE_NOTIFY_DATA_DIR:dataDir, AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT:'1', MOCK_DESKTOP_LOG:desktopLog};
+  const settings = {version:2, summary:{enabled:false}, ui:{autoFocusOnNotify:false},
+    channels:Object.fromEntries(['webhook','telegram','sound','desktop','email','gotify'].map(name=>[name,{enabled:name==='desktop'}])),
+    sources:{claude:{enabled:false},codex:{enabled:true},herdr:{enabled:true,channels:{desktop:true}}}};
+  const settingsPath = path.join(dataDir, 'settings.json');
+  fs.writeFileSync(settingsPath,JSON.stringify(settings));
+  const before = fs.readFileSync(settingsPath,'utf8');
+  assert.equal(runHooks(env,'install','--target','herdr').status,0);
+  assert.equal(fs.readFileSync(settingsPath,'utf8'),before);
+  const result = spawnSync(path.join(sb.configDir,'ai-cli-complete-notify-bridge'),
+    ['notify','--source','herdr','--task','Herdr desktop bridge check','--force','--skip-dedupe','--skip-summary'],
+    {env,encoding:'utf8',cwd:projectRoot});
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.match(fs.readFileSync(desktopLog,'utf8'),/Herdr desktop bridge check/);
+  assert.doesNotMatch(result.stdout,/AI_CLI_DESKTOP_NOTIFY/);
+  assert.equal(fs.readFileSync(settingsPath,'utf8'),before);
+});
+
+test('an installed plugin with a stale bridge needs configuration before enabling in the UI', (t) => {
+  const sb = createSandbox(t);
+  fs.writeFileSync(sb.stateFile, JSON.stringify({installed:true,enabled:true}));
+  const result = runHooks(sb.env, 'status', '--target', 'herdr');
+  const status = JSON.parse(result.stdout).herdr;
+  assert.equal(status.installed, true);
+  assert.equal(status.configured, false);
+});
+
+test('watch hook reminders ignore optional Herdr without external discovery', (t) => {
+  const sb = createSandbox(t);
+  const modulePath = path.join(path.dirname(cliPath), 'src', 'hook-reminder.js');
+  const result = spawnSync(process.execPath, ['-e', `const result = require(${JSON.stringify(modulePath)}).checkAndRemindHooks('herdr', {quiet:true}); console.log(JSON.stringify(result));`], {env:sb.env,encoding:'utf8',cwd:projectRoot});
+  assert.equal(result.status,0,result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout).uninstalled,[]);
+  assert.deepEqual(readCalls(sb.logFile),[]);
 });

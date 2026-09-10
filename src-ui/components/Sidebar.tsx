@@ -1,3 +1,4 @@
+import ThemeSelector from './ThemeSelector';
 import { useTranslation } from 'react-i18next';
 
 const NAV_ITEMS = [
@@ -35,14 +36,13 @@ export default function Sidebar({
     <aside className="sidebar-shell overflow-auto">
       <div className="sidebar-stack">
         <div className="sidebar-card">
-          <p className="sidebar-kicker">Desktop console</p>
-          <h1 className="sidebar-title">
-            AI CLI
-            <br />
-            Notify
-          </h1>
-          <div className="mt-3 inline-flex items-center rounded-full border border-white/[0.08] bg-black/20 px-3 py-1 text-[10px] tracking-[0.18em] text-muted uppercase">
-            Version {version}
+          <div className="flex items-end justify-between gap-3">
+            <h1 className="sidebar-title">
+              AI CLI
+              <br />
+              Notify
+            </h1>
+            <span className="shrink-0 rounded-full border border-[rgba(110,123,255,0.36)] bg-[rgba(110,123,255,0.14)] px-3 py-1 text-[13px] font-semibold text-[var(--text)]">v{version}</span>
           </div>
           <div className="sidebar-subtitle">{t('brand.subtitle')}</div>
 
@@ -76,6 +76,7 @@ export default function Sidebar({
                 <option value="en">English</option>
               </select>
             </div>
+            <ThemeSelector />
           </div>
         </div>
 

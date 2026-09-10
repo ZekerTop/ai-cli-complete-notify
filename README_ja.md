@@ -11,12 +11,23 @@
 
 [English](README.md) | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | 日本語
 
-![UI Preview](docs/images/通道.png)
+![UI Preview](docs/images/home-v2.16.0.png)
 
 </div>
 
 ## Sponsors
+
 > [👉 このプロジェクトをスポンサー支援しませんか？](mailto:top.zeker@gmail.com)
+
+<table>
+  <tr>
+    <td align="center" width="180">
+      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
+      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+    </td>
+    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> は、ChatGPT Plus / Pro の購入・アップグレードガイド、プラン選びのアドバイス、FAQ、セルフトラブルシューティングを提供し、WeChat Pay と Alipay での支払いに対応しています。本オープンソースプロジェクトへのご支援に感謝します。</td>
+  </tr>
+</table>
 
 ### 📖 概要
 
@@ -183,7 +194,7 @@ node ai-reminder.js hooks install --target herdr
 
 ### オプションのサードパーティーツール（Herdr）
 
-**Third-party tools → Herdr** を開きます。通知は初期状態で無効です。依存関係の確認と設定の承認後、通知を別途有効にしてください。Herdr ≥ 0.7.0、Bash、Python 3 が必要です。macOS アプリは同梱 Node を使用します。プラグインのカスタム設定を保持し、通常の起動や watch では Herdr を呼び出しません。このソースで選択した有効な通知チャネルのみを使用し、既存の AI 連携は変更しません。同じタスクでネイティブ連携と併用すると通知が重複する場合があります。コミュニティプラグイン：[8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)。
+**Third-party tools → Herdr** を開くと状態を自動確認します。**① Check → ② Install and connect plugin…** の順で操作し、その後に通知を有効にします。Herdr は、同じウィンドウで Codex などの AI ツールを実行・管理する独立したターミナルツールです。通知対象は Herdr 内のタスクのみで、Codex デスクトップ版の利用には不要です。Herdr ≥ 0.7.0、Bash、Python 3 が必要です。macOS アプリは同梱 Node を使用します。準備完了・成功は緑、設定が必要な状態は黄色で表示します。Herdr をオフにするとチャネル操作はグレー表示で無効になり、選択は保持されます。通常の起動や watch では Herdr を呼び出さず、ページを開くだけでインストールすることもありません。カスタム設定と既存の AI 連携を保持し、選択済みかつ全体で有効なチャネルのみを使用します。同じタスクでネイティブ連携と併用すると通知が重複する場合があります。**?** をクリックすると説明を表示・非表示にできます。**Plugin repository** は [herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)、貢献者リンクは [8liang](https://github.com/8liang) の GitHub プロフィールを開きます。
 
 ```bash
 # Explicit plugin status (ordinary hooks status does not run Herdr)
@@ -312,7 +323,11 @@ macOS の注意:
 
 ### 2.16.0
 
-- 初期状態で無効な Herdr 専用ページ、チャネル選択、重複通知の確認を追加。設定パスの引用、カスタム設定の保持、同梱ランタイムの呼び出しを修正。Herdr の状態確認を手動に分離し、起動や watch の遅延を防止。この版はローカル Apple Silicon ビルドで、新しい GitHub Release は未公開です。
+- レイアウトを簡素化。バージョン番号をアプリ名の右側に、文字を大きく太くした角丸バッジで表示します。背景色と枠線で見やすくし、専用の行は使いません。Desktop Console、Workspace Panel、Source Profile の装飾見出しも削除し、設定欄の縦方向のスペースを確保しました。
+- 全体のライト・ダーク・システム連動テーマを追加。言語選択の下にある太陽・月・モニターのアイコンで切り替え、選択を保存します。システム連動では OS の外観変更を反映します。
+- 任意で利用する Herdr ページを追加。通知は初期状態で無効で、独立したチャネル設定と重複通知の確認を備え、既存の AI 連携には影響しません。
+- ページ表示時の自動確認、確認・インストールの手順番号、緑の成功表示と黄色の設定案内を追加。通知をオフにするとチャネル操作をグレー表示で無効化し、選択は保持します。クリックで開く説明、コミュニティタグ、プラグインと貢献者の GitHub リンクも追加しました。
+- macOS GUI での Herdr パス検出、再接続時の不要なダウンロード、有効なプラグインの重複有効化、言語切り替えに追従しないメッセージを修正。カスタム設定、パスの引用、同梱ランタイムを維持します。
 
 ### 2.15.0
 

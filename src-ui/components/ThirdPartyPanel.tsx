@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppConfig } from '@/lib/types';
 import { CHANNELS } from '@/lib/types';
@@ -24,6 +24,8 @@ interface HerdrStatus {
 
 export default function ThirdPartyPanel({ config, onSave }: Props) {
   const { t } = useTranslation();
+  const helpId = useId();
+  const [helpOpen, setHelpOpen] = useState(false);
   const [status, setStatus] = useState<HerdrStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -61,36 +63,41 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
     if (!saved) throw new Error('thirdParty.saveFailed');
   };
 
+  useEffect(() => {
+    void run(async () => { await check(); });
+  }, []);
+
   return (
     <Panel title={t('thirdParty.title')} subtitle={t('thirdParty.subtitle')}>
       <div className="surface-card p-5 space-y-5" aria-busy={busy}>
         <div>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.18em] text-muted">{t('thirdParty.optional')}</div>
+              <div className="inline-flex rounded-full border border-indigo-400/30 bg-indigo-400/10 px-2.5 py-1 text-[11px] text-indigo-200">{t('thirdParty.optional')}</div>
               <div className="mt-3 flex items-center gap-2">
                 <h3 className="font-serif text-[28px]">Herdr</h3>
-                <button type="button" title={t('thirdParty.help')} aria-label={t('thirdParty.help')} className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/[0.22] text-xs text-muted cursor-help focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">?</button>
+                <button type="button" aria-label={t('thirdParty.help')} aria-expanded={helpOpen} aria-controls={helpId} onClick={() => setHelpOpen(!helpOpen)} className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/[0.22] text-xs text-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">?</button>
               </div>
             </div>
             <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/[0.14] px-3 py-2 text-xs" onClick={() => void run(() => open('https://github.com/8liang/herdr-ai-notify'))}>
               <GitHubLogo />{t('thirdParty.repository')}
             </button>
           </div>
+          <p id={helpId} hidden={!helpOpen} className="surface-card-soft mt-3 p-3 text-[13px]">{t('thirdParty.help')}</p>
           <p className="mt-2 text-[13px] text-muted">{t('thirdParty.description')}</p>
           <p className="mt-2 text-[12px] text-muted">{t('thirdParty.scope')}</p>
         </div>
         <p className="text-[13px] text-muted">{t('thirdParty.dependencies')}</p>
         <div className="surface-card-soft p-4 space-y-3">
-          <p className="text-[13px]" role="status">
+          <p className={`text-[13px] ${busy || !status ? 'text-muted' : ready ? 'text-emerald-300' : 'text-yellow-300'}`} role="status">
             {busy ? t('thirdParty.busy') : !status ? t('thirdParty.unchecked')
               : !status.available ? t('thirdParty.unavailable')
               : !status.dependencies.bash || !status.dependencies.python3 ? t('thirdParty.missingDependencies')
               : ready ? t('thirdParty.ready') : t('thirdParty.unconfigured')}
           </p>
           <div className="flex flex-wrap gap-3">
-            <button className="px-3 py-2 rounded-xl border border-white/[0.14] text-xs disabled:opacity-45" disabled={busy} onClick={() => void run(async () => { await check(); })}>{t('thirdParty.check')}</button>
-            <button className="px-3 py-2 rounded-xl border border-white/[0.14] text-xs disabled:opacity-45" disabled={busy} onClick={() => setConfirmation('configure')}>{t('thirdParty.configure')}</button>
+            <button className="px-3 py-2 rounded-xl border border-white/[0.14] text-xs disabled:opacity-45" disabled={busy} onClick={() => void run(async () => { await check(); })}>① {t('thirdParty.check')}</button>
+            <button className="px-3 py-2 rounded-xl border border-white/[0.14] text-xs disabled:opacity-45" disabled={busy} onClick={() => setConfirmation('configure')}>② {t('thirdParty.configure')}</button>
           </div>
         </div>
         <div className="flex items-center justify-between gap-4">
@@ -128,19 +135,21 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
             </div>
           </div>
         )}
-        <div>
+        <fieldset disabled={busy || !source.enabled} className={`min-w-0 ${!source.enabled ? 'opacity-45 grayscale' : ''}`}>
           <p className="text-[13px] text-muted">{t('thirdParty.channels')}</p>
           <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3">
             {CHANNELS.filter((ch) => config.channels[ch.key]?.enabled).map((ch) => (
               <div key={ch.key} className="surface-card-soft flex items-center justify-between gap-3 p-3">
                 <span className="text-[12px]">{t(ch.titleKey)}</span>
-                <Switch label={t(ch.titleKey)} checked={source.channels[ch.key] ?? false} disabled={busy} onChange={() => void run(() => saveSource({ channels: { ...source.channels, [ch.key]: !source.channels[ch.key] } }))} />
+                <Switch label={t(ch.titleKey)} checked={source.channels[ch.key] ?? false} disabled={busy || !source.enabled} onChange={() => void run(() => saveSource({ channels: { ...source.channels, [ch.key]: !source.channels[ch.key] } }))} />
               </div>
             ))}
           </div>
-        </div>
-        <p className="border-t border-white/[0.08] pt-3 text-[12px] text-muted">{t('thirdParty.contributor')} · 8liang</p>
-        {message && <p className="text-[13px]" role="alert">{t(message)}</p>}
+        </fieldset>
+        <p className="border-t border-white/[0.08] pt-3 text-[12px] text-muted">
+          {t('thirdParty.contributor')} · <button type="button" className="underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => void run(() => open('https://github.com/8liang'))}>8liang</button>
+        </p>
+        {message && <p className={`text-[13px] ${message === 'thirdParty.configured' ? 'text-emerald-300' : 'text-yellow-300'}`} role="alert">{t(message)}</p>}
       </div>
     </Panel>
   );

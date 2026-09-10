@@ -12,7 +12,6 @@ export default function Panel({ title, subtitle, badge, children }: PanelProps) 
     <section className="panel-shell">
       <div className="panel-head">
         <div>
-          <p className="panel-kicker">Workspace panel</p>
           <h2 className="panel-title">{title}</h2>
           {subtitle && <div className="panel-subtitle">{subtitle}</div>}
         </div>

@@ -11,12 +11,23 @@
 
 [English](README.md) | 简体中文 | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![界面预览](docs/images/通道.png)
+![界面预览](docs/images/home-v2.16.0.png)
 
 </div>
 
 ## Sponsors
+
 > [👉 想赞助本项目？](mailto:top.zeker@gmail.com)
+
+<table>
+  <tr>
+    <td align="center" width="180">
+      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
+      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+    </td>
+    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> 提供 ChatGPT Plus / Pro 购买与升级指南、套餐选择建议、常见问题解答及自助排查说明，支持微信支付和支付宝。感谢其对本开源项目的支持。</td>
+  </tr>
+</table>
 
 ### 📖 简介
 
@@ -268,7 +279,7 @@ node ai-reminder.js hooks uninstall --target herdr
 
 ### 可选第三方工具（Herdr）
 
-打开 **第三方工具 → Herdr**。通知默认关闭；检查依赖、确认配置后，再单独启用通知。需要 Herdr ≥ 0.7.0、Bash 和 Python 3，macOS 应用使用内置 Node。配置时保留插件自定义设置；正常启动和 watch 不探测 Herdr。仅使用该来源选中的已启用渠道，不改变现有 AI 集成。同一任务同时接入 Herdr 与原生集成可能重复提醒。社区插件：[8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)。
+打开 **第三方工具 → Herdr** 时会自动检测状态，也可按 **① 检查 → ② 安装并连接插件…** 操作，随后单独开启通知。Herdr 是一个独立的终端工具，用来在同一个窗口里运行、管理 Codex 等 AI 工具。仅提醒在 Herdr 中运行的任务；使用 Codex 桌面端无需开启。需要 Herdr ≥ 0.7.0、Bash 和 Python 3，macOS 应用使用内置 Node。就绪或成功显示绿色，需要配置显示黄色。关闭 Herdr 后，渠道灰显并禁用，保留原有选择。正常启动和 watch 不探测 Herdr，进入页面不会自动安装。保留插件自定义设置，不改变现有 AI 集成；仅使用选中且全局已启用的渠道。同一任务同时接入 Herdr 与原生集成可能重复提醒。点击 **?** 可展开或收起说明；**插件项目仓库** 跳转到 [herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)，贡献者链接跳转到 [8liang](https://github.com/8liang) 的 GitHub 主页。
 
 ```bash
 # Explicit plugin status (ordinary hooks status does not run Herdr)
@@ -497,7 +508,11 @@ macOS 说明：
 
 ### 2.16.0
 
-- 新增独立、默认关闭的 Herdr 第三方工具页面，支持独立渠道与重复通知风险确认。修复配置路径引用、自定义配置保留和内置运行时调用；Herdr 状态改为显式检查，避免阻塞启动和 watch。本次为本地 Apple Silicon 构建，尚未发布新 GitHub Release。
+- 精简界面布局：版本号改为标题右侧的圆角标签，增大字号并加粗，增加底色与边框，不再独占一行；移除 Desktop Console、Workspace Panel 和 Source Profile 装饰标题，为设置内容腾出更多空间。
+- 新增全局浅色、深色和跟随系统主题，通过语言选择下方的太阳、月亮、显示器图标切换；记住选择，跟随系统模式会响应系统外观变化。
+- 新增可选的 Herdr 第三方工具页面，通知默认关闭，支持独立渠道和重复通知风险确认，不影响现有 AI 集成。
+- 进入页面自动检测，检查与安装按钮增加步骤序号；成功显示绿色，需要配置显示黄色。关闭通知后渠道灰显、禁用并保留选择。补充问号说明、社区标签和插件仓库／贡献者 GitHub 链接。
+- 修复 macOS 图形界面的 Herdr 路径识别、已安装插件重连时重复下载、已启用插件重复激活，以及提示未随语言切换的问题；保留自定义配置、路径引用和内置运行时调用。
 
 ### 2.15.0
 

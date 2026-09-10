@@ -1,4 +1,9 @@
 {
+  "theme.label": "外观",
+  "theme.light": "浅色",
+  "theme.dark": "深色",
+  "theme.system": "跟随系统",
+
   "brand.subtitle": "多种 AI CLI 任务完成提醒",
   "nav.notifications": "通知",
   "nav.channels": "通道",
@@ -235,7 +240,7 @@
   "thirdParty.optional": "可选 · 社区维护",
   "thirdParty.description": "将 Herdr 中 AI 任务的完成与异常事件，发送到你已配置的通知渠道。",
   "thirdParty.dependencies": "需要自行安装 Herdr ≥ 0.7.0、Bash 和 Python 3。macOS 打包版自带通知所需的 Node。",
-  "thirdParty.unchecked": "尚未检查；不会在后台探测或安装。",
+  "thirdParty.unchecked": "尚未获取状态，请重新检查；不会自动安装。",
   "thirdParty.unavailable": "无法查询 Herdr，请确认已安装且命令可用后重试。",
   "thirdParty.missingDependencies": "未找到 Bash 或 Python 3，请安装依赖后重新检查。",
   "thirdParty.ready": "插件已就绪；通知开关独立控制。",
@@ -259,7 +264,7 @@
   "thirdParty.enableFailed": "插件激活失败。请确认 Herdr 正在运行，再重试连接。",
   "thirdParty.saveFailed": "通知设置保存失败，请重试。",
   "thirdParty.help": "Herdr 是一个独立的终端工具，用来在同一个窗口里运行、管理 Codex 等 AI 工具。",
-  "thirdParty.repository": "项目仓库",
+  "thirdParty.repository": "插件项目仓库",
   "thirdParty.scope": "仅提醒在 Herdr 中运行的任务；使用 Codex 桌面端无需开启。",
   "thirdParty.contributor": "社区插件贡献者"
 }

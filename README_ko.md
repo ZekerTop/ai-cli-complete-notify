@@ -11,12 +11,23 @@
 
 [English](README.md) | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | 한국어 | [日本語](README_ja.md)
 
-![UI Preview](docs/images/通道.png)
+![UI Preview](docs/images/home-v2.16.0.png)
 
 </div>
 
 ## Sponsors
+
 > [👉 이 프로젝트를 후원하고 싶으신가요?](mailto:top.zeker@gmail.com)
+
+<table>
+  <tr>
+    <td align="center" width="180">
+      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
+      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+    </td>
+    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> 는 ChatGPT Plus / Pro 구매·업그레이드 안내, 요금제 선택 조언, FAQ 및 자가 문제 해결 안내를 제공하며 WeChat Pay와 Alipay 결제를 지원합니다. 이 오픈소스 프로젝트를 후원해 주셔서 감사합니다.</td>
+  </tr>
+</table>
 
 ### 📖 소개
 
@@ -183,7 +194,7 @@ node ai-reminder.js hooks install --target herdr
 
 ### 선택적 타사 도구 (Herdr)
 
-**Third-party tools → Herdr**를 엽니다. 알림은 기본적으로 꺼져 있습니다. 의존성을 확인하고 설정을 승인한 다음 알림을 별도로 켜세요. Herdr ≥ 0.7.0, Bash, Python 3가 필요하며 macOS 앱은 내장 Node를 사용합니다. 플러그인의 사용자 설정을 보존하고 일반 시작 및 watch에서는 Herdr를 호출하지 않습니다. 이 소스에서 선택한 활성 채널만 사용하며 기존 AI 연동은 변경하지 않습니다. 같은 작업에 기본 연동과 Herdr를 함께 사용하면 중복 알림이 발생할 수 있습니다. 커뮤니티 플러그인: [8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify).
+**Third-party tools → Herdr**를 열면 상태를 자동으로 확인합니다. **① Check → ② Install and connect plugin…** 순서로 진행한 다음 알림을 별도로 켜세요. Herdr는 한 창에서 Codex 같은 AI 도구를 실행하고 관리하는 독립적인 터미널 도구입니다. Herdr 안에서 실행한 작업만 알림 대상이며, Codex 데스크톱 사용자에게는 필요하지 않습니다. Herdr ≥ 0.7.0, Bash, Python 3가 필요하며 macOS 앱은 내장 Node를 사용합니다. 준비 완료·성공은 녹색, 설정이 필요한 상태는 노란색으로 표시합니다. Herdr를 끄면 채널 조작이 회색으로 비활성화되지만 선택은 유지됩니다. 일반 시작 및 watch에서는 Herdr를 호출하지 않으며 페이지를 열어도 자동 설치하지 않습니다. 사용자 설정과 기존 AI 연동을 유지하고, 선택했으며 전역으로 활성화된 채널만 사용합니다. 같은 작업에 기본 연동과 Herdr를 함께 사용하면 중복 알림이 발생할 수 있습니다. **?**를 클릭하면 설명을 펼치거나 접을 수 있습니다. **Plugin repository**는 [herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)로, 기여자 링크는 [8liang](https://github.com/8liang)의 GitHub 프로필로 이동합니다.
 
 ```bash
 # Explicit plugin status (ordinary hooks status does not run Herdr)
@@ -312,7 +323,11 @@ macOS 참고:
 
 ### 2.16.0
 
-- 기본적으로 꺼진 Herdr 전용 페이지, 개별 채널 선택 및 중복 알림 확인을 추가했습니다. 설정 경로 인용, 사용자 설정 보존 및 내장 런타임 호출을 수정했습니다. Herdr 상태 확인을 수동으로 분리하여 시작 및 watch 지연을 방지합니다. 로컬 Apple Silicon 빌드이며 새 GitHub Release는 아직 게시하지 않았습니다.
+- 화면 구성을 간소화했습니다. 버전 번호를 앱 제목 오른쪽의 둥근 배지로 표시하고 글자를 더 크고 굵게 했습니다. 배경색과 테두리로 강조하되 별도 줄을 차지하지 않으며, Desktop Console·Workspace Panel·Source Profile 장식 제목을 제거해 설정 영역의 세로 공간을 확보했습니다.
+- 전체 밝은·어두운·시스템 테마를 추가했습니다. 언어 선택 아래의 해·달·모니터 아이콘으로 전환하고 선택을 저장합니다. 시스템 모드는 OS 외관 변경을 반영합니다.
+- 선택적으로 사용하는 Herdr 페이지를 추가했습니다. 알림은 기본적으로 꺼져 있으며 독립 채널 설정과 중복 알림 확인을 제공하고 기존 AI 연동에는 영향을 주지 않습니다.
+- 페이지 진입 시 자동 확인, 확인·설치 버튼의 단계 번호, 녹색 성공 표시와 노란색 설정 안내를 추가했습니다. 알림을 끄면 채널 조작이 회색으로 비활성화되며 선택은 유지됩니다. 클릭하여 펼치는 설명, 커뮤니티 태그, 플러그인 및 기여자 GitHub 링크도 추가했습니다.
+- macOS GUI의 Herdr 경로 탐색, 재연결 시 불필요한 다운로드, 이미 활성화된 플러그인의 중복 활성화, 언어 전환이 반영되지 않는 메시지를 수정했습니다. 사용자 설정, 경로 인용 및 내장 런타임을 유지합니다.
 
 ### 2.15.0
 

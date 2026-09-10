@@ -11,11 +11,22 @@
 
 English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![UI Preview](docs/images/通道.png)
+![UI Preview](docs/images/home-v2.16.0.png)
 </div>
 
 ## Sponsors
+
 > [👉 Want to sponsor this project?](mailto:top.zeker@gmail.com)
+
+<table>
+  <tr>
+    <td align="center" width="180">
+      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
+      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+    </td>
+    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> offers ChatGPT Plus / Pro purchase and upgrade guides, plan-selection advice, FAQs and self-service troubleshooting, with WeChat Pay and Alipay payment options. Thank you for supporting this open-source project.</td>
+  </tr>
+</table>
 
 ### 📖 Introduction
 
@@ -267,7 +278,7 @@ Notes:
 
 ### Optional third-party tools (Herdr)
 
-Open **Third-party tools → Herdr**. Notifications are off by default. Check dependencies, confirm configuration, then enable notifications separately. Requires Herdr ≥ 0.7.0, Bash and Python 3; the macOS app uses its bundled Node runtime. Configuration preserves custom plugin settings. Normal startup/watch never probes Herdr. Only this source’s selected, globally enabled channels are used; existing AI integrations are unchanged. Enabling both Herdr and a native integration for the same task can produce duplicate notifications. Community plugin: [8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify).
+Open **Third-party tools → Herdr**. The page checks status automatically; use **① Check → ② Install and connect plugin…**, then enable notifications separately. Herdr is a standalone terminal tool for running and managing AI tools such as Codex in one window. Only tasks running inside Herdr send these notifications; Codex Desktop users do not need this integration. Requires Herdr ≥ 0.7.0, Bash and Python 3; the macOS app uses bundled Node. Ready/success is green; setup required is yellow. Turning Herdr off grays out and disables channel controls while preserving selections. Normal startup/watch does not probe Herdr, and opening this page does not install anything automatically. Custom plugin settings and existing AI integrations are preserved. Only selected, globally enabled channels are used. Using Herdr and a native integration for the same task may cause duplicate notifications. Click **?** to show or hide the Herdr explanation; **Plugin repository** opens [herdr-ai-notify](https://github.com/8liang/herdr-ai-notify), and the contributor link opens [8liang](https://github.com/8liang).
 
 ```bash
 # Explicit plugin status (ordinary hooks status does not run Herdr)
@@ -496,7 +507,11 @@ macOS notes:
 
 ### 2.16.0
 
-- Added a separate, opt-in Herdr page with independent notification controls and duplicate-risk confirmation. Fixed configuration path quoting/preservation and bundled-runtime delivery. Herdr status discovery is now explicit, avoiding startup/watch delays. Local Apple Silicon build; no new GitHub release yet.
+- Simplified the layout: displayed the version beside the app title as a larger, bold rounded badge with a tinted background and border, without adding a separate row and removed the decorative Desktop Console, Workspace Panel and Source Profile headings to free up vertical space.
+- Added global light, dark and system themes with sun, moon and monitor icon buttons below the language selector. The choice is remembered; system mode follows OS appearance changes.
+- Added an optional Herdr page with notifications off by default, independent channels and duplicate-notification confirmation; existing AI integrations remain unchanged.
+- Automatically check status when entering the page, with numbered check/install buttons, green success and yellow setup hints. Turning notifications off disables and grays out channel controls without clearing selections. Added a click-to-expand explanation, a community badge, and plugin/contributor GitHub links.
+- Fixed Herdr discovery in macOS GUI install paths, unnecessary downloads when reconnecting an installed plugin, redundant activation of an already-enabled plugin, and messages not switching language. Preserved custom configuration, quoted paths and bundled-runtime delivery.
 
 ### 2.15.0
 

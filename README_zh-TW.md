@@ -11,12 +11,23 @@
 
 [English](README.md) | [简体中文](README_zh.md) | 繁體中文 | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![介面預覽](docs/images/通道.png)
+![介面預覽](docs/images/home-v2.16.0.png)
 
 </div>
 
 ## Sponsors
+
 > [👉 想贊助本專案？](mailto:top.zeker@gmail.com)
+
+<table>
+  <tr>
+    <td align="center" width="180">
+      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
+      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+    </td>
+    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> 提供 ChatGPT Plus / Pro 購買與升級指南、方案選擇建議、常見問題解答及自助排查說明，支援微信支付與支付寶。感謝其對本開源專案的支持。</td>
+  </tr>
+</table>
 
 ### 📖 簡介
 
@@ -183,7 +194,7 @@ node ai-reminder.js hooks install --target herdr
 
 ### 可選第三方工具（Herdr）
 
-開啟 **第三方工具 → Herdr**。通知預設關閉；檢查依賴並確認設定後，再單獨啟用。需要 Herdr ≥ 0.7.0、Bash 與 Python 3；macOS 應用使用內建 Node。保留外掛自訂設定，正常啟動與 watch 不探測 Herdr。僅使用該來源選取且已啟用的通知管道，不改變既有 AI 整合。同一任務同時使用 Herdr 與原生整合可能重複通知。社群外掛：[8liang/herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)。
+開啟 **第三方工具 → Herdr** 時會自動檢查狀態，也可依 **① 檢查 → ② 安裝並連接外掛…** 操作，再單獨啟用通知。Herdr 是獨立的終端工具，可在同一視窗執行、管理 Codex 等 AI 工具。僅通知在 Herdr 中執行的任務；Codex 桌面版使用者無需啟用。需要 Herdr ≥ 0.7.0、Bash 與 Python 3，macOS 應用使用內建 Node。就緒或成功顯示綠色，需要設定顯示黃色。關閉 Herdr 後，管道會灰顯並停用，但保留選擇。正常啟動與 watch 不探測 Herdr，進入頁面不會自動安裝。保留外掛自訂設定，不改變既有 AI 整合；僅使用選取且全域已啟用的管道。同一任務同時使用 Herdr 與原生整合可能重複通知。點擊 **?** 可展開或收合說明；外掛專案倉庫連結前往 [herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)，貢獻者連結前往 [8liang](https://github.com/8liang) 的 GitHub 首頁。
 
 ```bash
 # Explicit plugin status (ordinary hooks status does not run Herdr)
@@ -312,7 +323,11 @@ macOS 建議：
 
 ### 2.16.0
 
-- 新增獨立、預設關閉的 Herdr 頁面，提供管道選擇與重複通知風險確認。修正路徑引用、自訂設定保留及內建執行環境；Herdr 改為手動檢查，避免阻塞啟動與 watch。本次為本機 Apple Silicon 建置，尚未發佈新 GitHub Release。
+- 精簡介面配置：版本號改為標題右側的圓角標籤，放大字級並加粗，加入底色與邊框，不再獨占一行；移除 Desktop Console、Workspace Panel 與 Source Profile 裝飾標題，為設定內容騰出更多空間。
+- 新增全域淺色、深色與跟隨系統主題，透過語言選擇下方的太陽、月亮、顯示器圖示切換；保留選擇，跟隨系統模式會回應系統外觀變更。
+- 新增可選的 Herdr 頁面，通知預設關閉，提供獨立管道與重複通知風險確認，不影響既有 AI 整合。
+- 進入頁面自動檢查，檢查與安裝按鈕加入步驟編號；成功顯示綠色，需要設定顯示黃色。關閉通知後管道灰顯、停用並保留選擇。新增問號說明、社群標籤及外掛倉庫／貢獻者 GitHub 連結。
+- 修正 macOS 圖形介面的 Herdr 路徑偵測、已安裝外掛重新連接時重複下載、已啟用外掛重複啟用，以及提示未隨語言切換的問題；保留自訂設定、路徑引用與內建執行環境。
 
 ### 2.15.0
 

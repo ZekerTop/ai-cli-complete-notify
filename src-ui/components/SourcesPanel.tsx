@@ -75,7 +75,6 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted">Source profile</div>
                   <div className="mt-3 font-serif text-[24px] leading-none">{t(src.titleKey)}</div>
                   <div className="mt-2 text-[13px] text-muted leading-relaxed">{t(src.descKey)}</div>
                 </div>

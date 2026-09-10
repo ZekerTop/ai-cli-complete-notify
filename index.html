@@ -3,7 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      try {
+        const mode = localStorage.getItem('ai-notify-theme');
+        const theme = mode === 'light' || mode === 'dark' ? mode : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    </script>
+    <style>
+      html[data-theme="light"], html[data-theme="light"] body, html[data-theme="light"] #boot { background: #f4f6fc; color: #1d2b43; }
+      html[data-theme="light"] .boot-card { background: #fff; box-shadow: 0 16px 48px #20335218; }
+      html[data-theme="light"] .boot-kicker, html[data-theme="light"] .boot-subtitle { color: #596980; }
+    </style>
     <title>AI CLI Complete Notify</title>
     <style>
       html, body {

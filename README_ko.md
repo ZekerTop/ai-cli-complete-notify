@@ -176,6 +176,9 @@ node ai-reminder.js hooks install --target gemini
 
 # OpenCode 전역 플러그인 설치
 node ai-reminder.js hooks install --target opencode
+
+# Herdr 플러그인(herdr-ai-notify) 설치 및 자동 설정
+node ai-reminder.js hooks install --target herdr
 ```
 
 ### Watch 로그 감시 모드

@@ -140,6 +140,19 @@ const DEFAULT_CONFIG = {
         gotify: false
       }
     },
+    herdr: {
+      enabled: true,
+      minDurationMinutes: 0,
+      webhookUrls: [],
+      channels: {
+        webhook: true,
+        telegram: false,
+        sound: true,
+        desktop: true,
+        email: false,
+        gotify: false
+      }
+    },
     gemini: {
       enabled: true,
       minDurationMinutes: 0,

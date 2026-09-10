@@ -282,8 +282,9 @@ function getClaudeHookNotificationContext(hookContext, defaultTaskInfo, options 
   };
 }
 
-function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
-  if (!hookContext || hookContext.hook_source !== 'opencode-plugin') return null;
+function getPluginHookNotificationContext(hookContext, defaultTaskInfo, options) {
+  const { hookSource, displayName } = options || {};
+  if (!hookContext || hookContext.hook_source !== hookSource) return null;
 
   const eventName = String(hookContext.hook_event_name || '').trim();
   if (!eventName) return null;
@@ -300,12 +301,12 @@ function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
     const failureSummary = truncate(
       hookContext.error_message
         || assistantText
-        || 'OpenCode task failed',
+        || `${displayName} task failed`,
       88,
     );
     return {
       notifyKind: 'error',
-      taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : `OpenCode 失败: ${failureSummary}`,
+      taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : `${displayName} 失败: ${failureSummary}`,
       outputContent: assistantText,
       summaryContext: assistantText ? { assistantMessage: assistantText } : undefined,
       skipSummary: true,
@@ -316,12 +317,26 @@ function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
   if (eventName !== 'session.idle' && eventName !== 'session.status') return null;
 
   return {
-    taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : 'OpenCode 完成',
+    taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : `${displayName} 完成`,
     outputContent: assistantText,
     summaryContext: assistantText ? { assistantMessage: assistantText } : undefined,
     skipSummary: !assistantText,
     delayMs: 0,
   };
+}
+
+function getOpenCodeHookNotificationContext(hookContext, defaultTaskInfo) {
+  return getPluginHookNotificationContext(hookContext, defaultTaskInfo, {
+    hookSource: 'opencode-plugin',
+    displayName: 'OpenCode',
+  });
+}
+
+function getHerdrHookNotificationContext(hookContext, defaultTaskInfo) {
+  return getPluginHookNotificationContext(hookContext, defaultTaskInfo, {
+    hookSource: 'herdr-plugin',
+    displayName: 'Herdr',
+  });
 }
 
 function normalizeGeminiSessionScope(scopeInput) {
@@ -422,6 +437,7 @@ module.exports = {
   getClaudeSessionOrigin,
   getClaudeHookNotificationContext,
   getGeminiHookNotificationContext,
+  getHerdrHookNotificationContext,
   getOpenCodeHookNotificationContext,
   looksLikeClaudeFailure,
   normalizeGeminiSessionScope,

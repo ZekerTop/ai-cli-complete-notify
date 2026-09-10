@@ -233,7 +233,7 @@ wslpath -w ~/.codex
 node ai-reminder.js notify --source claude --task "任务完成"
 ```
 
-### 原生 Hook / 插件模式（推荐用于 Claude Code / Gemini CLI / OpenCode）
+### 原生 Hook / 插件模式（推荐用于 Claude Code / Gemini CLI / OpenCode / Herdr）
 
 ```bash
 # 查看当前 Hook 状态
@@ -248,17 +248,22 @@ node ai-reminder.js hooks install --target gemini
 # 安装 OpenCode 全局插件
 node ai-reminder.js hooks install --target opencode
 
+# 安装 Herdr 插件（herdr-ai-notify）并自动写入配置
+node ai-reminder.js hooks install --target herdr
+
 # 预览将要写入的 Hook / 插件内容
 node ai-reminder.js hooks preview --target opencode
 
-# 卸载某个 Hook
+# 卸载某个 Hook / 插件
 node ai-reminder.js hooks uninstall --target claude
+node ai-reminder.js hooks uninstall --target herdr
 ```
 
 说明：
 - Claude Code 当前使用原生 `Stop` Hook 事件。
 - Gemini CLI 当前使用原生 `AfterAgent` Hook 事件。
 - OpenCode 当前使用全局插件，监听 `session.status` idle / `session.idle` / `session.error` 事件。
+- Herdr 通过 `herdr plugin install` 安装 [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) 插件，监听 `pane.agent_status_changed`（`done` / `blocked`），并自动把当前可执行文件路径写入插件配置目录下的 `config.env`（`AI_REMINDER_PATH`）。Herdr 通知使用独立的 `herdr` 源，标题前缀显示 `[Herdr]`，其通道与阈值可在 `sources.herdr` 中单独配置。
 - 当前集成下，Codex 的任务完成提醒仍主要通过 Watch 模式处理。
 
 ### 日志监听模式（推荐）

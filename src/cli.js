@@ -221,7 +221,11 @@ async function runCli(argv) {
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = installHook(target);
-      console.log(result.ok ? `已安装 ${target} 集成 -> ${result.settingsPath}` : `安装失败: ${result.error}`);
+      if (flags.json) {
+        console.log(JSON.stringify({ ok: result.ok, step: result.step, errorCode: result.errorCode }));
+      } else {
+        console.log(result.ok ? `已安装 ${target} 集成 -> ${result.settingsPath}` : `安装失败: ${result.error}`);
+      }
       return { ok: result.ok, mode: 'hooks', subCommand: 'install', result };
     }
 

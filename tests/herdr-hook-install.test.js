@@ -47,7 +47,8 @@ if (cmd === 'plugin' && sub === 'list') {
   process.exit(0);
 }
 if (cmd === 'plugin' && sub === 'install') {
-  writeState({ installed: true, enabled: false });
+  if (process.env.MOCK_FAIL_INSTALL === '1') process.exit(1);
+  writeState({ installed: true, enabled: process.env.MOCK_INSTALL_ENABLED === '1' });
   process.exit(0);
 }
 if (cmd === 'plugin' && sub === 'config-dir') {
@@ -55,6 +56,10 @@ if (cmd === 'plugin' && sub === 'config-dir') {
   process.exit(0);
 }
 if (cmd === 'plugin' && sub === 'enable') {
+  if (process.env.MOCK_NO_SERVER === '1') {
+    process.stdout.write(JSON.stringify({error:{code:'server_not_running'}}));
+    process.exit(1);
+  }
   const state = readState();
   writeState({ installed: state.installed !== false, enabled: true });
   process.exit(0);
@@ -117,11 +122,13 @@ test('herdr hooks install installs the plugin and writes config.env', (t) => {
   const calls = readCalls(sb.logFile);
   assert.deepEqual(
     calls.map((c) => c[1]),
-    ['install', 'config-dir', 'enable']
+    ['list', 'install', 'config-dir', 'list', 'enable']
   );
-  assert.deepEqual(calls[0], ['plugin', 'install', PLUGIN_REPO, '--yes']);
-  assert.deepEqual(calls[1], ['plugin', 'config-dir', PLUGIN_ID]);
-  assert.deepEqual(calls[2], ['plugin', 'enable', PLUGIN_ID]);
+  assert.deepEqual(calls[0], ['plugin', 'list', '--json']);
+  assert.deepEqual(calls[1], ['plugin', 'install', PLUGIN_REPO, '--yes']);
+  assert.deepEqual(calls[2], ['plugin', 'config-dir', PLUGIN_ID]);
+  assert.deepEqual(calls[3], ['plugin', 'list', '--json']);
+  assert.deepEqual(calls[4], ['plugin', 'enable', PLUGIN_ID]);
 
   // config.env should be written into the plugin config dir with the
   // auto-detected ai-reminder.js path.
@@ -327,4 +334,38 @@ test('macOS GUI PATH discovers ~/.local/bin/herdr for status and installation', 
   assert.equal(explicit.herdrBin, sb.env.HERDR_BIN_PATH, 'manual override must retain priority');
   const fromPath = JSON.parse(runHooks({...env, PATH:path.dirname(sb.env.HERDR_BIN_PATH)+':'+sb.env.PATH}, 'status', '--target', 'herdr').stdout).herdr;
   assert.equal(fromPath.herdrBin, sb.env.HERDR_BIN_PATH, 'PATH must retain priority');
+});
+
+test('an already enabled plugin configures successfully without a running server', (t) => {
+  const sb = createSandbox(t);
+  const result = runHooks({...sb.env, MOCK_INSTALL_ENABLED:'1', MOCK_NO_SERVER:'1'}, 'install', '--target', 'herdr', '--json');
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.equal(JSON.parse(result.stdout).ok,true);
+  assert.ok(!readCalls(sb.logFile).some(call=>call[1]==='enable'));
+});
+
+test('a disabled plugin without a server reports an actionable structured error', (t) => {
+  const sb = createSandbox(t);
+  const result = runHooks({...sb.env, MOCK_NO_SERVER:'1'}, 'install', '--target', 'herdr', '--json');
+  assert.equal(result.status,1);
+  assert.deepEqual(JSON.parse(result.stdout),{ok:false,step:'enable',errorCode:'server_not_running'});
+});
+
+test('Herdr UI keeps messages as translation keys and includes localized stage errors', () => {
+  const ui = fs.readFileSync(path.join(projectRoot, 'src-ui/components/ThirdPartyPanel.tsx'),'utf8');
+  assert.doesNotMatch(ui,/setMessage\(t\(/);
+  assert.match(ui,/role="alert">\{t\(message\)\}/);
+  for (const lang of ['zh-CN','en']) {
+    const messages = JSON.parse(fs.readFileSync(path.join(projectRoot,`src-ui/i18n/${lang}.json`),'utf8'));
+    for(const key of ['startHerdr','timeout','installFailed','configFailed','enableFailed','saveFailed']) assert.ok(messages[`thirdParty.${key}`]);
+  }
+});
+
+test('reconnecting an installed plugin needs no GitHub download', (t) => {
+  const sb = createSandbox(t);
+  fs.writeFileSync(sb.stateFile,JSON.stringify({installed:true,enabled:true}));
+  const result = runHooks({...sb.env, MOCK_FAIL_INSTALL:'1', MOCK_NO_SERVER:'1'},'install','--target','herdr','--json');
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.equal(JSON.parse(result.stdout).ok,true);
+  assert.ok(readCalls(sb.logFile).every(call=>!['install','enable'].includes(call[1])));
 });

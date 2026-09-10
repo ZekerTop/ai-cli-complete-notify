@@ -34,7 +34,7 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
   const check = async () => {
     setStatus(null);
     const out = await sidecar(['hooks', 'status', '--target', 'herdr']);
-    if (out.code !== 0) throw new Error(t('thirdParty.failed'));
+    if (out.code !== 0) throw new Error('thirdParty.failed');
     const result = JSON.parse(out.stdout).herdr as HerdrStatus;
     setStatus(result);
     return result;
@@ -47,9 +47,9 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
     setConfirmation(null);
     try {
       await action();
-    } catch {
-      // External command output can contain user configuration; keep it out of the UI.
-      setMessage(t('thirdParty.failed'));
+    } catch (error) {
+      // Store translation keys, never external command output or translated text.
+      setMessage(error instanceof Error && error.message.startsWith('thirdParty.') ? error.message : 'thirdParty.failed');
     } finally {
       setBusy(false);
     }
@@ -57,7 +57,7 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
 
   const saveSource = async (patch: Partial<typeof source>) => {
     const saved = await onSave({ sources: { herdr: { ...source, ...patch } } });
-    if (!saved) throw new Error('Save failed');
+    if (!saved) throw new Error('thirdParty.saveFailed');
   };
 
   return (
@@ -98,10 +98,17 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
                 if (confirmation === 'configure') {
                   const result = await check();
                   if (!result.available || !result.dependencies.bash || !result.dependencies.python3) return;
-                  const out = await sidecar(['hooks', 'install', '--target', 'herdr']);
-                  if (out.code !== 0) throw new Error('Configuration failed');
+                  const out = await sidecar(['hooks', 'install', '--target', 'herdr', '--json']);
+                  const installation = JSON.parse(out.stdout);
+                  if (out.code !== 0 || !installation.ok) {
+                    const keys: Record<string, string> = {
+                      server_not_running: 'thirdParty.startHerdr', timeout: 'thirdParty.timeout', not_found: 'thirdParty.unavailable',
+                      install: 'thirdParty.installFailed', config: 'thirdParty.configFailed', enable: 'thirdParty.enableFailed',
+                    };
+                    throw new Error(keys[installation.errorCode] || keys[installation.step] || 'thirdParty.failed');
+                  }
                   await check();
-                  setMessage(t('thirdParty.configured'));
+                  setMessage('thirdParty.configured');
                 } else {
                   await saveSource({ enabled: true });
                 }
@@ -121,7 +128,7 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
             ))}
           </div>
         </div>
-        {message && <p className="text-[13px]" role="alert">{message}</p>}
+        {message && <p className="text-[13px]" role="alert">{t(message)}</p>}
       </div>
     </Panel>
   );

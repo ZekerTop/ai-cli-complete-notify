@@ -242,7 +242,7 @@
   "thirdParty.unconfigured": "Herdr 可用，插件尚未配置或启用。",
   "thirdParty.busy": "正在处理…",
   "thirdParty.check": "检查",
-  "thirdParty.configure": "配置…",
+  "thirdParty.configure": "安装并连接插件…",
   "thirdParty.enable": "启用 Herdr 通知",
   "thirdParty.enableHint": "默认关闭。先检查并配置，再手动开启。",
   "thirdParty.configureWarning": "将调用 Herdr 安装并激活 8liang/herdr-ai-notify 社区插件，只更新受管桥接路径并保留自定义配置。不安装 Herdr 主程序，也不改变本应用通知开关或其他 AI 集成。是否继续？",
@@ -250,6 +250,12 @@
   "thirdParty.confirm": "确认",
   "thirdParty.cancel": "取消",
   "thirdParty.channels": "仅显示已启用的渠道，以下选择只影响 Herdr。",
-  "thirdParty.configured": "配置完成。Herdr 通知开关保持原状；首次使用仍需手动启用。",
-  "thirdParty.failed": "操作失败，未完成的步骤请重试。请检查 Herdr、依赖及配置目录权限；其他 AI 集成不受影响。"
+  "thirdParty.configured": "插件已连接，通知开关保持原状。在终端运行 herdr，并在其中使用 AI 工具；开启下方通知开关后，任务结束才会发送提醒。",
+  "thirdParty.failed": "操作失败，未完成的步骤请重试。请检查 Herdr、依赖及配置目录权限；其他 AI 集成不受影响。",
+  "thirdParty.startHerdr": "插件已安装，但尚未激活。请先在终端运行 herdr，保持运行，然后返回此处重试连接。",
+  "thirdParty.timeout": "Herdr 操作超时。请检查网络和 Herdr 状态后重试。",
+  "thirdParty.installFailed": "通知插件安装失败。请检查 GitHub 网络连接，以及 Git 是否可用，然后重试安装。",
+  "thirdParty.configFailed": "插件桥接配置失败。请检查 Herdr 配置目录是否可写，然后重试连接。",
+  "thirdParty.enableFailed": "插件激活失败。请确认 Herdr 正在运行，再重试连接。",
+  "thirdParty.saveFailed": "通知设置保存失败，请重试。"
 }

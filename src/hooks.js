@@ -654,11 +654,18 @@ function runHerdrCommand(args, options = {}) {
           ? `Failed to run \`${bin}\`: ${result.error.message}`
           : `Failed to run \`${bin}\``,
         status: result.status,
+        errorCode: result.error.code === 'ETIMEDOUT' ? 'timeout' : result.error.code === 'ENOENT' ? 'not_found' : 'command_failed',
         stdout: String(result.stdout || ''),
         stderr: String(result.stderr || ''),
       };
     }
+    let errorCode = 'command_failed';
+    try {
+      const response = JSON.parse(result.stdout || result.stderr || '{}');
+      if (response.error?.code === 'server_not_running') errorCode = 'server_not_running';
+    } catch (_error) { /* Plain-text CLI output has no structured error code. */ }
     return {
+      errorCode: result.status === 0 ? null : errorCode,
       ok: result.status === 0,
       status: result.status,
       stdout: String(result.stdout || ''),
@@ -771,8 +778,15 @@ function getHerdrHookStatus() {
 function installHerdrHook(exePath) {
   const bin = getHerdrBin();
 
-  // 1. Install the plugin from GitHub (non-interactive).
-  const installResult = runHerdrCommand(['plugin', 'install', HERDR_PLUGIN_REPO, '--yes']);
+  // Reconnecting an installed plugin must not depend on a fresh GitHub download.
+  const before = runHerdrCommand(['plugin', 'list', '--json'], { timeout: 5000 });
+  let existing = null;
+  try {
+    if (before.ok) existing = parseHerdrPluginList(before.stdout);
+  } catch (_error) { /* Unknown status still allows an explicit installation attempt. */ }
+  const installResult = existing
+    ? { ok: true }
+    : runHerdrCommand(['plugin', 'install', HERDR_PLUGIN_REPO, '--yes']);
   if (!installResult.ok) {
     const detail = installResult.stderr || installResult.stdout || installResult.error || '';
     return {
@@ -780,6 +794,7 @@ function installHerdrHook(exePath) {
       error: `herdr plugin install failed: ${String(detail).trim()}`,
       herdrBin: bin,
       step: 'install',
+      errorCode: installResult.errorCode,
     };
   }
 
@@ -809,7 +824,14 @@ function installHerdrHook(exePath) {
   }
 
   // Plugin delivery is separate from sources.herdr.enabled; configuration never changes that switch.
-  const enableResult = runHerdrCommand(['plugin', 'enable', HERDR_PLUGIN_ID]);
+  const listResult = runHerdrCommand(['plugin', 'list', '--json'], { timeout: 5000 });
+  let alreadyEnabled = false;
+  try {
+    alreadyEnabled = listResult.ok && parseHerdrPluginList(listResult.stdout)?.enabled === true;
+  } catch (_error) { /* Fall back to explicit activation if status cannot be read. */ }
+  const enableResult = alreadyEnabled
+    ? { ok: true }
+    : runHerdrCommand(['plugin', 'enable', HERDR_PLUGIN_ID]);
   if (!enableResult.ok) {
     const detail = enableResult.stderr || enableResult.stdout || enableResult.error || '';
     return {
@@ -818,6 +840,7 @@ function installHerdrHook(exePath) {
       herdrBin: bin,
       settingsPath: configPath,
       step: 'enable',
+      errorCode: enableResult.errorCode,
     };
   }
 

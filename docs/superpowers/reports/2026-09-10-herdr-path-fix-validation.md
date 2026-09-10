@@ -1,5 +1,7 @@
 # 2.16.0 Herdr 路径检测修复
 
+> 历史构建记录。当前下载包及校验值见 [连接与语言修复报告](2026-09-10-herdr-setup-and-language-fix.md)。
+
 ## 根因与修改
 
 此前仅通过 PATH 调用 Herdr。Finder 启动的应用通常不包含 `~/.local/bin`，导致已安装 Herdr 仍显示无法查询。隔离环境复现了 `spawnSync herdr ENOENT`，指定绝对路径后真实 Herdr 0.9.0 返回正常插件列表。

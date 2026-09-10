@@ -257,5 +257,9 @@
   "thirdParty.installFailed": "Notification plugin installation failed. Check access to GitHub and that Git is available, then retry installation.",
   "thirdParty.configFailed": "Plugin bridge configuration failed. Check write access to the Herdr configuration directory, then retry the connection.",
   "thirdParty.enableFailed": "Plugin activation failed. Make sure Herdr is running, then retry the connection.",
-  "thirdParty.saveFailed": "Could not save notification settings. Please retry."
+  "thirdParty.saveFailed": "Could not save notification settings. Please retry.",
+  "thirdParty.help": "Herdr is a standalone terminal tool for running and managing AI tools such as Codex in one window.",
+  "thirdParty.repository": "Repository",
+  "thirdParty.scope": "Only tasks running inside Herdr are notified. You do not need this integration for Codex Desktop.",
+  "thirdParty.contributor": "Community plugin contributor"
 }

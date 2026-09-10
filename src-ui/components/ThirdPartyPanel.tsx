@@ -5,6 +5,7 @@ import { CHANNELS } from '@/lib/types';
 import { open } from '@tauri-apps/plugin-shell';
 import { sidecar } from '@/lib/sidecar';
 import Panel from './ui/Panel';
+import GitHubLogo from './ui/GitHubLogo';
 import Switch from './ui/Switch';
 
 interface Props {
@@ -64,10 +65,20 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
     <Panel title={t('thirdParty.title')} subtitle={t('thirdParty.subtitle')}>
       <div className="surface-card p-5 space-y-5" aria-busy={busy}>
         <div>
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted">{t('thirdParty.optional')}</div>
-          <h3 className="mt-3 font-serif text-[28px]">Herdr</h3>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-muted">{t('thirdParty.optional')}</div>
+              <div className="mt-3 flex items-center gap-2">
+                <h3 className="font-serif text-[28px]">Herdr</h3>
+                <button type="button" title={t('thirdParty.help')} aria-label={t('thirdParty.help')} className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/[0.22] text-xs text-muted cursor-help focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">?</button>
+              </div>
+            </div>
+            <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-white/[0.14] px-3 py-2 text-xs" onClick={() => void run(() => open('https://github.com/8liang/herdr-ai-notify'))}>
+              <GitHubLogo />{t('thirdParty.repository')}
+            </button>
+          </div>
           <p className="mt-2 text-[13px] text-muted">{t('thirdParty.description')}</p>
-          <button className="mt-2 inline-block text-[13px] underline" onClick={() => void run(() => open('https://github.com/8liang/herdr-ai-notify'))}>8liang / herdr-ai-notify ↗</button>
+          <p className="mt-2 text-[12px] text-muted">{t('thirdParty.scope')}</p>
         </div>
         <p className="text-[13px] text-muted">{t('thirdParty.dependencies')}</p>
         <div className="surface-card-soft p-4 space-y-3">
@@ -128,6 +139,7 @@ export default function ThirdPartyPanel({ config, onSave }: Props) {
             ))}
           </div>
         </div>
+        <p className="border-t border-white/[0.08] pt-3 text-[12px] text-muted">{t('thirdParty.contributor')} · 8liang</p>
         {message && <p className="text-[13px]" role="alert">{t(message)}</p>}
       </div>
     </Panel>

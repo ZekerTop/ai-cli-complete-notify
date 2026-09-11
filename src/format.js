@@ -3,7 +3,8 @@ const SOURCE_LABELS = {
   codex: 'Codex',
   opencode: 'OpenCode',
   gemini: 'Gemini',
-  herdr: 'Herdr'
+  herdr: 'Herdr',
+  zcode: 'ZCode'
 };
 
 function formatDurationMs(durationMs) {

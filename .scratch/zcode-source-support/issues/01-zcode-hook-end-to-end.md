@@ -4,17 +4,17 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** implemented
 
-- [ ] Hook installation for ZCode writes the user-level ZCode configuration: hooks runner enabled, a Stop handler registered as a process-type (argument vector, shell-free) invocation of the notifier in hook mode, and all pre-existing hooks plus unknown fields preserved
-- [ ] Uninstall removes only this tool's Stop handler; the rest of the user's ZCode configuration is untouched
-- [ ] Hook status reports ZCode's installation state, and the install preview shows what would be written
-- [ ] All installation behaviors are verified against a temporary HOME — the developer's real ZCode configuration is never touched by tests
-- [ ] A Stop payload yields a notification context with the correct source, a stable dedupe key, and content from the payload with fallback to the project directory name; non-Stop events are rejected; absent optional fields never error
-- [ ] With ZCode at its default (disabled) no notification is sent; once enabled with the Duration threshold met, notifications flow through the per-Source channels
-- [ ] Watch-only Notification mode does not suppress ZCode hook alerts, and ZCode is absent from the watch "all" source set
-- [ ] Two identical ZCode completions inside the dedupe window collapse to one alert
-- [ ] A hook-invoked notification writes nothing to stdout (ZCode validates hook stdout as strict JSON)
-- [ ] The ZCode webhook URL environment variable is honored and documented in the `.env` example
-- [ ] ZCode has a display label and appears in CLI help text, the valid hook targets, and hook-reminder display names
-- [ ] Automated tests cover the three seams — installation, payload parsing, engine routing — following the Herdr hook-install / Herdr hook-context / Gemini hook-install / engine hybrid-routing prior art, all green
+- [x] Hook installation for ZCode writes the user-level ZCode configuration: hooks runner enabled, a Stop handler registered as a process-type (argument vector, shell-free) invocation of the notifier in hook mode, and all pre-existing hooks plus unknown fields preserved
+- [x] Uninstall removes only this tool's Stop handler; the rest of the user's ZCode configuration is untouched
+- [x] Hook status reports ZCode's installation state, and the install preview shows what would be written
+- [x] All installation behaviors are verified against a temporary HOME — the developer's real ZCode configuration is never touched by tests
+- [x] A Stop payload yields a notification context with the correct source, a stable dedupe key, and content from the payload with fallback to the project directory name; non-Stop events are rejected; absent optional fields never error
+- [x] With ZCode at its default (disabled) no notification is sent; once enabled with the Duration threshold met, notifications flow through the per-Source channels
+- [x] Watch-only Notification mode does not suppress ZCode hook alerts, and ZCode is absent from the watch "all" source set
+- [x] Two identical ZCode completions inside the dedupe window collapse to one alert
+- [x] A hook-invoked notification writes nothing to stdout (ZCode validates hook stdout as strict JSON)
+- [x] The ZCode webhook URL environment variable is honored and documented in the `.env` example
+- [x] ZCode has a display label and appears in CLI help text, the valid hook targets, and hook-reminder display names
+- [x] Automated tests cover the three seams — installation, payload parsing, engine routing — following the Herdr hook-install / Herdr hook-context / Gemini hook-install / engine hybrid-routing prior art, all green

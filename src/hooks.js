@@ -895,12 +895,161 @@ function getHerdrConfigPreview(exePath) {
   return lines.join('\n');
 }
 
+// ---------------------------------------------------------------------------
+// ZCode hook mode (user-level ~/.zcode/cli/config.json)
+// ---------------------------------------------------------------------------
+
+function getZcodeConfigDir() {
+  const override = String(process.env.ZCODE_CONFIG_DIR || '').trim();
+  if (override) return path.resolve(override);
+  return path.join(os.homedir(), '.zcode', 'cli');
+}
+
+function getZcodeConfigPath() {
+  return path.join(getZcodeConfigDir(), 'config.json');
+}
+
+function buildZcodeProcessHook(exePath) {
+  const args = ['notify', '--source', 'zcode', '--from-hook', '--force'];
+  // ZCode runs process hooks as a raw argv vector without a shell, which is
+  // the reliable shape on Windows. Resolve node explicitly so PATH is not a factor.
+  if (exePath.endsWith('.js')) {
+    return { type: 'process', command: process.execPath, args: [exePath, ...args] };
+  }
+  return { type: 'process', command: exePath, args };
+}
+
+function isOurZcodeHook(hook) {
+  if (!hook || typeof hook !== 'object') return false;
+  if (typeof hook.command === 'string'
+    && isOurHookCommand(hook.command)
+    && hook.command.includes('--source zcode')) return true;
+  if (hook.type !== 'process' || !Array.isArray(hook.args)) return false;
+  const sourceIndex = hook.args.indexOf('--source');
+  return hook.args.includes(HOOK_FLAG) && sourceIndex !== -1 && hook.args[sourceIndex + 1] === 'zcode';
+}
+
+function removeOurZcodeStopEntries(entries) {
+  return entries
+    .map((block) => {
+      if (!block || typeof block !== 'object' || !Array.isArray(block.hooks)) return block;
+      const remainingHooks = block.hooks.filter((hook) => !isOurZcodeHook(hook));
+      if (remainingHooks.length === block.hooks.length) return block;
+      if (remainingHooks.length === 0) return null;
+      return { ...block, hooks: remainingHooks };
+    })
+    .filter(Boolean);
+}
+
+function readZcodeConfig(configPath) {
+  // Unlike the Claude/Gemini installers, a failed parse must never clobber the
+  // user's entire ZCode CLI configuration with a fresh object.
+  try {
+    if (!fs.existsSync(configPath)) return { ok: true, config: {} };
+    const raw = fs.readFileSync(configPath, 'utf8').trim();
+    if (!raw) return { ok: true, config: {} };
+    const config = JSON.parse(raw);
+    if (!config || typeof config !== 'object' || Array.isArray(config)) {
+      return { ok: false, error: `ZCode config is not a JSON object: ${configPath}` };
+    }
+    return { ok: true, config };
+  } catch (_error) {
+    return { ok: false, error: `ZCode config is not valid JSON: ${configPath}` };
+  }
+}
+
+function installZcodeHook(exePath) {
+  const configPath = getZcodeConfigPath();
+  const parsed = readZcodeConfig(configPath);
+  if (!parsed.ok) {
+    return { ok: false, error: parsed.error };
+  }
+  const config = parsed.config;
+
+  if (!config.hooks || typeof config.hooks !== 'object' || Array.isArray(config.hooks)) {
+    config.hooks = {};
+  }
+  // ZCode runs configuration-file hooks only when the runner is explicitly
+  // enabled, so a hook entry alone would never fire.
+  config.hooks.enabled = true;
+
+  if (!config.hooks.events || typeof config.hooks.events !== 'object' || Array.isArray(config.hooks.events)) {
+    config.hooks.events = {};
+  }
+
+  const existingEntries = Array.isArray(config.hooks.events.Stop)
+    ? removeOurZcodeStopEntries(config.hooks.events.Stop)
+    : [];
+  config.hooks.events.Stop = [...existingEntries, { hooks: [buildZcodeProcessHook(exePath)] }];
+
+  writeJsonFile(configPath, config);
+  return { ok: true, settingsPath: configPath };
+}
+
+function uninstallZcodeHook() {
+  const configPath = getZcodeConfigPath();
+  const config = readJsonFile(configPath);
+  const hooks = config.hooks && typeof config.hooks === 'object' && !Array.isArray(config.hooks)
+    ? config.hooks
+    : null;
+  const entries = hooks && hooks.events && typeof hooks.events === 'object' && !Array.isArray(hooks.events)
+    ? hooks.events.Stop
+    : null;
+
+  if (Array.isArray(entries)) {
+    const remainingEntries = removeOurZcodeStopEntries(entries);
+    if (remainingEntries.length > 0) {
+      hooks.events.Stop = remainingEntries;
+    } else {
+      delete hooks.events.Stop;
+    }
+    if (Object.keys(hooks.events).length === 0) {
+      delete hooks.events;
+    }
+    // hooks.enabled stays as-is: other or plugin-contributed hooks may rely on
+    // the runner, and uninstall must only remove this tool's handler.
+    writeJsonFile(configPath, config);
+  }
+
+  return { ok: true, settingsPath: configPath };
+}
+
+function getZcodeHookStatus() {
+  const settingsPath = getZcodeConfigPath();
+  const config = readJsonFile(settingsPath);
+  const hooks = config.hooks && typeof config.hooks === 'object' && !Array.isArray(config.hooks)
+    ? config.hooks
+    : {};
+  const events = hooks.events && typeof hooks.events === 'object' && !Array.isArray(hooks.events)
+    ? hooks.events
+    : {};
+  const stopEntries = Array.isArray(events.Stop) ? events.Stop : [];
+  const installed = stopEntries.some((block) =>
+    block && typeof block === 'object' && Array.isArray(block.hooks)
+    && block.hooks.some((hook) => isOurZcodeHook(hook))
+  );
+
+  return { installed, hooksEnabled: hooks.enabled === true, settingsPath };
+}
+
+function getZcodeConfigPreview(exePath) {
+  return JSON.stringify({
+    hooks: {
+      enabled: true,
+      events: {
+        Stop: [{ hooks: [buildZcodeProcessHook(exePath)] }]
+      }
+    }
+  }, null, 2);
+}
+
 function getHookStatus(target) {
   if (target === 'herdr') return { herdr: getHerdrHookStatus() };
   return {
     claude: getClaudeHookStatus(),
     gemini: getGeminiHookStatus(),
     opencode: getOpenCodeHookStatus(),
+    zcode: getZcodeHookStatus(),
     herdr: { supported: true }
   };
 }
@@ -911,6 +1060,7 @@ function installHook(target) {
   if (target === 'gemini') return installGeminiHook(exePath);
   if (target === 'opencode') return installOpenCodeHook(exePath);
   if (target === 'herdr') return installHerdrHook(exePath);
+  if (target === 'zcode') return installZcodeHook(exePath);
   return { ok: false, error: `Unknown target: ${target}` };
 }
 
@@ -919,6 +1069,7 @@ function uninstallHook(target) {
   if (target === 'gemini') return uninstallGeminiHook();
   if (target === 'opencode') return uninstallOpenCodeHook();
   if (target === 'herdr') return uninstallHerdrHook();
+  if (target === 'zcode') return uninstallZcodeHook();
   return { ok: false, error: `Unknown target: ${target}` };
 }
 
@@ -937,6 +1088,9 @@ function getHookConfigPreview(target) {
   }
   if (target === 'herdr') {
     return getHerdrConfigPreview(exePath);
+  }
+  if (target === 'zcode') {
+    return getZcodeConfigPreview(exePath);
   }
   return '';
 }

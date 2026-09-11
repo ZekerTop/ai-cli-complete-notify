@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 — ZCode hook end-to-end (the Source's config key and the hook status/install registries must exist first).
 
-**Status:** implemented (manual pass pending)
+**Status:** implemented
 
 - [x] The Sources panel lists ZCode as a first-class Source with enable toggle, Duration threshold, and the per-Source channel grid; default state is disabled
 - [x] The Hooks panel offers install / status / preview / uninstall for ZCode and shows the actual installation state
 - [x] ZCode never appears in any watch-source listing (it has no Watch path)
 - [x] English and Simplified Chinese locale files contain all new strings; no missing-translation warnings at runtime
 - [x] A production build of the desktop UI passes
-- [ ] Manual pass: toggle ZCode on/off, set a threshold, run hook install and uninstall from the UI against the developer's real environment, and undo it
+- [x] Manual pass: toggle ZCode on/off, set a threshold, run hook install and uninstall from the UI against the developer's real environment, and undo it

@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.16.0)
+# AI CLI Complete Notify (v2.17.0)
 
-![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.17.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![macOS DMG 다운로드](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -31,7 +31,7 @@
 
 ### 📖 소개
 
-AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 알림 도구입니다. AI 도구가 긴 작업을 마쳤을 때 데스크톱 알림, 소리, Webhook, Telegram, Email 등 여러 채널로 알려 주기 때문에 컴퓨터 앞에서 계속 기다릴 필요가 없습니다.
+AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini / ZCode 작업 완료 알림 도구입니다. AI 도구가 긴 작업을 마쳤을 때 데스크톱 알림, 소리, Webhook, Telegram, Email 등 여러 채널로 알려 주기 때문에 컴퓨터 앞에서 계속 기다릴 필요가 없습니다.
 
 **지원 알림 채널:**
 
@@ -42,17 +42,17 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 
 ## ✨ 주요 기능
 
 - 🎯 **스마트 디바운스**: 작업 유형에 따라 알림 시점을 자동 조정합니다. 도구 호출이 있으면 기본 60초, 없으면 기본 15초를 기다립니다.
-- 🔀 **소스별 제어**: Claude / Codex / OpenCode / Gemini를 각각 켜고 끌 수 있으며, 시간 임계값과 알림 채널도 따로 설정할 수 있습니다.
+- 🔀 **소스별 제어**: Claude / Codex / OpenCode / Gemini / ZCode를 각각 켜고 끌 수 있으며, 시간 임계값과 알림 채널도 따로 설정할 수 있습니다.
 - 📡 **멀티 채널 알림**: Webhook, Telegram, Email, 데스크톱 알림, 사운드를 동시에 사용할 수 있습니다.
 - ⏱️ **소요 시간 임계값**: 지정한 시간보다 오래 걸린 작업에만 알림을 보내 불필요한 방해를 줄입니다.
-- 🪝 **Hooks + Watch 혼합 방식**: Claude Code / Gemini CLI는 네이티브 Hook을, OpenCode는 전역 플러그인 이벤트를 사용할 수 있으며 Codex는 주로 로그 Watch 방식을 사용합니다.
+- 🪝 **Hooks + Watch 혼합 방식**: Claude Code / Gemini CLI / ZCode는 네이티브 Hook을, OpenCode는 전역 플러그인 이벤트를 사용할 수 있으며 Codex는 주로 로그 Watch 방식을 사용합니다.
 - 🧠 **AI 요약(선택 사항)**: 작업 완료 후 짧은 요약을 생성하고, 실패하거나 시간 초과되면 원래 내용으로 되돌아갑니다.
 - 🖥️ **데스크톱 앱**: GUI 설정, 언어 전환, 트레이/메뉴 막대 숨김, 로그인 시 자동 시작을 지원합니다.
 - 🔐 **설정 분리**: 실행 설정과 민감한 토큰/키를 분리하여 `.env`로 관리할 수 있습니다.
 
 ## 💡 권장 설정
 
-최상의 경험을 위해 Claude Code / Codex / OpenCode / Gemini를 사용할 때 AI 도구에 충분한 파일 읽기/쓰기 권한을 부여하는 것을 권장합니다.
+최상의 경험을 위해 Claude Code / Codex / OpenCode / Gemini를 사용할 때 AI 도구에 충분한 파일 읽기/쓰기 권한을 부여하는 것을 권장합니다. ZCode는 영향을 받지 않습니다. 네이티브 `Stop` Hook으로 완료를 알리며 Watch 경로가 없어 이 권한이 필요하지 않습니다.
 
 이렇게 하면 로컬 로그가 안정적으로 기록되고, Watch 모드가 작업 완료 상태를 더 정확하게 판단하여 누락 알림이나 오탐을 줄일 수 있습니다.
 
@@ -60,11 +60,11 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 
 
 - Claude Code는 하나의 요청을 여러 하위 작업으로 나눌 수 있습니다. 알림이 과도하게 발생하지 않도록 이 도구는 전체 턴이 끝났을 때만 알림을 보냅니다.
 - Watch 모드는 로그 변화를 기반으로 완료를 추정하므로 조용한 시간이 지나야 알림이 발생합니다. 즉시 알림이 아닙니다.
-- 더 빠르고 정확한 알림이 필요하면 Claude Code / Gemini CLI는 Hook을, OpenCode는 전역 플러그인을 우선 사용하세요. Codex 또는 일반 fallback 용도에는 Watch를 사용합니다.
+- 더 빠르고 정확한 알림이 필요하면 Claude Code / Gemini CLI / ZCode는 Hook을, OpenCode는 전역 플러그인을 우선 사용하세요. Codex 또는 일반 fallback 용도에는 Watch를 사용합니다.
 
 ## Hooks와 Watch의 차이
 
-- **Hook / 플러그인 이벤트**는 AI CLI가 직접 내보내는 생명주기 이벤트를 사용하므로 실제 완료 시점에 더 가깝습니다.
+- **Hook / 플러그인 이벤트**는 AI CLI가 직접 내보내는 생명주기 이벤트(예: Claude Code / ZCode의 `Stop`, Gemini CLI의 `AfterAgent`, OpenCode의 `session.status` idle)를 사용하므로 실제 완료 시점에 더 가깝습니다.
 - **Hook**은 해당 도구에 대해 장시간 백그라운드 로그 감시기를 유지할 필요가 없습니다.
 - **Watch**는 범용 fallback입니다. Codex와 Hook이 구성되지 않은 환경에서 유용합니다.
 
@@ -129,7 +129,7 @@ npm run dist:mac:dmg
 
 - **상단 바**: 언어 전환, Watch 토글, 창 제어.
 - **채널 설정**: Webhook, Telegram, Email, 데스크톱 알림, 사운드 설정.
-- **소스 설정**: Claude / Codex / OpenCode / Gemini별 활성화 상태와 시간 임계값 설정.
+- **소스 설정**: Claude / Codex / OpenCode / Gemini / ZCode별 활성화 상태와 시간 임계값 설정.
 - **감시 설정**: 폴링 간격과 디바운스 시간 설정.
 - **확인 알림(기본 OFF)**: Codex가 선택/제출이 필요한 대화형 프롬프트를 표시할 때만 알림을 보냅니다.
 - **AI 요약**: API URL, Key, 모델, 타임아웃 fallback 설정.
@@ -190,7 +190,12 @@ node ai-reminder.js hooks install --target opencode
 
 # Herdr 플러그인(herdr-ai-notify) 설치 및 자동 설정
 node ai-reminder.js hooks install --target herdr
+
+# ZCode Hook 설치(사용자 수준, ZCode의 hooks runner 자동 활성화)
+node ai-reminder.js hooks install --target zcode
 ```
+
+ZCode는 Hook 전용이며 Watch 경로가 없습니다. 설치하면 사용자 수준 `~/.zcode/cli/config.json`에 네이티브 `Stop` 핸들러가 등록되고 ZCode의 hooks runner가 자동으로 활성화되며 기존 설정은 병합됩니다. 제거 시에는 이 도구의 핸들러만 삭제됩니다. ZCode 소스는 기본적으로 꺼져 있습니다(`sources.zcode.enabled`).
 
 ### 선택적 타사 도구 (Herdr)
 
@@ -256,6 +261,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # CODEX_WEBHOOK_URLS=https://example.com/codex-hook
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
+# ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
 NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
@@ -312,7 +318,7 @@ macOS 참고:
 - `notify` 명령은 시간 임계값을 무시하고 즉시 알림을 보냅니다.
 - Webhook은 기본적으로 Feishu post 형식을 사용합니다. WeCom/DingTalk는 텍스트 형식으로 전송됩니다.
 - 스마트 밴드/워치 알림은 보통 휴대폰 알림 동기화, Webhook relay, Telegram, Email을 통해 간접적으로 구현합니다.
-- Hooks / 플러그인 모드는 Claude Code / Gemini CLI / OpenCode에 더 적합하며, Watch는 주로 Codex 또는 fallback 용도로 사용합니다.
+- Hooks / 플러그인 모드는 Claude Code / Gemini CLI / OpenCode / ZCode에 더 적합하며, Watch는 주로 Codex 또는 fallback 용도로 사용합니다.
 
 ## 변경 이력
 
@@ -320,6 +326,13 @@ macOS 참고:
 <summary>버전 이력 보기</summary>
 
 > `v2.x`는 현재 Tauri 기반 데스크톱 라인이고, `v1.x`는 이전 Electron 라인입니다. 전체 이전 버전 이력은 [English](README.md) 또는 [简体中文](README_zh.md)를 참고하세요.
+
+### 2.17.0
+
+- ZCode를 일급 소스(Hook 전용)로 추가했습니다. `hooks install --target zcode` 한 번으로 이 도구를 ZCode의 네이티브 `Stop` 핸들러로 등록하며, 사용자 수준 `~/.zcode/cli/config.json`에 기록하고 ZCode의 hooks runner(`hooks.enabled`)를 자동으로 활성화합니다. 기존 Hook과 알 수 없는 설정은 병합되며, 제거 시에는 이 도구의 Stop 핸들러만 삭제됩니다.
+- ZCode 소스는 기본적으로 꺼져 있으며, 독립적인 활성화 스위치, 소요 시간 임계값, 소스별 채널(`sources.zcode`)을 갖습니다. `ZCODE_WEBHOOK_URLS` 환경 변수를 지원하고 AI 요약과도 함께 사용할 수 있습니다.
+- Stop 핸들러는 셸을 거치지 않는 직접 프로세스로 실행되어 Windows에서도 안정적입니다. ZCode는 hook의 stdout을 엄격한 JSON으로 검증하므로 stdout에 아무것도 출력하지 않습니다. 알림 내용은 응답 미리보기를 우선 사용하고 없으면 프로젝트 디렉터리 이름으로 폴백합니다. 같은 턴 안에서 반복되는 Stop 연속 호출은 중복 제거로 하나로 합쳐집니다.
+- ZCode에는 Watch 경로가 없습니다. `watch --sources all` 동작은 바뀌지 않으며, Watch 전용 알림 모드도 ZCode Hook 알림을 억제하지 않습니다. 데스크톱 앱에는 ZCode 소스 카드와 Hooks 패널 컨트롤이 추가되었습니다(UI 문자열은 영어·간체 중국어 제공).
 
 ### 2.16.0
 

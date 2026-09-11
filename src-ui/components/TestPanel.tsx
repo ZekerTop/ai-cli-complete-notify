@@ -48,6 +48,7 @@ export default function TestPanel() {
           <option value="codex">Codex</option>
           <option value="opencode">OpenCode</option>
           <option value="gemini">Gemini</option>
+          <option value="zcode">ZCode</option>
         </select>
 
         <label className="text-sm">{t('test.duration')}</label>

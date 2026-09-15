@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.16.0)
+# AI CLI Complete Notify (v2.17.0)
 
-![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.17.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![macOS DMG 다운로드](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -31,7 +31,7 @@
 
 ### 📖 소개
 
-AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 알림 도구입니다. AI 도구가 긴 작업을 마쳤을 때 데스크톱 알림, 소리, Webhook, Telegram, Email 등 여러 채널로 알려 주기 때문에 컴퓨터 앞에서 계속 기다릴 필요가 없습니다.
+AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini / ZCode 작업 완료 알림 도구입니다. AI 도구가 긴 작업을 마쳤을 때 데스크톱 알림, 소리, Webhook, Telegram, Email 등 여러 채널로 알려 주기 때문에 컴퓨터 앞에서 계속 기다릴 필요가 없습니다.
 
 **지원 알림 채널:**
 
@@ -42,17 +42,17 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 
 ## ✨ 주요 기능
 
 - 🎯 **스마트 디바운스**: 작업 유형에 따라 알림 시점을 자동 조정합니다. 도구 호출이 있으면 기본 60초, 없으면 기본 15초를 기다립니다.
-- 🔀 **소스별 제어**: Claude / Codex / OpenCode / Gemini를 각각 켜고 끌 수 있으며, 시간 임계값과 알림 채널도 따로 설정할 수 있습니다.
+- 🔀 **소스별 제어**: Claude / Codex / OpenCode / Gemini / ZCode를 각각 켜고 끌 수 있으며, 시간 임계값과 알림 채널도 따로 설정할 수 있습니다.
 - 📡 **멀티 채널 알림**: Webhook, Telegram, Email, 데스크톱 알림, 사운드를 동시에 사용할 수 있습니다.
 - ⏱️ **소요 시간 임계값**: 지정한 시간보다 오래 걸린 작업에만 알림을 보내 불필요한 방해를 줄입니다.
-- 🪝 **Hooks + Watch 혼합 방식**: Claude Code / Gemini CLI는 네이티브 Hook을, OpenCode는 전역 플러그인 이벤트를 사용할 수 있으며 Codex는 주로 로그 Watch 방식을 사용합니다.
+- 🪝 **Hooks + Watch 혼합 방식**: Claude Code / Gemini CLI / ZCode는 네이티브 Hook을, OpenCode는 전역 플러그인 이벤트를 사용할 수 있으며 Codex는 주로 로그 Watch 방식을 사용합니다.
 - 🧠 **AI 요약(선택 사항)**: 작업 완료 후 짧은 요약을 생성하고, 실패하거나 시간 초과되면 원래 내용으로 되돌아갑니다.
 - 🖥️ **데스크톱 앱**: GUI 설정, 언어 전환, 트레이/메뉴 막대 숨김, 로그인 시 자동 시작을 지원합니다.
 - 🔐 **설정 분리**: 실행 설정과 민감한 토큰/키를 분리하여 `.env`로 관리할 수 있습니다.
 
 ## 💡 권장 설정
 
-최상의 경험을 위해 Claude Code / Codex / OpenCode / Gemini를 사용할 때 AI 도구에 충분한 파일 읽기/쓰기 권한을 부여하는 것을 권장합니다.
+최상의 경험을 위해 Claude Code / Codex / OpenCode / Gemini를 사용할 때 AI 도구에 충분한 파일 읽기/쓰기 권한을 부여하는 것을 권장합니다. ZCode는 영향을 받지 않습니다. 네이티브 `Stop` Hook으로 완료를 알리며 Watch 경로가 없어 이 권한이 필요하지 않습니다.
 
 이렇게 하면 로컬 로그가 안정적으로 기록되고, Watch 모드가 작업 완료 상태를 더 정확하게 판단하여 누락 알림이나 오탐을 줄일 수 있습니다.
 
@@ -60,11 +60,11 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini 작업 완료 
 
 - Claude Code는 하나의 요청을 여러 하위 작업으로 나눌 수 있습니다. 알림이 과도하게 발생하지 않도록 이 도구는 전체 턴이 끝났을 때만 알림을 보냅니다.
 - Watch 모드는 로그 변화를 기반으로 완료를 추정하므로 조용한 시간이 지나야 알림이 발생합니다. 즉시 알림이 아닙니다.
-- 더 빠르고 정확한 알림이 필요하면 Claude Code / Gemini CLI는 Hook을, OpenCode는 전역 플러그인을 우선 사용하세요. Codex 또는 일반 fallback 용도에는 Watch를 사용합니다.
+- 더 빠르고 정확한 알림이 필요하면 Claude Code / Gemini CLI / ZCode는 Hook을, OpenCode는 전역 플러그인을 우선 사용하세요. Codex 또는 일반 fallback 용도에는 Watch를 사용합니다.
 
 ## Hooks와 Watch의 차이
 
-- **Hook / 플러그인 이벤트**는 AI CLI가 직접 내보내는 생명주기 이벤트를 사용하므로 실제 완료 시점에 더 가깝습니다.
+- **Hook / 플러그인 이벤트**는 AI CLI가 직접 내보내는 생명주기 이벤트(예: Claude Code / ZCode의 `Stop`, Gemini CLI의 `AfterAgent`, OpenCode의 `session.status` idle)를 사용하므로 실제 완료 시점에 더 가깝습니다.
 - **Hook**은 해당 도구에 대해 장시간 백그라운드 로그 감시기를 유지할 필요가 없습니다.
 - **Watch**는 범용 fallback입니다. Codex와 Hook이 구성되지 않은 환경에서 유용합니다.
 
@@ -129,7 +129,7 @@ npm run dist:mac:dmg
 
 - **상단 바**: 언어 전환, Watch 토글, 창 제어.
 - **채널 설정**: Webhook, Telegram, Email, 데스크톱 알림, 사운드 설정.
-- **소스 설정**: Claude / Codex / OpenCode / Gemini별 활성화 상태와 시간 임계값 설정.
+- **소스 설정**: Claude / Codex / OpenCode / Gemini / ZCode별 활성화 상태와 시간 임계값 설정.
 - **감시 설정**: 폴링 간격과 디바운스 시간 설정.
 - **확인 알림(기본 OFF)**: Codex가 선택/제출이 필요한 대화형 프롬프트를 표시할 때만 알림을 보냅니다.
 - **AI 요약**: API URL, Key, 모델, 타임아웃 fallback 설정.
@@ -190,7 +190,14 @@ node ai-reminder.js hooks install --target opencode
 
 # Herdr 플러그인(herdr-ai-notify) 설치 및 자동 설정
 node ai-reminder.js hooks install --target herdr
+
+# ZCode Hook 설치(사용자 수준, ZCode의 hooks runner 자동 활성화)
+node ai-reminder.js hooks install --target zcode
 ```
+
+ZCode는 Hook 전용이며 Watch 경로가 없고 기본적으로 비활성화됩니다(`sources.zcode.enabled`). 설치 시 사용자 수준 `~/.zcode/cli/config.json`에 `UserPromptSubmit`과 `Stop` process Hook을 등록하고 `hooks.enabled`를 켭니다. 다른 Hook과 기존 설정은 유지하며, 제거 시 이 도구의 핸들러만 삭제합니다.
+ZCode 소스를 활성화하고 **Hooks / Plugin Integration**에서 Hook을 설치한 뒤 새 ZCode 세션을 시작하세요. `UserPromptSubmit`이 타이머를 시작하고 `Stop`이 소요 시간 임계값을 확인합니다. `0`이면 매 턴 완료 시 알림을 허용하고, 양수이면 해당 분 수 이상 실행되어야 합니다. 시작 시간이 없으면 양수 임계값에서는 알림을 보내지 않습니다. 기존 Stop 전용 설정은 Hook을 다시 설치해야 합니다. ZCode 채널 설정은 개별적으로 변경할 수 있지만, 실제 전송에는 해당 전역 채널의 활성화와 설정이 필요합니다.
+ZCode Hook을 설치하거나 업데이트한 뒤에는 **ZCode를 완전히 종료하고 다시 실행한 다음 새 세션을 시작하세요**. 설치 전에 만든 세션은 시작 시 불러온 Hook 설정을 유지할 수 있습니다. 테스트 알림은 도착하지만 실제 작업 알림이 오지 않는다면 ZCode 소스와 대상 채널이 활성화되어 있는지 확인하고, 임계값을 잠시 `0`으로 설정한 뒤 재시작한 새 세션에서 테스트하세요. 테스트 알림은 직접 전송되며 소요 시간 임계값을 건너뛰므로 실제 Hook 실행 여부를 검증하지 않습니다.
 
 ### 선택적 타사 도구 (Herdr)
 
@@ -256,6 +263,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # CODEX_WEBHOOK_URLS=https://example.com/codex-hook
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
+# ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
 NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
@@ -270,6 +278,15 @@ TELEGRAM_CHAT_ID=your_chat_id
 # SUMMARY_MODEL=gpt-4o-mini
 # SUMMARY_TIMEOUT_MS=30000
 ```
+
+<a id="telegram-token-및-chat-id"></a>
+
+<details>
+<summary><strong>📱 Telegram 설정: Token 및 Chat ID (클릭하여 펼치기)</strong></summary>
+
+[영문 설정 안내](README.md#telegram-get-your-token-and-chat-id)에서 봇 생성, 토큰 및 Chat ID 확인, 빈 결과 해결, `.env`, HTTP 프록시 설정과 실제 알림 수신 확인 절차를 볼 수 있습니다.
+
+</details>
 
 ### `settings.json`
 
@@ -312,7 +329,7 @@ macOS 참고:
 - `notify` 명령은 시간 임계값을 무시하고 즉시 알림을 보냅니다.
 - Webhook은 기본적으로 Feishu post 형식을 사용합니다. WeCom/DingTalk는 텍스트 형식으로 전송됩니다.
 - 스마트 밴드/워치 알림은 보통 휴대폰 알림 동기화, Webhook relay, Telegram, Email을 통해 간접적으로 구현합니다.
-- Hooks / 플러그인 모드는 Claude Code / Gemini CLI / OpenCode에 더 적합하며, Watch는 주로 Codex 또는 fallback 용도로 사용합니다.
+- Hooks / 플러그인 모드는 Claude Code / Gemini CLI / OpenCode / ZCode에 더 적합하며, Watch는 주로 Codex 또는 fallback 용도로 사용합니다.
 
 ## 변경 이력
 
@@ -320,6 +337,19 @@ macOS 참고:
 <summary>버전 이력 보기</summary>
 
 > `v2.x`는 현재 Tauri 기반 데스크톱 라인이고, `v1.x`는 이전 Electron 라인입니다. 전체 이전 버전 이력은 [English](README.md) 또는 [简体中文](README_zh.md)를 참고하세요.
+
+
+### 2.17.0
+
+- 명시적으로 선택한 `.env`를 오래된 상속 환경 변수가 덮어쓰는 문제를 수정했습니다. 알림 테스트의 Telegram 확인과 `node ai-reminder.js telegram-check`로 메시지 전송 없이 토큰, 채팅 및 설정 출처를 확인할 수 있습니다. [문제 해결 안내](docs/telegram-troubleshooting.md) (Issue #37).
+- 앱과 트레이 로고를 업데이트했습니다. “i” 위의 점을 음파가 있는 기울어진 종으로 바꾸고, 왼쪽 상단 앱 이름 왼쪽에 로고를 추가하여 제목·버전 배지·부제목의 배치를 조정했습니다.
+- 앱 시작 시와 실행 중 매시간 GitHub의 최신 공개 안정 버전을 백그라운드에서 확인합니다. 새 버전이 있으면 버전 배지에 빨간 점이 표시되며, 클릭하면 프로젝트 정보에서 버전 정보와 다운로드 링크를 확인할 수 있습니다. 수동 재확인도 지원하며, 자동 다운로드나 설치는 하지 않습니다.
+- 업데이트 확인에 10초 제한 시간을 적용하고 중복 요청을 방지했습니다. 백그라운드 확인이 실패해도 이전에 발견한 업데이트 표시는 유지합니다.
+- 메뉴를 전환할 때 이전 메뉴의 스크롤 위치가 유지되던 문제를 수정했습니다. 이제 메뉴 전환 시 맨 위로 돌아갑니다.
+- 기본 비활성화 상태인 ZCode 소스를 추가했습니다. `node ai-reminder.js hooks install --target zcode`로 설치하며, `UserPromptSubmit`이 시작 시간을 기록하고 `Stop`이 소요 시간을 확인합니다. 프로젝트와 세션별로 시간을 관리하고, 반복 Stop은 최초 완료 시간을 유지하며 중복 알림을 제거합니다. 업데이트 후 새 ZCode 세션을 시작하세요.
+- ZCode Hook이 소요 시간 임계값을 강제로 우회하지 않도록 수정했습니다. 잘못된 이벤트나 완료가 아닌 이벤트는 완료 알림을 보내지 않습니다. 개별 채널, `ZCODE_WEBHOOK_URLS`, AI 요약을 지원합니다. Watch 경로를 추가하지 않으며 Watch 전용 모드에서도 ZCode Hook은 차단되지 않습니다.
+- 소스별 로고를 통일하고 Claude와 Codex 설명에 데스크톱을 추가했습니다. Codex는 파란색 로고를 사용하며 여백으로 작게 보이는 문제를 보정했습니다. 프로젝트 정보의 소스 목록은 자동 줄바꿈 아이콘으로 표시되고 마우스를 올리면 이름이 나타납니다. 소스 설정과 같은 목록을 사용합니다.
+- Feishu 카드에 ZCode 로고를 추가했습니다. 전역 채널이 꺼져 있어도 ZCode 채널 설정을 변경할 수 있습니다. 실제 전송에는 전역 채널 활성화가 필요하며 다른 소스의 동작은 그대로 유지됩니다.
 
 ### 2.16.0
 

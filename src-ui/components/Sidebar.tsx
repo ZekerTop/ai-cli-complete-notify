@@ -1,3 +1,4 @@
+import logo from '../../desktop/assets/tray.png';
 import ThemeSelector from './ThemeSelector';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +16,7 @@ interface SidebarProps {
   activePanel: string;
   onNavigate: (id: string) => void;
   version: string;
+  hasUpdate?: boolean;
   language: string;
   onLanguageChange: (lang: string) => void;
   watchRunning: boolean;
@@ -25,6 +27,7 @@ export default function Sidebar({
   activePanel,
   onNavigate,
   version,
+  hasUpdate = false,
   language,
   onLanguageChange,
   watchRunning,
@@ -36,13 +39,20 @@ export default function Sidebar({
     <aside className="sidebar-shell overflow-auto">
       <div className="sidebar-stack">
         <div className="sidebar-card">
-          <div className="flex items-end justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <img src={logo} alt="" width={48} height={48} className="shrink-0" />
             <h1 className="sidebar-title">
               AI CLI
               <br />
               Notify
             </h1>
-            <span className="shrink-0 rounded-full border border-[rgba(110,123,255,0.36)] bg-[rgba(110,123,255,0.14)] px-3 py-1 text-[13px] font-semibold text-[var(--text)]">v{version}</span>
+            <button type="button" onClick={() => onNavigate('about-project')}
+              aria-label={hasUpdate ? t('aboutProject.update.newVersionHint') : t('section.aboutProject.title')}
+              title={hasUpdate ? t('aboutProject.update.newVersionHint') : t('section.aboutProject.title')}
+              className="relative ml-auto shrink-0 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] border border-[rgba(110,123,255,0.36)] bg-[rgba(110,123,255,0.14)] px-2 py-1 text-[11px] font-semibold text-[var(--text)]">
+              v{version}
+              {hasUpdate && <span aria-hidden="true" className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />}
+            </button>
           </div>
           <div className="sidebar-subtitle">{t('brand.subtitle')}</div>
 

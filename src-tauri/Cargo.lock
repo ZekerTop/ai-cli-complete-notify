@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "ai-cli-complete-notify"
-version = "2.16.0"
+version = "2.17.0"
 dependencies = [
  "objc2",
  "objc2-app-kit",

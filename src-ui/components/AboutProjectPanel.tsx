@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { open } from '@tauri-apps/plugin-shell';
-import {
-  checkLatestRelease,
-  RELEASES_URL,
-  type UpdateCheckResult,
-} from '@/lib/update-check.mts';
+import { RELEASES_URL } from '@/lib/update-check.mts';
+import type { UpdateViewState } from '@/hooks/useUpdateCheck';
 import Panel from './ui/Panel';
+import SourceLogo from './ui/SourceLogo';
+import { SOURCES } from '@/lib/types';
 import GitHubLogo from './ui/GitHubLogo';
 import alipayRewardQr from '@/assets/author/alipay-reward.jpg';
 import wechatPayRewardQr from '@/assets/author/wechat-pay-reward.jpg';
@@ -16,48 +14,17 @@ const PROJECT_URL = 'https://github.com/ZekerTop/ai-cli-complete-notify';
 
 interface Props {
   currentVersion: string;
+  updateState: UpdateViewState;
+  runUpdateCheck: () => Promise<void>;
 }
-
-type UpdateViewState = { status: 'checking' | 'error' } | UpdateCheckResult;
 
 function displayVersion(value: string) {
   const normalized = String(value || '').trim().replace(/^v/i, '');
   return `v${normalized}`;
 }
 
-export default function AboutProjectPanel({ currentVersion }: Props) {
+export default function AboutProjectPanel({ currentVersion, updateState, runUpdateCheck }: Props) {
   const { t } = useTranslation();
-  const [updateState, setUpdateState] = useState<UpdateViewState>({ status: 'checking' });
-  const activeRequestRef = useRef(0);
-  const checkingRef = useRef(false);
-
-  const runUpdateCheck = useCallback(async () => {
-    if (checkingRef.current) return;
-
-    checkingRef.current = true;
-    const requestId = activeRequestRef.current + 1;
-    activeRequestRef.current = requestId;
-    setUpdateState({ status: 'checking' });
-
-    try {
-      const result = await checkLatestRelease(currentVersion);
-      if (activeRequestRef.current === requestId) setUpdateState(result);
-    } catch (_error) {
-      if (activeRequestRef.current === requestId) setUpdateState({ status: 'error' });
-    } finally {
-      if (activeRequestRef.current === requestId) checkingRef.current = false;
-    }
-  }, [currentVersion]);
-
-  useEffect(() => {
-    void runUpdateCheck();
-
-    return () => {
-      activeRequestRef.current += 1;
-      checkingRef.current = false;
-    };
-  }, [runUpdateCheck]);
-
   const isChecking = updateState.status === 'checking';
   const latestVersion = 'latestVersion' in updateState ? updateState.latestVersion : '';
   const statusText =
@@ -112,7 +79,11 @@ export default function AboutProjectPanel({ currentVersion }: Props) {
                   <div className="text-[11px] uppercase tracking-[0.14em] text-muted">
                     {t('aboutProject.sourcesLabel')}
                   </div>
-                  <div className="mt-2 text-base font-semibold">{t('aboutProject.sourcesValue')}</div>
+                  <div className="mt-3 flex flex-wrap gap-2" data-testid="about-source-logos">
+                    {SOURCES.map((source) => (
+                      <SourceLogo key={source.key} source={source} name={t(source.titleKey)} className="h-8 w-8" />
+                    ))}
+                  </div>
                 </div>
                 <div className="surface-card-soft p-4">
                   <div className="text-[11px] uppercase tracking-[0.14em] text-muted">

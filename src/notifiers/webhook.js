@@ -10,6 +10,10 @@ const WEBHOOK_MESSAGE_MARKER = 'AI提醒';
 
 // Logo key map for light and dark themes.
 const LOGO_MAP = {
+  'zcode': {
+    light: 'img_v3_0215i_61c21733-9f18-4807-a8ff-72c8f67e5b2g',
+    dark: 'img_v3_0215i_61c21733-9f18-4807-a8ff-72c8f67e5b2g'
+  },
   'codex': {
     light: 'img_v3_02u8_e7160911-b3b6-49fe-98b6-4fcf92f857fg',
     dark: 'img_v3_02u8_789a1ca1-bfe3-4091-a2a3-55a264d2383g'
@@ -193,7 +197,8 @@ const SOURCE_WEBHOOK_ENV_NAMES = Object.freeze({
   claude: 'CLAUDE_WEBHOOK_URLS',
   codex: 'CODEX_WEBHOOK_URLS',
   gemini: 'GEMINI_WEBHOOK_URLS',
-  opencode: 'OPENCODE_WEBHOOK_URLS'
+  opencode: 'OPENCODE_WEBHOOK_URLS',
+  zcode: 'ZCODE_WEBHOOK_URLS'
 });
 
 function readConfigUrls(value) {

@@ -49,7 +49,8 @@ function getSourceDisplayName(source) {
   const names = {
     claude: 'Claude Code',
     gemini: 'Gemini CLI',
-    opencode: 'OpenCode'
+    opencode: 'OpenCode',
+    zcode: 'ZCode CLI'
   };
   return names[source] || source;
 }

@@ -35,6 +35,19 @@ export default function TestPanel() {
     }
   };
 
+  const handleCheckTelegram = async () => {
+    setSending(true);
+    setLog(t('test.telegramChecking'));
+    try {
+      const out = await sidecar(['telegram-check']);
+      setLog([out.stdout.trim(), out.stderr.trim()].filter(Boolean).join('\n'));
+    } catch (error) {
+      setLog(`Error: ${error}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <Panel title={t('section.test.title')} subtitle={t('section.test.sub')}>
       <div className="flex items-center gap-2.5 flex-wrap">
@@ -48,6 +61,7 @@ export default function TestPanel() {
           <option value="codex">Codex</option>
           <option value="opencode">OpenCode</option>
           <option value="gemini">Gemini</option>
+          <option value="zcode">ZCode</option>
         </select>
 
         <label className="text-sm">{t('test.duration')}</label>
@@ -74,6 +88,15 @@ export default function TestPanel() {
           className="px-3 py-2 rounded-xl border border-white/[0.14] bg-gradient-to-br from-accent to-accent2 text-white text-sm cursor-pointer disabled:opacity-50"
         >
           {t('btn.send')}
+        </button>
+        <button
+          type="button"
+          onClick={handleCheckTelegram}
+          disabled={sending}
+          title={t('test.telegramCheckHint')}
+          className="px-3 py-2 rounded-xl border border-white/[0.14] text-sm disabled:opacity-50"
+        >
+          {t('test.telegramCheck')}
         </button>
       </div>
       <pre className="mt-2.5 p-2.5 bg-black/25 border border-white/[0.10] rounded-xl max-h-[220px] overflow-auto text-xs leading-relaxed whitespace-pre-wrap break-all">

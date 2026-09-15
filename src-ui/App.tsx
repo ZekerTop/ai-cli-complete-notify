@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { exit } from '@tauri-apps/plugin-process';
+import { useUpdateCheck } from '@/hooks/useUpdateCheck';
 import { useConfig } from '@/hooks/useConfig';
 import { useWatch } from '@/hooks/useWatch';
 import { useHooks } from '@/hooks/useHooks';
@@ -30,6 +31,7 @@ const appWindow = getCurrentWindow();
 
 export default function App() {
   const { i18n } = useTranslation();
+  const release = useUpdateCheck(VERSION);
   const { config, load, save, update, loading, error, setConfig } = useConfig();
   const watch = useWatch();
   const hooks = useHooks();
@@ -269,6 +271,7 @@ export default function App() {
         activePanel={activePanel}
         onNavigate={setActivePanel}
         version={VERSION}
+        hasUpdate={release.hasUpdate}
         language={config.ui.language}
         onLanguageChange={handleLanguageChange}
         watchRunning={watch.running}
@@ -285,7 +288,7 @@ export default function App() {
           }
         }}
       />
-      <main className="content-shell scroll-smooth">
+      <main key={activePanel} className="content-shell scroll-smooth">
         {showEnvBanner && envStatus && (
           <div
             className={`mx-4 mt-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
@@ -391,7 +394,7 @@ export default function App() {
             />
           )}
           {activePanel === 'about-project' && (
-            <AboutProjectPanel currentVersion={VERSION} />
+            <AboutProjectPanel currentVersion={VERSION} updateState={release.updateState} runUpdateCheck={release.runUpdateCheck} />
           )}
         </div>
       </main>

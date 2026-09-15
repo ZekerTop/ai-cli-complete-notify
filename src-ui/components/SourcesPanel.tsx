@@ -3,6 +3,7 @@ import type { AppConfig, SourceKey, ChannelKey } from '@/lib/types';
 import { SOURCES, CHANNELS } from '@/lib/types';
 import Panel from './ui/Panel';
 import Switch from './ui/Switch';
+import SourceLogo from './ui/SourceLogo';
 
 interface Props {
   config: AppConfig;
@@ -75,7 +76,10 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
               {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="mt-3 font-serif text-[24px] leading-none">{t(src.titleKey)}</div>
+                  <div className="mt-3 flex items-center gap-2 font-serif text-[24px] leading-none">
+                    <SourceLogo source={src} />
+                    {t(src.titleKey)}
+                  </div>
                   <div className="mt-2 text-[13px] text-muted leading-relaxed">{t(src.descKey)}</div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -122,7 +126,7 @@ export default function SourcesPanel({ config, onUpdate }: Props) {
                       <Switch
                         checked={active}
                         onChange={() => toggleSourceChannel(src.key, ch.key)}
-                        disabled={!s.enabled || !globallyEnabled}
+                        disabled={!s.enabled || (src.key !== 'zcode' && !globallyEnabled)}
                       />
                     </div>
                   );

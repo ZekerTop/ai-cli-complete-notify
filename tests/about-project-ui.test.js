@@ -58,8 +58,9 @@ test('about project link includes the GitHub logo', () => {
 test('about project panel checks GitHub Releases without changing platform behavior', () => {
   const source = readSource('src-ui/components/AboutProjectPanel.tsx');
 
-  assert.match(source, /checkLatestRelease\(currentVersion\)/);
-  assert.match(source, /useEffect\(\(\) =>/);
+  const hook = readSource('src-ui/hooks/useUpdateCheck.ts');
+  assert.match(hook, /checkLatestRelease\(currentVersion\)/);
+  assert.match(hook, /useEffect\(\(\) =>/);
   assert.match(source, /void runUpdateCheck\(\)/);
   assert.match(source, /open\(updateState\.releaseUrl\)/);
   assert.match(source, /open\(RELEASES_URL\)/);

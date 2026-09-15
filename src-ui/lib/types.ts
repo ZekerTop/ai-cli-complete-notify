@@ -1,3 +1,9 @@
+import zcodeLogo from '@/assets/sources/zcode.png';
+import claudeLogo from '@/assets/sources/claude-color.svg';
+import codexLogo from '@/assets/sources/codex.png';
+import opencodeLogo from '@/assets/sources/opencode.svg';
+import geminiLogo from '@/assets/sources/gemini-color.svg';
+
 export interface AppConfig {
   version: number;
   app: { host: string; port: number };
@@ -104,7 +110,10 @@ export interface HookStatus {
   claude: { installed: boolean; settingsPath: string };
   gemini: { installed: boolean; settingsPath: string };
   opencode: { installed: boolean; settingsPath: string };
+  zcode: { installed: boolean; hooksEnabled: boolean; settingsPath: string };
 }
+
+export type HookTarget = keyof HookStatus;
 
 export interface WatchPayload {
   sources: string;
@@ -127,7 +136,7 @@ export interface EnvSetupStatus {
 }
 
 export type ChannelKey = 'webhook' | 'telegram' | 'desktop' | 'sound' | 'email' | 'gotify';
-export type SourceKey = 'claude' | 'codex' | 'opencode' | 'gemini';
+export type SourceKey = 'claude' | 'codex' | 'opencode' | 'gemini' | 'zcode';
 
 export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] = [
   { key: 'webhook', titleKey: 'channel.webhook', descKey: 'channel.webhook.desc' },
@@ -138,9 +147,10 @@ export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] 
   { key: 'gotify', titleKey: 'channel.gotify', descKey: 'channel.gotify.desc' },
 ];
 
-export const SOURCES: { key: SourceKey; titleKey: string; descKey: string }[] = [
-  { key: 'claude', titleKey: 'source.claude', descKey: 'source.claude.desc' },
-  { key: 'codex', titleKey: 'source.codex', descKey: 'source.codex.desc' },
-  { key: 'opencode', titleKey: 'source.opencode', descKey: 'source.opencode.desc' },
-  { key: 'gemini', titleKey: 'source.gemini', descKey: 'source.gemini.desc' },
+export const SOURCES: { key: SourceKey; titleKey: string; descKey: string; logo: string }[] = [
+  { key: 'claude', titleKey: 'source.claude', descKey: 'source.claude.desc', logo: claudeLogo },
+  { key: 'codex', titleKey: 'source.codex', descKey: 'source.codex.desc', logo: codexLogo },
+  { key: 'opencode', titleKey: 'source.opencode', descKey: 'source.opencode.desc', logo: opencodeLogo },
+  { key: 'gemini', titleKey: 'source.gemini', descKey: 'source.gemini.desc', logo: geminiLogo },
+  { key: 'zcode', titleKey: 'source.zcode', descKey: 'source.zcode.desc', logo: zcodeLogo },
 ];

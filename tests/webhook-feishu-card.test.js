@@ -70,6 +70,15 @@ test('Feishu card keeps Codex output content in interactive payload', async (t) 
   const cardText = JSON.stringify(postedPayload.card);
   assert.match(cardText, /AI提醒 原文/);
   assert.match(cardText, /Codex final answer for Feishu card/);
+  assert.equal(postedPayload.card.header.icon.img_key, 'img_v3_02u8_e7160911-b3b6-49fe-98b6-4fcf92f857fg');
+  const zcodeResult = await notifyWebhook({
+    config: { channels: { webhook: { urls: ['https://open.feishu.cn/open-apis/bot/v2/hook/test'], useFeishuCard: true } } },
+    sourceName: 'zcode', sourceLabel: 'ZCode', title: 'ZCode 完成', taskInfo: 'ZCode 完成',
+    projectName: 'app', summaryUsed: false,
+  });
+  assert.equal(zcodeResult.ok, true);
+  assert.equal(postedPayload.card.header.icon.img_key, 'img_v3_0215i_61c21733-9f18-4807-a8ff-72c8f67e5b2g');
+
 });
 
 test('Feishu card hides original output by default when summary is present', async (t) => {

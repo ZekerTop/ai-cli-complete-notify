@@ -2,6 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const { getEnvPathCandidates } = require('./paths');
 
+let loadedEnvPath = '';
+let loadedValues = {};
+let inheritedKeys = new Set();
+let explicitEnv = false;
+
 function bootstrapEnv() {
   try {
     const explicit =
@@ -23,13 +28,31 @@ function bootstrapEnv() {
       }
     });
 
-    if (firstExisting) require('dotenv').config({ path: firstExisting, quiet: true });
-    else require('dotenv').config({ quiet: true });
+    inheritedKeys = new Set(Object.keys(process.env));
+    explicitEnv = Boolean(explicit) && firstExisting === path.resolve(explicit);
+    const result = require('dotenv').config({
+      ...(firstExisting ? { path: firstExisting } : {}),
+      override: explicitEnv,
+      quiet: true
+    });
+    loadedEnvPath = result.error ? '' : (firstExisting || path.join(process.cwd(), '.env'));
+    loadedValues = result.parsed || {};
   } catch (error) {
     // dotenv 失败时不阻断主流程
   }
 }
 
+function describeEnvValue(name) {
+  const fromFile = Object.prototype.hasOwnProperty.call(loadedValues, name);
+  return {
+    source: fromFile && (explicitEnv || !inheritedKeys.has(name)) ? 'env-file' : 'process-environment',
+    envFile: loadedEnvPath,
+    shadowsEnvFile: fromFile && !explicitEnv && inheritedKeys.has(name)
+      && String(process.env[name] || '').trim() !== String(loadedValues[name] || '').trim()
+  };
+}
+
 module.exports = {
-  bootstrapEnv
+  bootstrapEnv,
+  describeEnvValue
 };

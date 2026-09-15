@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.16.0)
+# AI CLI Complete Notify (v2.17.0)
 
-![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.17.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![下載 macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -31,7 +31,7 @@
 
 ### 📖 簡介
 
-AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任務完成提醒工具。它可以在 AI 助手完成長時間任務後，透過桌面通知、聲音、Webhook、Telegram、Email 等方式提醒你，不必一直守在電腦前等待。
+AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini / ZCode 的任務完成提醒工具。它可以在 AI 助手完成長時間任務後，透過桌面通知、聲音、Webhook、Telegram、Email 等方式提醒你，不必一直守在電腦前等待。
 
 **支援的通知方式：**
 
@@ -42,17 +42,17 @@ AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任�
 ## ✨ 核心特性
 
 - 🎯 **智慧去抖**：依任務類型自動調整提醒時機，有工具呼叫時等待 60 秒，無工具呼叫時僅需 15 秒。
-- 🔀 **來源控制**：Claude / Codex / OpenCode / Gemini 可分別設定啟用狀態、耗時閾值與通知通道。
+- 🔀 **來源控制**：Claude / Codex / OpenCode / Gemini / ZCode 可分別設定啟用狀態、耗時閾值與通知通道。
 - 📡 **多通道推送**：Webhook、Telegram、Email、桌面通知與聲音可以同時啟用。
 - ⏱️ **耗時閾值**：只在任務超過指定時長後提醒，避免頻繁打擾。
-- 🪝 **Hooks + Watch 混合模式**：Claude Code / Gemini CLI 可使用原生 Hook，OpenCode 可使用全域插件事件，Codex 仍以日誌監聽為主。
+- 🪝 **Hooks + Watch 混合模式**：Claude Code / Gemini CLI / ZCode 可使用原生 Hook，OpenCode 可使用全域插件事件，Codex 仍以日誌監聽為主。
 - 🧠 **AI 摘要（可選）**：任務完成後產生短摘要，逾時或失敗時會回退到原始內容。
 - 🖥️ **桌面應用**：圖形化配置、語言切換、隱藏到托盤 / macOS 選單列、開機自啟。
 - 🔐 **設定分離**：執行設定與敏感憑證分離，`.env` 優先保存 Token、Webhook、Email 等資訊。
 
 ## 💡 建議設定
 
-為了獲得最佳體驗，使用 Claude Code / Codex / OpenCode / Gemini 時，建議授予 AI 助手完整的檔案讀寫權限。
+為了獲得最佳體驗，使用 Claude Code / Codex / OpenCode / Gemini 時，建議授予 AI 助手完整的檔案讀寫權限。ZCode 不受影響：它透過原生 `Stop` Hook 完成提醒、沒有 Watch 路徑，不需要此權限。
 
 這樣可以確保任務日誌被正確寫入本機檔案，讓 Watch 模式更準確地判斷任務是否真正完成，減少誤報或漏報。
 
@@ -60,11 +60,11 @@ AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任�
 
 - Claude Code 經常會把一個請求拆成多個子任務。為避免每個子任務都提醒，本工具只在整輪完成後發送提醒。
 - Watch 模式依賴日誌變化，需要一段去抖靜默時間確認結束，因此提醒不是即時觸發。
-- 若想要更快、更準確的提醒：Claude Code / Gemini CLI 優先使用 Hook，OpenCode 優先使用全域插件，Codex 或兜底場景繼續使用 Watch。
+- 若想要更快、更準確的提醒：Claude Code / Gemini CLI / ZCode 優先使用 Hook，OpenCode 優先使用全域插件，Codex 或兜底場景繼續使用 Watch。
 
 ## Hooks 與 Watch 的差異
 
-- **Hook / 插件事件** 直接使用 AI CLI 自身發出的生命週期事件，完成時機更接近真實狀態。
+- **Hook / 插件事件** 直接使用 AI CLI 自身發出的生命週期事件（例如 Claude Code / ZCode 的 `Stop`、Gemini CLI 的 `AfterAgent`、OpenCode 的 `session.status` idle），完成時機更接近真實狀態。
 - **Hook** 不需要為對應工具長期常駐背景監聽器，空閒開銷更低。
 - **Watch** 是通用兜底方案，適合 Codex，也適合尚未配置 Hook 的場景。
 
@@ -129,7 +129,7 @@ npm run dist:mac:dmg
 
 - **頂部列**：語言切換、Watch 監聽開關、視窗控制。
 - **通道設定**：設定 Webhook、Telegram、Email、桌面通知與聲音。
-- **來源設定**：分別設定 Claude / Codex / OpenCode / Gemini 的啟用狀態與耗時閾值。
+- **來源設定**：分別設定 Claude / Codex / OpenCode / Gemini / ZCode 的啟用狀態與耗時閾值。
 - **監聽設定**：設定輪詢間隔與去抖時間。
 - **確認提醒（預設關閉）**：僅在 Codex 出現需要選擇 / 提交的互動提示時提醒。
 - **AI 摘要**：設定 API URL、Key、模型與逾時回退。
@@ -190,7 +190,14 @@ node ai-reminder.js hooks install --target opencode
 
 # 安裝 Herdr 插件（herdr-ai-notify）並自動寫入設定
 node ai-reminder.js hooks install --target herdr
+
+# 安裝 ZCode Hook（使用者層級；自動啟用 ZCode 的 hooks runner）
+node ai-reminder.js hooks install --target zcode
 ```
+
+ZCode 僅使用 Hook，沒有 Watch 路徑，來源預設關閉（`sources.zcode.enabled`）。安裝會在使用者層級的 `~/.zcode/cli/config.json` 註冊 `UserPromptSubmit` 與 `Stop` 兩個 process Hook，並啟用 `hooks.enabled`；保留其他 Hook 與既有設定，解除安裝僅移除本工具的處理器。
+啟用 ZCode 來源後，在「Hooks / 插件整合」安裝 ZCode Hook，再建立新的 ZCode 工作階段。`UserPromptSubmit` 開始計時，`Stop` 檢查耗時閾值：`0` 表示每輪完成皆可提醒，正數表示至少執行相應分鐘數；沒有開始時間記錄時，正數閾值下不會傳送提醒。舊版僅安裝 `Stop` 的使用者需重新安裝 Hook。ZCode 管道偏好可獨立調整，實際傳送仍要求對應全域管道已啟用並完成設定。
+安裝或更新 ZCode Hook 後，請**完全結束 ZCode，重新開啟並建立新的工作階段**，不要繼續使用安裝前的舊工作階段。舊工作階段可能仍使用啟動時載入的 Hook 設定。若「測試通知」成功但實際任務沒有提醒，先確認 ZCode 來源與目標管道已啟用，暫時將閾值設為 `0`，再重新啟動並使用新的工作階段測試。「測試通知」會直接傳送並略過耗時閾值，無法驗證真正的 Hook 是否執行。
 
 ### 可選第三方工具（Herdr）
 
@@ -256,6 +263,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # CODEX_WEBHOOK_URLS=https://example.com/codex-hook
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
+# ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
 NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
@@ -270,6 +278,15 @@ TELEGRAM_CHAT_ID=your_chat_id
 # SUMMARY_MODEL=gpt-4o-mini
 # SUMMARY_TIMEOUT_MS=30000
 ```
+
+<a id="telegram-token-與-chat-id"></a>
+
+<details>
+<summary><strong>📱 Telegram 設定教學：Token 與 Chat ID（點擊展開）</strong></summary>
+
+完整步驟請見 [中文設定教學](README_zh.md#telegram获取-tokenchat-id-并测试通知)：建立或尋找機器人、取得 Token、查詢 Chat ID、處理空結果、填寫 `.env`、設定 HTTP 代理及驗證實際收件。
+
+</details>
 
 ### `settings.json`
 
@@ -312,7 +329,7 @@ macOS 建議：
 - `notify` 會忽略耗時閾值並直接發送提醒。
 - Webhook 預設使用飛書 post 格式；企業微信 / 釘釘會自動使用文字格式。
 - 手環 / 手錶提醒通常透過手機通知同步、Webhook 中轉、Telegram 或 Email 間接實現。
-- Hooks / 插件模式較適合 Claude Code / Gemini CLI / OpenCode；Watch 主要保留給 Codex 或兜底場景。
+- Hooks / 插件模式較適合 Claude Code / Gemini CLI / OpenCode / ZCode；Watch 主要保留給 Codex 或兜底場景。
 
 ## 版本歷史
 
@@ -320,6 +337,19 @@ macOS 建議：
 <summary>展開 / 收合版本歷史</summary>
 
 > `v2.x` 是目前的 Tauri 桌面版本線；`v1.x` 是舊 Electron 版本線。完整舊版本歷史可參考 [English](README.md) 或 [简体中文](README_zh.md)。
+
+
+### 2.17.0
+
+- 修復繼承的舊環境變數覆蓋明確指定 `.env` 的問題。測試通知頁新增 Telegram 檢查，CLI 新增 `node ai-reminder.js telegram-check`，不傳送訊息即可檢查 Token、聊天及設定來源。見 [Telegram 排障說明](docs/telegram-troubleshooting.md)（Issue #37）。
+- 更新應用程式與系統匣 logo：將 i 上方的圓點替換為帶聲波的傾斜鈴鐺；在左上角軟體名稱左側加入 logo，並調整標題、版本號與副標題的配置。
+- 新增背景版本檢查：應用程式啟動時及執行期間每小時檢查 GitHub 最新公開正式版本。發現新版本後，左上角版本號顯示紅點，點擊可前往「關於專案」查看版本資訊與下載連結；保留手動重新檢查，不會自動下載或安裝。
+- 更新檢查加入 10 秒逾時並避免重複請求；背景檢查失敗時保留先前已發現的更新提示。
+- 修復切換頁面後沿用上一頁捲動位置的問題，切換時自動回到頂部。
+- 新增預設關閉的 ZCode Hook 來源，安裝命令為 `node ai-reminder.js hooks install --target zcode`。`UserPromptSubmit` 記錄每輪開始時間，`Stop` 檢查耗時閾值；不同專案與工作階段分別計時，重複 Stop 保留首次完成時間並去重。升級 Hook 後需建立新的 ZCode 工作階段。
+- ZCode Hook 不再強制略過耗時閾值；無效或非完成事件不會傳送完成提醒。支援獨立管道、`ZCODE_WEBHOOK_URLS` 與 AI 摘要；不新增 Watch 路徑，「僅 Watch」模式也不會封鎖 ZCode Hook。
+- 來源設定新增統一 logo，Claude 與 Codex 說明補充桌面端；Codex 採用藍色圖標並調整留白比例。關於專案以可換行的來源圖標取代文字列表，滑鼠停留顯示名稱，與來源設定共用列表。
+- 飛書卡片新增 ZCode logo。修復全域管道關閉時 ZCode 管道開關無法調整的問題；實際傳送仍受全域開關控制，其他來源行為保持不變。
 
 ### 2.16.0
 

@@ -65,27 +65,34 @@ export async function checkLatestRelease(
   const current = parseStableVersion(currentVersion);
   if (!current) throw new Error('Invalid current version');
 
-  const response = await fetchImpl(LATEST_RELEASE_API_URL, {
-    headers: { Accept: 'application/vnd.github+json' },
-  });
-  if (!response.ok) throw new Error(`GitHub release request failed: ${response.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetchImpl(LATEST_RELEASE_API_URL, {
+      signal: controller.signal,
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!response.ok) throw new Error(`GitHub release request failed: ${response.status}`);
 
-  const payload = await response.json();
-  if (!payload || typeof payload !== 'object') throw new Error('Invalid GitHub release payload');
+    const payload = await response.json();
+    if (!payload || typeof payload !== 'object') throw new Error('Invalid GitHub release payload');
 
-  const tagName = 'tag_name' in payload ? payload.tag_name : null;
-  const releaseUrlValue = 'html_url' in payload ? payload.html_url : null;
-  const latest = typeof tagName === 'string' ? parseStableVersion(tagName) : null;
-  const releaseUrl = normalizeReleaseUrl(releaseUrlValue);
-  if (!latest || !releaseUrl) throw new Error('Invalid GitHub release payload');
+    const tagName = 'tag_name' in payload ? payload.tag_name : null;
+    const releaseUrlValue = 'html_url' in payload ? payload.html_url : null;
+    const latest = typeof tagName === 'string' ? parseStableVersion(tagName) : null;
+    const releaseUrl = normalizeReleaseUrl(releaseUrlValue);
+    if (!latest || !releaseUrl) throw new Error('Invalid GitHub release payload');
 
-  const comparison = compareStableVersions(current.normalized, latest.normalized);
-  if (comparison === null) throw new Error('Invalid release version');
+    const comparison = compareStableVersions(current.normalized, latest.normalized);
+    if (comparison === null) throw new Error('Invalid release version');
 
-  return {
-    status: comparison < 0 ? 'update-available' : comparison > 0 ? 'ahead' : 'up-to-date',
-    currentVersion: current.normalized,
-    latestVersion: latest.normalized,
-    releaseUrl,
-  };
+    return {
+      status: comparison < 0 ? 'update-available' : comparison > 0 ? 'ahead' : 'up-to-date',
+      currentVersion: current.normalized,
+      latestVersion: latest.normalized,
+      releaseUrl,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }

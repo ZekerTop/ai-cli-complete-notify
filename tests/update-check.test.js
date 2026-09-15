@@ -82,3 +82,15 @@ test('release check rejects network, HTTP, and invalid payload failures', async 
     /Invalid GitHub release payload/,
   );
 });
+
+test('release check aborts a stalled request so later checks can retry', async (t) => {
+  const { checkLatestRelease } = await loadUpdateCheck();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const request = checkLatestRelease('2.16.1', (_url, { signal }) => new Promise((_resolve, reject) => {
+    signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+  }));
+  const rejected = assert.rejects(request, /aborted/);
+  t.mock.timers.tick(10000);
+  await rejected;
+  assert.equal((await checkLatestRelease('2.11.0', async () => releaseResponse())).status, 'update-available');
+});

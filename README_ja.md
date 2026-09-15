@@ -11,7 +11,7 @@
 
 [English](README.md) | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | 日本語
 
-![UI Preview](docs/images/home-v2.16.0.png)
+![UI Preview](docs/images/home-v2.17.0.png)
 
 </div>
 

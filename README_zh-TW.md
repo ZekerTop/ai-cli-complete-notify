@@ -2,9 +2,9 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.16.0)
+# AI CLI Complete Notify (v2.17.0)
 
-![Version](https://img.shields.io/badge/version-2.16.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.17.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![下載 macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
@@ -31,7 +31,7 @@
 
 ### 📖 簡介
 
-AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任務完成提醒工具。它可以在 AI 助手完成長時間任務後，透過桌面通知、聲音、Webhook、Telegram、Email 等方式提醒你，不必一直守在電腦前等待。
+AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini / ZCode 的任務完成提醒工具。它可以在 AI 助手完成長時間任務後，透過桌面通知、聲音、Webhook、Telegram、Email 等方式提醒你，不必一直守在電腦前等待。
 
 **支援的通知方式：**
 
@@ -42,17 +42,17 @@ AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任�
 ## ✨ 核心特性
 
 - 🎯 **智慧去抖**：依任務類型自動調整提醒時機，有工具呼叫時等待 60 秒，無工具呼叫時僅需 15 秒。
-- 🔀 **來源控制**：Claude / Codex / OpenCode / Gemini 可分別設定啟用狀態、耗時閾值與通知通道。
+- 🔀 **來源控制**：Claude / Codex / OpenCode / Gemini / ZCode 可分別設定啟用狀態、耗時閾值與通知通道。
 - 📡 **多通道推送**：Webhook、Telegram、Email、桌面通知與聲音可以同時啟用。
 - ⏱️ **耗時閾值**：只在任務超過指定時長後提醒，避免頻繁打擾。
-- 🪝 **Hooks + Watch 混合模式**：Claude Code / Gemini CLI 可使用原生 Hook，OpenCode 可使用全域插件事件，Codex 仍以日誌監聽為主。
+- 🪝 **Hooks + Watch 混合模式**：Claude Code / Gemini CLI / ZCode 可使用原生 Hook，OpenCode 可使用全域插件事件，Codex 仍以日誌監聽為主。
 - 🧠 **AI 摘要（可選）**：任務完成後產生短摘要，逾時或失敗時會回退到原始內容。
 - 🖥️ **桌面應用**：圖形化配置、語言切換、隱藏到托盤 / macOS 選單列、開機自啟。
 - 🔐 **設定分離**：執行設定與敏感憑證分離，`.env` 優先保存 Token、Webhook、Email 等資訊。
 
 ## 💡 建議設定
 
-為了獲得最佳體驗，使用 Claude Code / Codex / OpenCode / Gemini 時，建議授予 AI 助手完整的檔案讀寫權限。
+為了獲得最佳體驗，使用 Claude Code / Codex / OpenCode / Gemini 時，建議授予 AI 助手完整的檔案讀寫權限。ZCode 不受影響：它透過原生 `Stop` Hook 完成提醒、沒有 Watch 路徑，不需要此權限。
 
 這樣可以確保任務日誌被正確寫入本機檔案，讓 Watch 模式更準確地判斷任務是否真正完成，減少誤報或漏報。
 
@@ -60,11 +60,11 @@ AI CLI Complete Notify 是面向 Claude Code / Codex / OpenCode / Gemini 的任�
 
 - Claude Code 經常會把一個請求拆成多個子任務。為避免每個子任務都提醒，本工具只在整輪完成後發送提醒。
 - Watch 模式依賴日誌變化，需要一段去抖靜默時間確認結束，因此提醒不是即時觸發。
-- 若想要更快、更準確的提醒：Claude Code / Gemini CLI 優先使用 Hook，OpenCode 優先使用全域插件，Codex 或兜底場景繼續使用 Watch。
+- 若想要更快、更準確的提醒：Claude Code / Gemini CLI / ZCode 優先使用 Hook，OpenCode 優先使用全域插件，Codex 或兜底場景繼續使用 Watch。
 
 ## Hooks 與 Watch 的差異
 
-- **Hook / 插件事件** 直接使用 AI CLI 自身發出的生命週期事件，完成時機更接近真實狀態。
+- **Hook / 插件事件** 直接使用 AI CLI 自身發出的生命週期事件（例如 Claude Code / ZCode 的 `Stop`、Gemini CLI 的 `AfterAgent`、OpenCode 的 `session.status` idle），完成時機更接近真實狀態。
 - **Hook** 不需要為對應工具長期常駐背景監聽器，空閒開銷更低。
 - **Watch** 是通用兜底方案，適合 Codex，也適合尚未配置 Hook 的場景。
 
@@ -129,7 +129,7 @@ npm run dist:mac:dmg
 
 - **頂部列**：語言切換、Watch 監聽開關、視窗控制。
 - **通道設定**：設定 Webhook、Telegram、Email、桌面通知與聲音。
-- **來源設定**：分別設定 Claude / Codex / OpenCode / Gemini 的啟用狀態與耗時閾值。
+- **來源設定**：分別設定 Claude / Codex / OpenCode / Gemini / ZCode 的啟用狀態與耗時閾值。
 - **監聽設定**：設定輪詢間隔與去抖時間。
 - **確認提醒（預設關閉）**：僅在 Codex 出現需要選擇 / 提交的互動提示時提醒。
 - **AI 摘要**：設定 API URL、Key、模型與逾時回退。
@@ -190,7 +190,12 @@ node ai-reminder.js hooks install --target opencode
 
 # 安裝 Herdr 插件（herdr-ai-notify）並自動寫入設定
 node ai-reminder.js hooks install --target herdr
+
+# 安裝 ZCode Hook（使用者層級；自動啟用 ZCode 的 hooks runner）
+node ai-reminder.js hooks install --target zcode
 ```
+
+ZCode 僅走 Hook、沒有 Watch 路徑：安裝會在使用者層級的 `~/.zcode/cli/config.json` 註冊原生 `Stop` 處理器，自動啟用 ZCode 的 hooks runner 並合併既有設定；解除安裝只移除本工具的 handler；來源預設關閉（`sources.zcode.enabled`）。
 
 ### 可選第三方工具（Herdr）
 
@@ -256,6 +261,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # CODEX_WEBHOOK_URLS=https://example.com/codex-hook
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
+# ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
 NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
@@ -312,7 +318,7 @@ macOS 建議：
 - `notify` 會忽略耗時閾值並直接發送提醒。
 - Webhook 預設使用飛書 post 格式；企業微信 / 釘釘會自動使用文字格式。
 - 手環 / 手錶提醒通常透過手機通知同步、Webhook 中轉、Telegram 或 Email 間接實現。
-- Hooks / 插件模式較適合 Claude Code / Gemini CLI / OpenCode；Watch 主要保留給 Codex 或兜底場景。
+- Hooks / 插件模式較適合 Claude Code / Gemini CLI / OpenCode / ZCode；Watch 主要保留給 Codex 或兜底場景。
 
 ## 版本歷史
 
@@ -320,6 +326,13 @@ macOS 建議：
 <summary>展開 / 收合版本歷史</summary>
 
 > `v2.x` 是目前的 Tauri 桌面版本線；`v1.x` 是舊 Electron 版本線。完整舊版本歷史可參考 [English](README.md) 或 [简体中文](README_zh.md)。
+
+### 2.17.0
+
+- 新增 ZCode 作為第一梯隊、僅 Hook 的來源。一條 `hooks install --target zcode` 即可把本工具註冊為 ZCode 原生 `Stop` 處理器，寫入使用者層級的 `~/.zcode/cli/config.json`，自動啟用 ZCode 的 hooks runner（`hooks.enabled`），並合併既有 hooks 與未知設定；解除安裝只移除本工具的 Stop 處理器。
+- ZCode 來源預設關閉，擁有獨立的啟用開關、耗時閾值與分來源管道（`sources.zcode`），支援 `ZCODE_WEBHOOK_URLS` 環境變數，並相容 AI 摘要。
+- Stop 處理器以直接程序方式執行（不經過 shell），確保 Windows 可靠性；不向 stdout 輸出任何內容（ZCode 會把 hook 的 stdout 驗證為嚴格 JSON）。通知內容優先使用回覆預覽，缺失時回退為專案目錄名稱；同一輪次內重複的 Stop 續跑會透過去重合併。
+- ZCode 沒有 Watch 路徑：`watch --sources all` 行為不變，「僅 Watch」通知模式也不會遮蔽 ZCode 的 Hook 提醒。桌面應用新增 ZCode 來源卡片與 Hooks 面板控制，並提供英文與簡體中文介面文案。
 
 ### 2.16.0
 

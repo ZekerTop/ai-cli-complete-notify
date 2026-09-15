@@ -72,8 +72,9 @@ function shouldSkipByNotificationMode({ sourceName, fromHook, notificationMode }
   const hookCapable = sourceName === 'claude' || sourceName === 'gemini';
 
   // Codex has no hooks path and always uses watch.
-  // OpenCode / Herdr have no watch path and always use plugin hooks.
-  if (sourceName === 'codex' || sourceName === 'opencode' || sourceName === 'herdr') {
+  // OpenCode / Herdr / ZCode have no watch path and always use hooks, so a
+  // mode meant to gate log polling must never silence their only signal.
+  if (sourceName === 'codex' || sourceName === 'opencode' || sourceName === 'herdr' || sourceName === 'zcode') {
     return null;
   }
 

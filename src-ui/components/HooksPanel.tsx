@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppConfig, HookStatus } from '@/lib/types';
+import type { AppConfig, HookStatus, HookTarget } from '@/lib/types';
 import { sidecar } from '@/lib/sidecar';
 import Panel from './ui/Panel';
-
-type HookTarget = 'claude' | 'gemini' | 'opencode';
 
 interface HooksState {
   status: HookStatus | null;
@@ -26,6 +24,7 @@ const TARGETS: { key: HookTarget; title: string; descKey: string }[] = [
   { key: 'claude', title: 'Claude Code', descKey: 'hooks.claude.desc' },
   { key: 'gemini', title: 'Gemini CLI', descKey: 'hooks.gemini.desc' },
   { key: 'opencode', title: 'OpenCode', descKey: 'hooks.opencode.desc' },
+  { key: 'zcode', title: 'ZCode', descKey: 'hooks.zcode.desc' },
 ];
 
 const MODE_OPTIONS: {
@@ -44,11 +43,13 @@ export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChang
     claude: '',
     gemini: '',
     opencode: '',
+    zcode: '',
   });
   const [loading, setLoading] = useState<Record<HookTarget, boolean>>({
     claude: false,
     gemini: false,
     opencode: false,
+    zcode: false,
   });
 
   useEffect(() => {

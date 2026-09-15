@@ -193,7 +193,8 @@ const SOURCE_WEBHOOK_ENV_NAMES = Object.freeze({
   claude: 'CLAUDE_WEBHOOK_URLS',
   codex: 'CODEX_WEBHOOK_URLS',
   gemini: 'GEMINI_WEBHOOK_URLS',
-  opencode: 'OPENCODE_WEBHOOK_URLS'
+  opencode: 'OPENCODE_WEBHOOK_URLS',
+  zcode: 'ZCODE_WEBHOOK_URLS'
 });
 
 function readConfigUrls(value) {

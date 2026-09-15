@@ -16,6 +16,7 @@ const {
   getGeminiHookNotificationContext,
   getHerdrHookNotificationContext,
   getOpenCodeHookNotificationContext,
+  getZcodeHookNotificationContext,
 } = require('./hook-context');
 const { exec, spawn } = require('child_process');
 const path = require('path');
@@ -40,22 +41,22 @@ function printHelp() {
   ${invoke} paths
   ${invoke} env-status [--create-example]
   ${invoke} hooks  status    [--target herdr]
-  ${invoke} hooks  install   --target claude|gemini|opencode|herdr
-  ${invoke} hooks  uninstall --target claude|gemini|opencode|herdr
-  ${invoke} hooks  preview   --target claude|gemini|opencode|herdr
+  ${invoke} hooks  install   --target claude|gemini|opencode|herdr|zcode
+  ${invoke} hooks  uninstall --target claude|gemini|opencode|herdr|zcode
+  ${invoke} hooks  preview   --target claude|gemini|opencode|herdr|zcode
   ${invoke} config
 
 说明:
-  - source 支持: claude / codex / opencode / gemini / herdr
+  - source 支持: claude / codex / opencode / gemini / herdr / zcode
   - 阈值提醒建议使用 start/stop（自动计算耗时）
   - 最省事的接入方式是 run：由 ${PRODUCT_NAME} 负责计时并在命令结束后提醒
   - 交互式 / VSCode 插件场景建议使用 watch：自动监听本机日志并在每次回复完成后提醒（Claude / Codex / Gemini）
-  - hooks：Claude Code / Gemini CLI 使用原生 hooks；OpenCode 通过全局 plugin 接收 session.status idle / session.idle / session.error 事件；Herdr 通过 herdr plugin install 安装 herdr-ai-notify 插件并写入 AI_REMINDER_PATH 配置
+  - hooks：Claude Code / Gemini CLI 使用原生 hooks；OpenCode 通过全局 plugin 接收 session.status idle / session.idle / session.error 事件；Herdr 通过 herdr plugin install 安装 herdr-ai-notify 插件并写入 AI_REMINDER_PATH 配置；ZCode 通过用户级 config.json 注册 Stop process hook（安装时会自动启用 hooks runner）
 
 配置:
   - settings: ${getConfigPath()}
   - dataDir: ${getDataDir()}
-  - env: WEBHOOK_URLS, <SOURCE>_WEBHOOK_URLS (CLAUDE/CODEX/GEMINI/OPENCODE), TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_HOST/EMAIL_USER/EMAIL_PASS/EMAIL_FROM/EMAIL_TO
+  - env: WEBHOOK_URLS, <SOURCE>_WEBHOOK_URLS (CLAUDE/CODEX/GEMINI/OPENCODE/ZCODE), TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_HOST/EMAIL_USER/EMAIL_PASS/EMAIL_FROM/EMAIL_TO
 `);
 }
 
@@ -74,7 +75,7 @@ function sleep(ms) {
 }
 
 function isValidHookTarget(target) {
-  return target === 'claude' || target === 'gemini' || target === 'opencode' || target === 'herdr';
+  return target === 'claude' || target === 'gemini' || target === 'opencode' || target === 'herdr' || target === 'zcode';
 }
 
 async function runCli(argv) {
@@ -217,7 +218,7 @@ async function runCli(argv) {
 
     if (subCommand === 'install') {
       if (!isValidHookTarget(target)) {
-        console.error('请指定 --target claude / gemini / opencode / herdr');
+        console.error('请指定 --target claude / gemini / opencode / herdr / zcode');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = installHook(target);
@@ -231,7 +232,7 @@ async function runCli(argv) {
 
     if (subCommand === 'uninstall') {
       if (!isValidHookTarget(target)) {
-        console.error('请指定 --target claude / gemini / opencode / herdr');
+        console.error('请指定 --target claude / gemini / opencode / herdr / zcode');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = uninstallHook(target);
@@ -341,12 +342,17 @@ async function runCli(argv) {
 
   if (command === 'notify') {
     const fromHook = Boolean(flags['from-hook']);
+    // ZCode validates hook stdout as strict JSON (any extra output fails the
+    // hook run), so hook-mode notifications must print NOTHING to stdout —
+    // stricter than Gemini, which expects a literal `{}`.
+    const isZcodeHook = fromHook && source === 'zcode';
     const isGeminiHook = fromHook && source === 'gemini';
+    const silentStdoutHook = isZcodeHook || isGeminiHook;
     const originalLog = console.log;
     const durationMinutes = toNumberOrNull(flags['duration-minutes']);
     const durationMs = durationMinutes != null ? durationMinutes * 60 * 1000 : toNumberOrNull(flags['duration-ms']);
 
-    if (isGeminiHook) {
+    if (silentStdoutHook) {
       console.log = (...args) => console.error(...args);
     }
 
@@ -371,7 +377,9 @@ async function runCli(argv) {
               ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
               : fromHook && source === 'herdr'
                 ? getHerdrHookNotificationContext(hookContext, effectiveTask)
-                : null;
+                : fromHook && source === 'zcode'
+                  ? getZcodeHookNotificationContext(hookContext, effectiveTask)
+                  : null;
 
       if (hookNotificationContext && hookNotificationContext.skip) {
         const skipped = {
@@ -404,9 +412,11 @@ async function runCli(argv) {
       printResult(result);
       return { ok: true, mode: 'notify', result };
     } finally {
-      if (isGeminiHook) {
+      if (silentStdoutHook) {
         console.log = originalLog;
-        originalLog('{}');
+        if (isGeminiHook) {
+          originalLog('{}');
+        }
       }
     }
   }

@@ -32,7 +32,7 @@ const DEFAULT_CONFIG = {
     // 'hooks' = hybrid: Claude/Gemini/OpenCode prefer hooks/plugins, Codex uses watch;
 //           both paths may fire and content-based dedupe collapses duplicates.
 // 'watch' = watch-only for Claude/Gemini (installed hooks are suppressed);
-//           OpenCode still uses its plugin (no watch path); Codex stays on watch.
+//           OpenCode/Herdr/ZCode have no watch path and their hooks stay live.
     notificationMode: 'hooks',
     hideDockIcon: false,
   },
@@ -155,6 +155,21 @@ const DEFAULT_CONFIG = {
     },
     gemini: {
       enabled: true,
+      minDurationMinutes: 0,
+      webhookUrls: [],
+      channels: {
+        webhook: true,
+        telegram: false,
+        sound: true,
+        desktop: true,
+        email: false,
+        gotify: false
+      }
+    },
+    zcode: {
+      // Hooks-only source (native Stop event, no watch path); ships disabled
+      // so upgrading users see no behavior change until they opt in.
+      enabled: false,
       minDurationMinutes: 0,
       webhookUrls: [],
       channels: {

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 function normalizeText(text) {
   return String(text || '')
@@ -339,6 +340,62 @@ function getHerdrHookNotificationContext(hookContext, defaultTaskInfo) {
   });
 }
 
+function firstNonEmptyString(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+function getZcodeHookNotificationContext(hookContext, defaultTaskInfo) {
+  if (!hookContext || typeof hookContext !== 'object') return null;
+
+  // Stop is ZCode's only completion event; the handler is registered for
+  // nothing else, and a non-Stop payload must never produce a notification.
+  const eventName = String(hookContext.hook_event_name || '').trim();
+  if (eventName !== 'Stop') return null;
+
+  // ZCode's stdin payload schema is undocumented, but it injects documented
+  // Claude-compatible variables, so both name families are probed and every
+  // field is tolerated-absent.
+  const cwd = firstNonEmptyString(
+    hookContext.cwd,
+    process.env.ZCODE_PROJECT_DIR,
+    process.env.CLAUDE_PROJECT_DIR,
+    process.cwd(),
+  );
+  const projectName = path.basename(cwd) || 'ZCode';
+  const assistantText = normalizeText(firstNonEmptyString(
+    hookContext.response,
+    hookContext.output_content,
+    hookContext.assistant_message,
+    hookContext.last_assistant_message,
+  ));
+  const content = assistantText || projectName;
+  const sessionScope = firstNonEmptyString(
+    hookContext.session_id,
+    hookContext.sessionId,
+    process.env.ZCODE_SESSION_ID,
+    process.env.CLAUDE_SESSION_ID,
+    projectName,
+  );
+  const defaultTask = String(defaultTaskInfo || '').trim();
+
+  const context = {
+    taskInfo: defaultTask && defaultTask !== '任务已完成' ? defaultTask : 'ZCode 完成',
+    outputContent: content,
+    // Session-scoped so repeatable Stop continuations collapse through dedupe
+    // while different sessions with identical output still notify.
+    dedupeKey: `zcode-complete:${sessionScope}:${content}`,
+    skipSummary: !assistantText,
+    delayMs: 0,
+  };
+  if (assistantText) {
+    context.summaryContext = { assistantMessage: assistantText };
+  }
+  return context;
+}
+
 function normalizeGeminiSessionScope(scopeInput) {
   if (scopeInput == null) return '';
   if (typeof scopeInput === 'string' || typeof scopeInput === 'number') {
@@ -439,6 +496,7 @@ module.exports = {
   getGeminiHookNotificationContext,
   getHerdrHookNotificationContext,
   getOpenCodeHookNotificationContext,
+  getZcodeHookNotificationContext,
   looksLikeClaudeFailure,
   normalizeGeminiSessionScope,
 };

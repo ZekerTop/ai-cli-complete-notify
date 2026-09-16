@@ -771,9 +771,17 @@ Issues and Pull Requests are welcome!
 
 Thanks to everyone who has contributed to this project through code, documentation, feedback, and ideas.
 
-<a href="https://github.com/ZekerTop/ai-cli-complete-notify/graphs/contributors">
- <img alt="Contributors" src="https://contrib.rocks/image?repo=ZekerTop/ai-cli-complete-notify&max=100&columns=12&anon=0" />
-</a>
+<p>
+  <a href="https://github.com/ZekerTop"><img src="https://avatars.githubusercontent.com/u/74919690?v=4&s=64" width="64" height="64" alt="ZekerTop" title="ZekerTop" /></a>
+  <a href="https://github.com/claude-notes"><img src="https://avatars.githubusercontent.com/u/208144119?v=4&s=64" width="64" height="64" alt="claude-notes" title="claude-notes" /></a>
+  <a href="https://github.com/8liang"><img src="https://avatars.githubusercontent.com/u/4822347?v=4&s=64" width="64" height="64" alt="8liang" title="8liang" /></a>
+  <a href="https://github.com/Atoony"><img src="https://avatars.githubusercontent.com/u/25926468?v=4&s=64" width="64" height="64" alt="Atoony" title="Atoony" /></a>
+  <a href="https://github.com/Windyskr"><img src="https://avatars.githubusercontent.com/u/54269955?v=4&s=64" width="64" height="64" alt="Windyskr" title="Windyskr" /></a>
+  <a href="https://github.com/Bbbbqsh"><img src="https://avatars.githubusercontent.com/u/144756694?v=4&s=64" width="64" height="64" alt="Bbbbqsh" title="Bbbbqsh" /></a>
+  <a href="https://github.com/WALKERKILLER"><img src="https://avatars.githubusercontent.com/u/189623296?v=4&s=64" width="64" height="64" alt="WALKERKILLER" title="WALKERKILLER" /></a>
+  <a href="https://github.com/quecai-niu"><img src="https://avatars.githubusercontent.com/u/114210016?v=4&s=64" width="64" height="64" alt="quecai-niu" title="quecai-niu" /></a>
+  <a href="https://github.com/lishangwl"><img src="https://avatars.githubusercontent.com/u/39029051?v=4&s=64" width="64" height="64" alt="lishangwl" title="lishangwl" /></a>
+</p>
 
 ## 🔗 Links
 

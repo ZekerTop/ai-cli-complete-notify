@@ -72,6 +72,7 @@ async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
   const key = createHash('sha256').update(dedupeKey).digest('hex');
   const claimDir = path.join(root, key);
   fs.mkdirSync(root, { recursive: true });
+  let renameRetries = 0;
 
   for (;;) {
     const state = inspectClaim(claimDir, dedupeMs, leaseMs);
@@ -86,15 +87,19 @@ async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
     const temporaryDir = path.join(root, `.${key}-${token}`);
     const owner = { pid: process.pid, status: 'pending' };
     fs.mkdirSync(temporaryDir);
-    const fd = fs.openSync(path.join(temporaryDir, ownerName), 'wx+');
-    fs.writeSync(fd, JSON.stringify(owner), 0, 'utf8');
+    fs.writeFileSync(path.join(temporaryDir, ownerName), JSON.stringify(owner), { flag: 'wx' });
     try {
       // Rename a nonempty directory so acquisition has no empty-directory
       // window and can never replace another live owner's directory.
       fs.renameSync(temporaryDir, claimDir);
     } catch (error) {
-      fs.closeSync(fd);
       removeOwner(temporaryDir, ownerName);
+      // Windows scanners and recently deleted handles can temporarily prevent
+      // directory renames even after our own file has been closed.
+      if (error.code === 'EPERM' && !fs.existsSync(claimDir) && renameRetries++ < 20) {
+        await new Promise((resolve) => setTimeout(resolve, pollMs));
+        continue;
+      }
       if (!['EEXIST', 'ENOTEMPTY'].includes(error.code)
         && !(error.code === 'EPERM' && fs.existsSync(claimDir))) throw error;
       await new Promise((resolve) => setTimeout(resolve, pollMs));
@@ -109,7 +114,12 @@ async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
         return;
       }
       const now = new Date();
-      fs.futimesSync(fd, now, now);
+      try {
+        fs.utimesSync(ownerPath, now, now);
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        clearInterval(heartbeat);
+      }
     }, Math.max(10, Math.floor(leaseMs / 3)));
     heartbeat.unref();
     let completed = false;
@@ -119,10 +129,18 @@ async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
         if (completed) return false;
         completed = true;
         clearInterval(heartbeat);
+        let fd;
         try {
           if (!ownsClaim()) return false;
           if (success) {
             const data = JSON.stringify({ ...owner, status: 'success', completedAt: Date.now() });
+            // Keep handles short-lived so Windows can reclaim expired directories.
+            try {
+              fd = fs.openSync(ownerPath, 'r+');
+            } catch (error) {
+              if (error.code === 'ENOENT') return false;
+              throw error;
+            }
             // Write through our descriptor: a stale owner cannot update a
             // replacement generation, even if it resumes after lease expiry.
             fs.writeSync(fd, data, 0, 'utf8');
@@ -132,7 +150,7 @@ async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
           }
           return true;
         } finally {
-          fs.closeSync(fd);
+          if (fd !== undefined) fs.closeSync(fd);
         }
       }
     };

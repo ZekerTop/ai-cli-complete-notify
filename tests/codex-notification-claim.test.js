@@ -10,6 +10,16 @@ const workerSource = String.raw`
 const fs = require('node:fs');
 const path = require('node:path');
 const options = JSON.parse(process.env.CODEX_CLAIM_TEST_OPTIONS);
+if (options.renameFailures) {
+  const rename = fs.renameSync;
+  let remaining = options.renameFailures;
+  fs.renameSync = (...args) => {
+    if (remaining-- > 0) {
+      throw Object.assign(new Error('Temporary Windows rename contention'), { code: 'EPERM' });
+    }
+    return rename(...args);
+  };
+}
 if (options.clockOffsetMs) {
   const realNow = Date.now;
   Date.now = () => realNow() + options.clockOffsetMs;
@@ -229,6 +239,18 @@ test('Codex claims keep successful records for distinct turns written concurrent
   const probeResults = await Promise.all(probes.map((probe) => waitFor(probe, 'result')));
   assert.equal(probeResults.every((result) => result.status === 'skipped'), true);
   assert.equal(harness.deliveries().length, keys.length);
+});
+
+test('Codex claims recover from temporary Windows rename contention', { timeout: 15000 }, async (t) => {
+  const harness = createHarness(t);
+  const owner = harness.worker('owner', 'codex-complete:windows-rename', { renameFailures: 2 });
+  await startTogether([owner]);
+  await waitFor(owner, 'acquired');
+  assert.equal((await complete(owner)).status, 'success');
+  const probe = harness.worker('probe', 'codex-complete:windows-rename');
+  await startTogether([probe]);
+  assert.equal((await waitFor(probe, 'result')).status, 'skipped');
+  assert.deepEqual(harness.deliveries(), ['owner.json']);
 });
 
 test('Codex waiting candidate recovers when its owner process exits unexpectedly', { timeout: 15000 }, async (t) => {

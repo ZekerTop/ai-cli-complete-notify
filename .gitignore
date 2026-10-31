@@ -57,3 +57,6 @@ src-tauri/binaries/ai-reminder-*
 src-tauri/binaries/*.exe
 src-tauri/gen/
 src-tauri/resources/
+
+AI_tests/
+AI_Success_Log/

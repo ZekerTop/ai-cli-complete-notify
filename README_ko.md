@@ -25,7 +25,7 @@
       <a href="https://ai-chongzhi.com/"><img src="https://ai-chongzhi.com/img/icon.svg" alt="ai-chongzhi" width="100" /></a><br />
       <a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>
     </td>
-    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>는 본인 계정의 ChatGPT Plus / Pro 충전 서비스를 제공하며, WeChat Pay와 Alipay 결제, 셀프 주문 및 주문 진행 상황 조회를 지원합니다. 이 오픈소스 프로젝트를 후원해 주셔서 감사합니다.</td>
+    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>는 본인 계정의 ChatGPT Plus / Pro 충전 서비스를 제공하며, WeChat Pay와 Alipay 결제, 셀프 주문 및 주문 진행 상황 조회를 지원합니다. Claude, Grok, Google Gemini, Muse 등의 AI 서비스도 제공합니다. 이 오픈소스 프로젝트를 후원해 주셔서 감사합니다.</td>
   </tr>
 </table>
 

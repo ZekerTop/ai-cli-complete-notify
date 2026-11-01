@@ -25,7 +25,7 @@
       <a href="https://ai-chongzhi.com/"><img src="https://ai-chongzhi.com/img/icon.svg" alt="ai-chongzhi" width="100" /></a><br />
       <a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>
     </td>
-    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a> 提供 ChatGPT Plus / Pro 自有帳號儲值服務，支援微信支付與支付寶、自助下單及訂單進度查詢。感謝其對本開源專案的支持。</td>
+    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a> 提供 ChatGPT Plus / Pro 自有帳號儲值服務，支援微信支付與支付寶、自助下單及訂單進度查詢。另有 Claude、Grok、Google Gemini、Muse 等 AI 服務。感謝其對本開源專案的支持。</td>
   </tr>
 </table>
 

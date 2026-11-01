@@ -24,7 +24,7 @@ English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한�
       <a href="https://ai-chongzhi.com/"><img src="https://ai-chongzhi.com/img/icon.svg" alt="ai-chongzhi" width="100" /></a><br />
       <a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>
     </td>
-    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a> offers ChatGPT Plus / Pro top-ups for your own account, with WeChat Pay and Alipay, self-service ordering, and order tracking. Thank you for supporting this open-source project.</td>
+    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a> offers ChatGPT Plus / Pro top-ups for your own account, with WeChat Pay and Alipay, self-service ordering, and order tracking. It also offers AI services including Claude, Grok, Google Gemini, and Muse. Thank you for supporting this open-source project.</td>
   </tr>
 </table>
 

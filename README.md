@@ -21,10 +21,10 @@ English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한�
 <table>
   <tr>
     <td align="center" width="180">
-      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
-      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+      <a href="https://ai-chongzhi.com/"><img src="https://ai-chongzhi.com/img/icon.svg" alt="ai-chongzhi" width="100" /></a><br />
+      <a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>
     </td>
-    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> offers ChatGPT Plus / Pro purchase and upgrade guides, plan-selection advice, FAQs and self-service troubleshooting, with WeChat Pay and Alipay payment options. Thank you for supporting this open-source project.</td>
+    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a> offers ChatGPT Plus / Pro top-ups for your own account, with WeChat Pay and Alipay, self-service ordering, and order tracking. Thank you for supporting this open-source project.</td>
   </tr>
 </table>
 

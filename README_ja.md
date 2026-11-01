@@ -22,10 +22,10 @@
 <table>
   <tr>
     <td align="center" width="180">
-      <a href="https://gptplus.uno"><img src="https://www.gptplus.uno/image/logo.png" alt="gptplus.uno" width="100" /></a><br />
-      <a href="https://gptplus.uno"><strong>gptplus.uno</strong></a>
+      <a href="https://ai-chongzhi.com/"><img src="https://ai-chongzhi.com/img/icon.svg" alt="ai-chongzhi" width="100" /></a><br />
+      <a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a>
     </td>
-    <td><a href="https://gptplus.uno"><strong>gptplus.uno</strong></a> は、ChatGPT Plus / Pro の購入・アップグレードガイド、プラン選びのアドバイス、FAQ、セルフトラブルシューティングを提供し、WeChat Pay と Alipay での支払いに対応しています。本オープンソースプロジェクトへのご支援に感謝します。</td>
+    <td><a href="https://ai-chongzhi.com/"><strong>ai-chongzhi</strong></a> は、ご自身のアカウント向けに ChatGPT Plus / Pro のチャージサービスを提供し、WeChat Pay と Alipay による決済、セルフサービスでの注文、注文状況の確認に対応しています。本オープンソースプロジェクトへのご支援に感謝します。</td>
   </tr>
 </table>
 

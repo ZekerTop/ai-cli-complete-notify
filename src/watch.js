@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
@@ -644,15 +644,27 @@ function summarizeResult(result) {
   if (result.skipped) return `skipped: ${result.reason || ''}`.trim();
   const ok = Array.isArray(result.results) ? result.results.filter((r) => r && r.ok).length : 0;
   const total = Array.isArray(result.results) ? result.results.length : 0;
+  const failures = (Array.isArray(result.results) ? result.results : [])
+    .filter((entry) => entry && !entry.ok)
+    .map((entry) => `${entry.channel || 'unknown'}: ${entry.error || 'delivery failed'}`)
+    .join('; ')
+    .replace(/https?:\/\/\S+/gi, '<redacted URL>')
+    .replace(/\b(token|secret|access_token)=\S+/gi, '$1=<redacted>');
+  const delivery = `sent: ${ok}/${total}${failures ? ` errors: ${failures}` : ''}`;
   const summary = result.summary && typeof result.summary === 'object' ? result.summary : null;
-  if (!summary) return `sent: ${ok}/${total}`;
-  if (summary.used) return `sent: ${ok}/${total} summary: used`;
-  if (summary.skipped) return `sent: ${ok}/${total} summary: skipped`;
+  if (!summary) return delivery;
+  if (summary.used) return `${delivery} summary: used`;
+  if (summary.skipped) return `${delivery} summary: skipped`;
   const detail = [
     summary.error ? String(summary.error) : 'fallback',
     summary.status ? `HTTP ${summary.status}` : ''
   ].filter(Boolean).join(' ');
-  return `sent: ${ok}/${total} summary: ${detail}`;
+  return `${delivery} summary: ${detail}`;
+}
+
+function notificationDelivered(result) {
+  return Boolean(result && (result.results?.some((entry) => entry && entry.ok)
+    || (result.skipped && String(result.reason || '').startsWith('duplicate notification suppressed'))));
 }
 
 async function maybeNotifyConfirm({
@@ -685,9 +697,6 @@ async function maybeNotifyConfirm({
   const key = turnId ? `${turnId}::${keyBase}` : keyBase;
   const now = Date.now();
   if (state && state.lastConfirmKey === key && now - (state.lastConfirmAt || 0) < CONFIRM_DEDUPE_MS) return false;
-  if (state) state.lastConfirmKey = key;
-  if (state) state.lastConfirmAt = now;
-  if (state && markTurnConfirmed) state.confirmNotifiedForTurn = true;
 
   const taskInfo = buildConfirmTaskInfo(normalized);
   const result = await sendNotifications({
@@ -702,6 +711,10 @@ async function maybeNotifyConfirm({
   });
   const suffix = tag ? ` (${tag})` : '';
   logger(`[watch][confirm:${source}] ${summarizeResult(result)}${suffix}`);
+  if (!notificationDelivered(result)) return false;
+  if (state) state.lastConfirmKey = key;
+  if (state) state.lastConfirmAt = now;
+  if (state && markTurnConfirmed) state.confirmNotifiedForTurn = true;
   return true;
 }
 
@@ -1114,7 +1127,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
     const pushOptions = (options) => {
       const labels = Array.isArray(options)
         ? options
-          .map((o) => (o && typeof o.label === 'string' ? o.label.trim() : ''))
+          .map((o) => (typeof o === 'string' ? o.trim() : o && typeof o.label === 'string' ? o.label.trim() : ''))
           .filter(Boolean)
         : [];
       if (labels.length) lines.push(`选项: ${labels.join(' / ')}`);
@@ -1123,7 +1136,8 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
     if (questions.length) {
       for (const q of questions) {
         const header = q && typeof q.header === 'string' ? q.header.trim() : '';
-        const question = q && typeof q.question === 'string' ? q.question.trim() : '';
+        const question = q && typeof q.question === 'string' ? q.question.trim()
+          : q && typeof q.title === 'string' ? q.title.trim() : '';
         if (header) lines.push(header);
         if (question) lines.push(ensureQuestion(question));
         pushOptions(q && q.options);
@@ -1174,13 +1188,14 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       ...candidate.notification,
       dedupeKey: buildCodexCompletionDedupeKey(candidate.state?.sessionId, candidate.turnId || candidate.state?.currentTurnId) || undefined,
     });
-    if (candidate.state) {
+    const delivered = notificationDelivered(result);
+    if (candidate.state && delivered) {
       candidate.state.lastNotifiedAssistantAt = candidate.assistantAt;
       if (candidate.turnId) candidate.state.lastNotifiedTurnId = candidate.turnId;
       candidate.state.confirmNotifiedForTurn = true;
     }
     logger(`[watch][codex] ${summarizeResult(result)} (${candidate.logReason || 'task_complete'})`);
-    return true;
+    return delivered;
   }
 
   function buildRequestUserInputDedupeKey(payload, ts) {
@@ -1593,16 +1608,15 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
         return;
       }
 
-      // Codex Plan mode interactive prompts: request_user_input (single-choice / submit UI).
-      // These are emitted as a tool call item (e.g. `function_call` / `custom_tool_call`) with name `request_user_input`.
+      // Codex synchronous and desktop asynchronous question prompts.
       if (
         obj.type === 'response_item'
         && obj.payload
         && ['function_call', 'custom_tool_call', 'tool_use'].includes(obj.payload.type)
         && (
-          obj.payload.name === 'request_user_input'
-          || obj.payload.function_name === 'request_user_input'
-          || (obj.payload.function && obj.payload.function.name === 'request_user_input')
+          ['request_user_input', 'request_user_input_async'].includes(obj.payload.name)
+          || ['request_user_input', 'request_user_input_async'].includes(obj.payload.function_name)
+          || (obj.payload.function && ['request_user_input', 'request_user_input_async'].includes(obj.payload.function.name))
         )
       ) {
         clearPendingCompletion();

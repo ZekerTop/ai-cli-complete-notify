@@ -1,4 +1,4 @@
-﻿const { loadConfig } = require('./config');
+const { loadConfig } = require('./config');
 const { getProjectName } = require('./project-name');
 const { formatDurationMs, getSourceLabel, buildTitle } = require('./format');
 const { notifyWebhook } = require('./notifiers/webhook');
@@ -9,7 +9,7 @@ const { notifyEmail } = require('./notifiers/email');
 const { notifyGotify } = require('./notifiers/gotify');
 const { summarizeTaskDetailed } = require('./summary');
 const { focusTarget } = require('./focus');
-const { checkAndRememberNotification } = require('./state');
+const { checkAndRememberNotification, forgetNotification } = require('./state');
 const { acquireCodexNotificationClaim } = require('./codex-notification-claim');
 
 const NOTIFICATION_DEDUPE_MS = Math.max(30 * 1000, Number(process.env.NOTIFICATION_DEDUPE_MS || 2 * 60 * 1000));
@@ -331,6 +331,9 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     return { skipped: false, reason: null, results, summary: summaryDiagnostics };
   } finally {
     if (codexClaim) codexClaim.complete(notificationSucceeded);
+    if (!notificationSucceeded && !codexClaim && !skipDedupe && dedupeText && sourceName === 'codex') {
+      forgetNotification({ source: sourceName, cwd: explicitDedupeKey ? '' : cwdToUse, text: dedupeText });
+    }
   }
 }
 

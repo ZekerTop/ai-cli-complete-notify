@@ -1,4 +1,4 @@
-﻿const https = require('https');
+const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -582,7 +582,10 @@ async function buildPayloadByProvider({
         summaryUsed,
         summaryFailureText,
         templatePath: channel.cardTemplatePath,
-        outputContent: outputText
+        // Feishu Markdown images require uploaded image keys, not local paths
+        // or ordinary URLs. Keep the description instead of rejecting the card.
+        outputContent: String(outputText || '').replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+          (image, label, key) => /^img_[\w-]+$/.test(key) ? image : `[图片：${label || '请在原会话查看'}]`)
       });
       return { payload: { msg_type: 'interactive', card }, format: 'feishu_card' };
     }
@@ -684,7 +687,12 @@ async function notifyWebhook({ config, title, contentText, projectName, timestam
       channel
     });
     // eslint-disable-next-line no-await-in-loop
-    const r = await sendWebhook(url, payload, provider);
+    let r = await sendWebhook(url, payload, provider);
+    for (let attempt = 0; !r.ok && attempt < 2
+      && (r.status === 429 || r.status >= 500); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      r = await sendWebhook(url, payload, provider);
+    }
     results.push({ url, provider, format, ...r });
   }
 

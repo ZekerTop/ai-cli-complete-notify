@@ -98,11 +98,19 @@ function checkAndRememberNotification({ source, cwd, text, dedupeMs }) {
   return duplicated;
 }
 
+function forgetNotification({ source, cwd, text }) {
+  const fingerprint = makeNotificationFingerprint({ source, cwd, text });
+  const state = loadState();
+  state.recentNotifications = state.recentNotifications.filter((entry) => entry.fingerprint !== fingerprint);
+  saveState(state);
+}
+
 module.exports = {
   STATE_PATH,
   markTaskStart,
   consumeTaskStart,
   makeTaskKey,
   loadState,
-  checkAndRememberNotification
+  checkAndRememberNotification,
+  forgetNotification
 };

@@ -1269,6 +1269,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       // Plan mode interactive prompts (`request_user_input`) mean the turn ends waiting for user input.
       // We should never treat that as "task completed".
       interactionRequiredForTurn: false,
+      pendingAsyncRequestUserInput: false,
       pendingRequestUserInputCallIds: new Set(),
       pendingRequestUserInputWithoutId: 0,
       lastInteractionResolvedAt: null,
@@ -1591,6 +1592,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
             state.lastConfirmKey = '';
             state.confirmNotifiedForTurn = false;
             state.interactionRequiredForTurn = false;
+            state.pendingAsyncRequestUserInput = false;
             state.pendingRequestUserInputCallIds.clear();
             state.pendingRequestUserInputWithoutId = 0;
             state.lastInteractionResolvedAt = null;
@@ -1614,6 +1616,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
         state.lastConfirmKey = '';
         state.confirmNotifiedForTurn = false;
         state.interactionRequiredForTurn = false;
+        state.pendingAsyncRequestUserInput = false;
         state.pendingRequestUserInputCallIds.clear();
         state.pendingRequestUserInputWithoutId = 0;
         state.lastInteractionResolvedAt = null;
@@ -1639,6 +1642,13 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       ) {
         clearPendingCompletion();
         state.interactionRequiredForTurn = true;
+        if (
+          obj.payload.name === 'request_user_input_async'
+          || obj.payload.function_name === 'request_user_input_async'
+          || (obj.payload.function && obj.payload.function.name === 'request_user_input_async')
+        ) {
+          state.pendingAsyncRequestUserInput = true;
+        }
         state.lastInteractionResolvedAt = null;
         {
           const requestCallId =
@@ -1708,6 +1718,8 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
         if (
           state.pendingRequestUserInputCallIds.size === 0
           && state.pendingRequestUserInputWithoutId === 0
+          // Async tool output acknowledges the prompt; the reply arrives in a new user turn.
+          && !state.pendingAsyncRequestUserInput
         ) {
           state.interactionRequiredForTurn = false;
           state.lastInteractionResolvedAt = ts != null ? ts : Date.now();
@@ -1767,6 +1779,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
           state.lastConfirmKey = '';
           state.confirmNotifiedForTurn = false;
           state.interactionRequiredForTurn = false;
+          state.pendingAsyncRequestUserInput = false;
           state.pendingRequestUserInputCallIds.clear();
           state.pendingRequestUserInputWithoutId = 0;
           state.lastInteractionResolvedAt = null;
@@ -1912,6 +1925,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
           state.lastConfirmKey = '';
           state.confirmNotifiedForTurn = false;
           state.interactionRequiredForTurn = false;
+          state.pendingAsyncRequestUserInput = false;
           state.pendingRequestUserInputCallIds.clear();
           state.pendingRequestUserInputWithoutId = 0;
           state.lastInteractionResolvedAt = null;

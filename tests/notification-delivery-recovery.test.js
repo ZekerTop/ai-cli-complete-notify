@@ -83,3 +83,65 @@ test('failed Codex confirmation releases its dedupe record for a later attempt',
   const code=await new Promise(r=>child.on('close',r));
   assert.equal(code,0,output);assert.equal(attempts,4);
 });
+
+test('late failed Codex attempt preserves a newer successful dedupe record', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'notify-late-failure-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({
+    version: 2,
+    ui: { notificationMode: 'hooks' },
+    summary: { enabled: false },
+    channels: Object.fromEntries(['webhook', 'telegram', 'desktop', 'sound', 'email', 'gotify']
+      .map(channel => [channel, { enabled: channel === 'webhook' }])),
+    sources: { codex: { enabled: true, minDurationMinutes: 0, channels: { webhook: true } } },
+  }));
+  const source = `
+    const assert = require('node:assert/strict');
+    let attempts = 0;
+    let finishFirst;
+    let markStarted;
+    const firstStarted = new Promise(resolve => { markStarted = resolve; });
+    const webhookPath = require.resolve(${JSON.stringify(path.resolve(__dirname, '../src/notifiers/webhook'))});
+    require.cache[webhookPath] = { id: webhookPath, filename: webhookPath, loaded: true, exports: {
+      notifyWebhook: () => {
+        attempts += 1;
+        if (attempts !== 1) return Promise.resolve({ ok: true });
+        return new Promise(resolve => { finishFirst = resolve; markStarted(); });
+      },
+    } };
+    const { sendNotifications } = require(${JSON.stringify(path.resolve(__dirname, '../src/engine'))});
+    let now = Date.now();
+    Date.now = () => now;
+    (async () => {
+      const args = { source: 'codex', taskInfo: 'confirmation regression',
+        outputContent: 'same question', notifyKind: 'confirm', force: true, skipSummary: true };
+      const first = sendNotifications(args);
+      await firstStarted;
+      now += 120001;
+      assert.equal((await sendNotifications(args)).results[0].ok, true);
+      finishFirst({ ok: false, error: 'late delivery failure' });
+      assert.equal((await first).results[0].ok, false);
+      assert.equal((await sendNotifications(args)).skipped, true);
+      assert.equal(attempts, 2);
+      const { checkAndRememberNotification, forgetNotification, loadState } =
+        require(${JSON.stringify(path.resolve(__dirname, '../src/state'))});
+      const legacy = { source: 'claude', cwd: 'legacy-project', text: 'legacy message', dedupeMs: 120000 };
+      assert.equal(checkAndRememberNotification(legacy), false);
+      const record = loadState().recentNotifications.find(entry => entry.fingerprint.startsWith('claude::'));
+      assert.deepEqual(Object.keys(record).sort(), ['fingerprint', 'timestamp']);
+      forgetNotification(legacy);
+      assert.equal(checkAndRememberNotification(legacy), true);
+      forgetNotification({ ...legacy, attemptToken: 'different-attempt' });
+      assert.equal(checkAndRememberNotification(legacy), true);
+      console.log('late-failure-regression-complete');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `;
+  const child = require('node:child_process').spawnSync(process.execPath, ['-e', source], {
+    env: { ...process.env, AI_CLI_COMPLETE_NOTIFY_DATA_DIR: dir, NOTIFICATION_DEDUPE_MS: '120000' },
+    windowsHide: true,
+    encoding: 'utf8',
+    timeout: 10000,
+  });
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  assert.match(child.stdout, /late-failure-regression-complete/);
+});

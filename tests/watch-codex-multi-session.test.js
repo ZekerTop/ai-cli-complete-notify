@@ -1239,7 +1239,8 @@ test('codex watch detects the first new fork turn when thread_settings_applied i
   assert.equal(notifications[0].outputContent, 'quiet fork done');
 });
 
-test('codex watch only uses explicit request_user_input for confirm alerts', async (t) => {
+for (const inputTool of ['request_user_input', 'request_user_input_async']) {
+test(`codex watch uses explicit ${inputTool} for confirm alerts`, async (t) => {
   const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-reminder-codex-confirm-home-'));
   const previousEnv = {
     CODEX_WATCH_BACKEND: process.env.CODEX_WATCH_BACKEND,
@@ -1329,9 +1330,11 @@ test('codex watch only uses explicit request_user_input for confirm alerts', asy
       type: 'response_item',
       payload: {
         type: 'function_call',
-        name: 'request_user_input',
+        name: inputTool,
         call_id: 'confirm-call',
-        arguments: JSON.stringify({ question: '请选择下一步' }),
+        arguments: JSON.stringify(inputTool === 'request_user_input_async'
+          ? { questions: [{ title: '请重新加载扩展并回复已加载', options: ['已加载', '稍后'] }] }
+          : { question: '请选择下一步' }),
       },
     },
   ]);
@@ -1339,6 +1342,10 @@ test('codex watch only uses explicit request_user_input for confirm alerts', asy
   await waitFor(() => notifications.length === 2);
   assert.equal(notifications[1].taskInfo, '确认提醒');
   assert.equal(notifications[1].notifyKind, 'confirm');
+  if (inputTool === 'request_user_input_async') {
+    assert.match(notifications[1].summaryContext.assistantMessage, /请重新加载扩展并回复已加载/);
+    assert.match(notifications[1].summaryContext.assistantMessage, /已加载 \/ 稍后/);
+  }
 
   appendJsonl(sessionFile, [
     { timestamp: 7, type: 'event_msg', payload: { type: 'task_complete', turn_id: 'turn-confirm', last_agent_message: '请选择下一步' } },
@@ -1351,3 +1358,4 @@ test('codex watch only uses explicit request_user_input for confirm alerts', asy
     `expected interaction-required skip log, got:\n${logs.join('\n')}`
   );
 });
+}

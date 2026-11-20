@@ -1,4 +1,5 @@
-﻿const { loadConfig } = require('./config');
+const { loadConfig } = require('./config');
+const { randomBytes } = require('crypto');
 const { getProjectName } = require('./project-name');
 const { formatDurationMs, getSourceLabel, buildTitle } = require('./format');
 const { notifyWebhook } = require('./notifiers/webhook');
@@ -9,7 +10,7 @@ const { notifyEmail } = require('./notifiers/email');
 const { notifyGotify } = require('./notifiers/gotify');
 const { summarizeTaskDetailed } = require('./summary');
 const { focusTarget } = require('./focus');
-const { checkAndRememberNotification } = require('./state');
+const { checkAndRememberNotification, forgetNotification } = require('./state');
 const { acquireCodexNotificationClaim } = require('./codex-notification-claim');
 
 const NOTIFICATION_DEDUPE_MS = Math.max(30 * 1000, Number(process.env.NOTIFICATION_DEDUPE_MS || 2 * 60 * 1000));
@@ -139,12 +140,14 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
   ).trim();
 
   let codexClaim = null;
+  let notificationAttemptToken;
   if (!skipDedupe && dedupeText) {
     let duplicated;
     if (sourceName === 'codex' && explicitDedupeKey.startsWith('codex-complete:')) {
       codexClaim = await acquireCodexNotificationClaim(explicitDedupeKey, { dedupeMs: NOTIFICATION_DEDUPE_MS });
       duplicated = !codexClaim;
     } else {
+      if (sourceName === 'codex') notificationAttemptToken = randomBytes(16).toString('hex');
       duplicated = checkAndRememberNotification({
         source: sourceName,
         // Explicit dedupe keys are content-scoped (e.g. Gemini hook/watch) and
@@ -153,6 +156,7 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
         cwd: explicitDedupeKey ? '' : cwdToUse,
         text: dedupeText,
         dedupeMs: NOTIFICATION_DEDUPE_MS,
+        attemptToken: notificationAttemptToken,
       });
     }
     if (duplicated) {
@@ -331,6 +335,14 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     return { skipped: false, reason: null, results, summary: summaryDiagnostics };
   } finally {
     if (codexClaim) codexClaim.complete(notificationSucceeded);
+    if (!notificationSucceeded && notificationAttemptToken) {
+      forgetNotification({
+        source: sourceName,
+        cwd: explicitDedupeKey ? '' : cwdToUse,
+        text: dedupeText,
+        attemptToken: notificationAttemptToken,
+      });
+    }
   }
 }
 

@@ -78,7 +78,7 @@ function makeNotificationFingerprint({ source, cwd, text }) {
   return `${sourcePart}::${cwdPart}::${textPart}`;
 }
 
-function checkAndRememberNotification({ source, cwd, text, dedupeMs }) {
+function checkAndRememberNotification({ source, cwd, text, dedupeMs, attemptToken }) {
   const trimmedText = String(text || '').trim();
   if (!trimmedText) return false;
 
@@ -90,12 +90,23 @@ function checkAndRememberNotification({ source, cwd, text, dedupeMs }) {
   const duplicated = recent.some((entry) => entry && entry.fingerprint === fingerprint);
 
   if (!duplicated) {
-    recent.push({ fingerprint, timestamp: now });
+    recent.push({ fingerprint, timestamp: now, ...(attemptToken ? { attemptToken } : {}) });
   }
 
   state.recentNotifications = recent;
   saveState(state);
   return duplicated;
+}
+
+function forgetNotification({ source, cwd, text, attemptToken }) {
+  if (!attemptToken) return;
+  const fingerprint = makeNotificationFingerprint({ source, cwd, text });
+  const state = loadState();
+  const recent = state.recentNotifications.filter((entry) =>
+    entry.fingerprint !== fingerprint || entry.attemptToken !== attemptToken);
+  if (recent.length === state.recentNotifications.length) return;
+  state.recentNotifications = recent;
+  saveState(state);
 }
 
 module.exports = {
@@ -104,5 +115,6 @@ module.exports = {
   consumeTaskStart,
   makeTaskKey,
   loadState,
-  checkAndRememberNotification
+  checkAndRememberNotification,
+  forgetNotification
 };

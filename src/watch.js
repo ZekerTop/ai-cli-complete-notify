@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
@@ -222,11 +222,24 @@ function findLatestFile(rootDir, isCandidate) {
   return latest;
 }
 
-function findLatestFiles(rootDir, isCandidate, limit) {
+function findLatestFiles(rootDir, isCandidate, limit, fileActivity) {
   const max = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : 1;
   const latest = [];
+  const growing = [];
+  const seen = new Set();
+  const now = Date.now();
 
   function push(item) {
+    if (fileActivity) {
+      seen.add(item.path);
+      const previous = fileActivity.get(item.path);
+      const changedAt = previous && previous.size !== item.size ? now : previous?.changedAt || 0;
+      fileActivity.set(item.path, { size: item.size, changedAt });
+      // Windows may leave mtime unchanged while Codex holds an append handle.
+      // Follow every recently growing file, even if newer chats fill the top N.
+      if (changedAt && now - changedAt < 30000) growing.push(item);
+      item.mtimeMs = Math.max(item.mtimeMs, changedAt);
+    }
     latest.push(item);
     latest.sort((a, b) => b.mtimeMs - a.mtimeMs);
     if (latest.length > max) latest.length = max;
@@ -256,7 +269,12 @@ function findLatestFiles(rootDir, isCandidate, limit) {
   }
 
   walk(rootDir);
-  return latest;
+  if (fileActivity) {
+    for (const filePath of fileActivity.keys()) {
+      if (!seen.has(filePath)) fileActivity.delete(filePath);
+    }
+  }
+  return [...new Map([...latest, ...growing].map((item) => [item.path, item])).values()];
 }
 
 function getCodexTurnIdFromObject(obj) {
@@ -644,15 +662,27 @@ function summarizeResult(result) {
   if (result.skipped) return `skipped: ${result.reason || ''}`.trim();
   const ok = Array.isArray(result.results) ? result.results.filter((r) => r && r.ok).length : 0;
   const total = Array.isArray(result.results) ? result.results.length : 0;
+  const failures = (Array.isArray(result.results) ? result.results : [])
+    .filter((entry) => entry && !entry.ok)
+    .map((entry) => `${entry.channel || 'unknown'}: ${entry.error || 'delivery failed'}`)
+    .join('; ')
+    .replace(/https?:\/\/\S+/gi, '<redacted URL>')
+    .replace(/\b(token|secret|access_token)=\S+/gi, '$1=<redacted>');
+  const delivery = `sent: ${ok}/${total}${failures ? ` errors: ${failures}` : ''}`;
   const summary = result.summary && typeof result.summary === 'object' ? result.summary : null;
-  if (!summary) return `sent: ${ok}/${total}`;
-  if (summary.used) return `sent: ${ok}/${total} summary: used`;
-  if (summary.skipped) return `sent: ${ok}/${total} summary: skipped`;
+  if (!summary) return delivery;
+  if (summary.used) return `${delivery} summary: used`;
+  if (summary.skipped) return `${delivery} summary: skipped`;
   const detail = [
     summary.error ? String(summary.error) : 'fallback',
     summary.status ? `HTTP ${summary.status}` : ''
   ].filter(Boolean).join(' ');
-  return `sent: ${ok}/${total} summary: ${detail}`;
+  return `${delivery} summary: ${detail}`;
+}
+
+function notificationDelivered(result) {
+  return Boolean(result && (result.results?.some((entry) => entry && entry.ok)
+    || (result.skipped && String(result.reason || '').startsWith('duplicate notification suppressed'))));
 }
 
 async function maybeNotifyConfirm({
@@ -685,9 +715,6 @@ async function maybeNotifyConfirm({
   const key = turnId ? `${turnId}::${keyBase}` : keyBase;
   const now = Date.now();
   if (state && state.lastConfirmKey === key && now - (state.lastConfirmAt || 0) < CONFIRM_DEDUPE_MS) return false;
-  if (state) state.lastConfirmKey = key;
-  if (state) state.lastConfirmAt = now;
-  if (state && markTurnConfirmed) state.confirmNotifiedForTurn = true;
 
   const taskInfo = buildConfirmTaskInfo(normalized);
   const result = await sendNotifications({
@@ -702,6 +729,10 @@ async function maybeNotifyConfirm({
   });
   const suffix = tag ? ` (${tag})` : '';
   logger(`[watch][confirm:${source}] ${summarizeResult(result)}${suffix}`);
+  if (!notificationDelivered(result)) return false;
+  if (state) state.lastConfirmKey = key;
+  if (state) state.lastConfirmAt = now;
+  if (state && markTurnConfirmed) state.confirmNotifiedForTurn = true;
   return true;
 }
 
@@ -1114,7 +1145,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
     const pushOptions = (options) => {
       const labels = Array.isArray(options)
         ? options
-          .map((o) => (o && typeof o.label === 'string' ? o.label.trim() : ''))
+          .map((o) => (typeof o === 'string' ? o.trim() : o && typeof o.label === 'string' ? o.label.trim() : ''))
           .filter(Boolean)
         : [];
       if (labels.length) lines.push(`选项: ${labels.join(' / ')}`);
@@ -1123,7 +1154,8 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
     if (questions.length) {
       for (const q of questions) {
         const header = q && typeof q.header === 'string' ? q.header.trim() : '';
-        const question = q && typeof q.question === 'string' ? q.question.trim() : '';
+        const question = q && typeof q.question === 'string' ? q.question.trim()
+          : q && typeof q.title === 'string' ? q.title.trim() : '';
         if (header) lines.push(header);
         if (question) lines.push(ensureQuestion(question));
         pushOptions(q && q.options);
@@ -1174,13 +1206,14 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       ...candidate.notification,
       dedupeKey: buildCodexCompletionDedupeKey(candidate.state?.sessionId, candidate.turnId || candidate.state?.currentTurnId) || undefined,
     });
-    if (candidate.state) {
+    const delivered = notificationDelivered(result);
+    if (candidate.state && delivered) {
       candidate.state.lastNotifiedAssistantAt = candidate.assistantAt;
       if (candidate.turnId) candidate.state.lastNotifiedTurnId = candidate.turnId;
       candidate.state.confirmNotifiedForTurn = true;
     }
     logger(`[watch][codex] ${summarizeResult(result)} (${candidate.logReason || 'task_complete'})`);
-    return true;
+    return delivered;
   }
 
   function buildRequestUserInputDedupeKey(payload, ts) {
@@ -1236,6 +1269,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
       // Plan mode interactive prompts (`request_user_input`) mean the turn ends waiting for user input.
       // We should never treat that as "task completed".
       interactionRequiredForTurn: false,
+      pendingAsyncRequestUserInput: false,
       pendingRequestUserInputCallIds: new Set(),
       pendingRequestUserInputWithoutId: 0,
       lastInteractionResolvedAt: null,
@@ -1558,6 +1592,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
             state.lastConfirmKey = '';
             state.confirmNotifiedForTurn = false;
             state.interactionRequiredForTurn = false;
+            state.pendingAsyncRequestUserInput = false;
             state.pendingRequestUserInputCallIds.clear();
             state.pendingRequestUserInputWithoutId = 0;
             state.lastInteractionResolvedAt = null;
@@ -1581,6 +1616,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
         state.lastConfirmKey = '';
         state.confirmNotifiedForTurn = false;
         state.interactionRequiredForTurn = false;
+        state.pendingAsyncRequestUserInput = false;
         state.pendingRequestUserInputCallIds.clear();
         state.pendingRequestUserInputWithoutId = 0;
         state.lastInteractionResolvedAt = null;
@@ -1593,20 +1629,26 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
         return;
       }
 
-      // Codex Plan mode interactive prompts: request_user_input (single-choice / submit UI).
-      // These are emitted as a tool call item (e.g. `function_call` / `custom_tool_call`) with name `request_user_input`.
+      // Codex synchronous and desktop asynchronous question prompts.
       if (
         obj.type === 'response_item'
         && obj.payload
         && ['function_call', 'custom_tool_call', 'tool_use'].includes(obj.payload.type)
         && (
-          obj.payload.name === 'request_user_input'
-          || obj.payload.function_name === 'request_user_input'
-          || (obj.payload.function && obj.payload.function.name === 'request_user_input')
+          ['request_user_input', 'request_user_input_async'].includes(obj.payload.name)
+          || ['request_user_input', 'request_user_input_async'].includes(obj.payload.function_name)
+          || (obj.payload.function && ['request_user_input', 'request_user_input_async'].includes(obj.payload.function.name))
         )
       ) {
         clearPendingCompletion();
         state.interactionRequiredForTurn = true;
+        if (
+          obj.payload.name === 'request_user_input_async'
+          || obj.payload.function_name === 'request_user_input_async'
+          || (obj.payload.function && obj.payload.function.name === 'request_user_input_async')
+        ) {
+          state.pendingAsyncRequestUserInput = true;
+        }
         state.lastInteractionResolvedAt = null;
         {
           const requestCallId =
@@ -1676,6 +1718,8 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
         if (
           state.pendingRequestUserInputCallIds.size === 0
           && state.pendingRequestUserInputWithoutId === 0
+          // Async tool output acknowledges the prompt; the reply arrives in a new user turn.
+          && !state.pendingAsyncRequestUserInput
         ) {
           state.interactionRequiredForTurn = false;
           state.lastInteractionResolvedAt = ts != null ? ts : Date.now();
@@ -1735,6 +1779,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
           state.lastConfirmKey = '';
           state.confirmNotifiedForTurn = false;
           state.interactionRequiredForTurn = false;
+          state.pendingAsyncRequestUserInput = false;
           state.pendingRequestUserInputCallIds.clear();
           state.pendingRequestUserInputWithoutId = 0;
           state.lastInteractionResolvedAt = null;
@@ -1880,6 +1925,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
           state.lastConfirmKey = '';
           state.confirmNotifiedForTurn = false;
           state.interactionRequiredForTurn = false;
+          state.pendingAsyncRequestUserInput = false;
           state.pendingRequestUserInputCallIds.clear();
           state.pendingRequestUserInputWithoutId = 0;
           state.lastInteractionResolvedAt = null;
@@ -2060,6 +2106,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
   }
 
   const sessions = new Map();
+  const fileActivity = new Map();
   const state = {
     tickRunning: false
   };
@@ -2070,7 +2117,7 @@ function startCodexWatchSessions({ intervalMs, log, confirmDetector, failureCont
     try {
       if (!fs.existsSync(root)) return;
 
-      const latest = findLatestFiles(root, (_full, name) => name.toLowerCase().endsWith('.jsonl'), followTopN);
+      const latest = findLatestFiles(root, (_full, name) => name.toLowerCase().endsWith('.jsonl'), followTopN, fileActivity);
       if (!latest || latest.length === 0) return;
 
       const wanted = new Set(latest.map((x) => x.path));

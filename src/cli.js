@@ -1,7 +1,6 @@
 const { parseArgs } = require('./args');
 const { loadConfig, saveConfig, getConfigPath } = require('./config');
 const { markTaskStart, consumeTaskStart } = require('./state');
-const { sendNotifications } = require('./engine');
 const {
   PRODUCT_NAME,
   getDataDir,
@@ -89,14 +88,23 @@ async function runCli(argv) {
     return { ok: true, mode: 'help' };
   }
 
-  if (command === 'open-file') {
-    const filePath = positional[1] || String(flags.path || flags.p || '');
+  if (command === 'open-file' || command === 'open-watch-log') {
+    const logPath = command === 'open-watch-log' ? getLatestWatchLogPath() : '';
+    const filePath = command === 'open-watch-log'
+      ? logPath || getDataDir()
+      : positional[1] || String(flags.path || flags.p || '');
     if (!filePath) {
       console.error(JSON.stringify({ ok: false, error: 'missing file path' }));
       return { ok: false };
     }
-    openFile(filePath);
-    console.log(JSON.stringify({ ok: true }));
+    try {
+      await openFile(filePath, { text: Boolean(flags.text) || Boolean(logPath) });
+    } catch (error) {
+      const detail = error && error.message ? error.message : String(error);
+      console.error(detail);
+      return { ok: false, mode: 'open-file', exitCode: 1, error: detail };
+    }
+    console.log(JSON.stringify({ ok: true, ...(command === 'open-watch-log' ? { logReady: Boolean(logPath) } : {}) }));
     return { ok: true, mode: 'open-file' };
   }
 
@@ -125,6 +133,9 @@ async function runCli(argv) {
     console.log(JSON.stringify(payload, null, 2));
     return { ok: true, mode: 'paths', result: payload };
   }
+
+  // File/path utilities must not load notification providers or start WPF prewarming.
+  const { sendNotifications } = require('./engine');
 
   if (command === 'env-status') {
     const { getEnvSetupStatus } = require('./env-setup');
@@ -474,22 +485,29 @@ async function runCli(argv) {
   return { ok: false, mode: 'unknown', error: `未知命令: ${command}` };
 }
 
-function openFile(filePath) {
+function openFile(filePath, { text = false } = {}) {
   const target = String(filePath || '');
-  if (process.platform === 'win32') {
+  if (!require('fs').existsSync(target)) return Promise.reject(new Error(`File does not exist: ${target}`));
+  if (process.platform === 'win32' && !text) {
     const escaped = target.replace(/"/g, '\\"');
-    exec(`start "" "${escaped}"`);
-    return;
+    return new Promise((resolve, reject) => {
+      exec(`start "" "${escaped}"`, (error) => error ? reject(error) : resolve());
+    });
   }
 
-  const opener = process.platform === 'darwin' ? 'open' : 'xdg-open';
-  const child = spawn(opener, [target], {
-    detached: true,
-    stdio: 'ignore',
-    shell: false,
+  const opener = process.platform === 'win32' ? 'notepad.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+  return new Promise((resolve, reject) => {
+    const child = spawn(opener, [target], {
+      detached: true,
+      stdio: 'ignore',
+      shell: false,
+    });
+    child.once('error', reject);
+    child.once('spawn', () => {
+      child.unref();
+      resolve();
+    });
   });
-  child.on('error', () => {});
-  child.unref();
 }
 
 function runChild(childArgv) {

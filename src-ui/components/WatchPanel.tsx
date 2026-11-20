@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { message, ask } from '@tauri-apps/plugin-dialog';
-import { open } from '@tauri-apps/plugin-shell';
 import type { AppConfig } from '@/lib/types';
 import { sidecar } from '@/lib/sidecar';
 import Panel from './ui/Panel';
@@ -105,44 +104,21 @@ export default function WatchPanel({ config, onUpdate, watch }: Props) {
     if (openingLog) return;
     setOpeningLog(true);
     try {
-      const { stdout, stderr, code } = await sidecar(['paths']);
+      const { stdout, stderr, code } = await sidecar(['open-watch-log']);
       if (code !== 0) {
-        throw new Error(stderr || 'paths command failed');
+        throw new Error(stderr || stdout || 'open-watch-log failed');
       }
 
-      const payload = JSON.parse(stdout || '{}') as {
-        latestWatchLogPath?: string;
-        watchLogsDir?: string;
-        dataDir?: string;
-      };
-      const logPath = typeof payload.latestWatchLogPath === 'string' ? payload.latestWatchLogPath.trim() : '';
-      const fallbackPath =
-        typeof payload.watchLogsDir === 'string' && payload.watchLogsDir.trim()
-          ? payload.watchLogsDir.trim()
-          : typeof payload.dataDir === 'string'
-            ? payload.dataDir.trim()
-            : '';
-
-      if (logPath) {
-        await open(logPath);
-        return;
-      }
-
-      if (fallbackPath) {
-        await open(fallbackPath);
-        await message(t('watch.logNotReady'), {
-          title: t('section.watch.title'),
-          kind: 'info',
-        });
-        return;
-      }
+      const payload = JSON.parse(stdout || '{}') as { logReady?: boolean };
+      if (payload.logReady) return;
 
       await message(t('watch.logNotReady'), {
         title: t('section.watch.title'),
-        kind: 'warning',
+        kind: 'info',
       });
-    } catch (_error) {
-      await message(t('watch.logOpenFailed'), {
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      await message(`${t('watch.logOpenFailed')}\n${detail}`, {
         title: t('section.watch.title'),
         kind: 'error',
       });

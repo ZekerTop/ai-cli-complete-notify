@@ -166,6 +166,19 @@ const DEFAULT_CONFIG = {
         gotify: false
       }
     },
+    deepseek: {
+      enabled: false,
+      minDurationMinutes: 0,
+      webhookUrls: [],
+      channels: {
+        webhook: true,
+        telegram: false,
+        sound: true,
+        desktop: true,
+        email: false,
+        gotify: false
+      }
+    },
     zcode: {
       // Hooks-only source (native Stop event, no watch path); ships disabled
       // so upgrading users see no behavior change until they opt in.

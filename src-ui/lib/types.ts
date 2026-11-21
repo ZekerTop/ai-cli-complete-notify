@@ -3,6 +3,7 @@ import claudeLogo from '@/assets/sources/claude-color.svg';
 import codexLogo from '@/assets/sources/codex.png';
 import opencodeLogo from '@/assets/sources/opencode.svg';
 import geminiLogo from '@/assets/sources/gemini-color.svg';
+import deepseekLogo from '@/assets/sources/deepseek.svg';
 
 export interface AppConfig {
   version: number;
@@ -112,9 +113,29 @@ export interface HookStatus {
   gemini: { installed: boolean; settingsPath: string };
   opencode: { installed: boolean; settingsPath: string };
   zcode: { installed: boolean; hooksEnabled: boolean; settingsPath: string };
+  deepseek: {
+    installed: boolean;
+    settingsPath: string;
+    pluginDir: string;
+    requiresManualInstall: true;
+    installCommand: string;
+    removeCommand: string;
+    instructions: string;
+    desktop?: {
+      available: boolean;
+      registered: boolean | null;
+      activation: 'unknown';
+    };
+  };
 }
 
 export type HookTarget = keyof HookStatus;
+
+export interface HookActionResult {
+  ok: boolean;
+  output: string;
+  errorCode?: string;
+}
 
 export interface WatchPayload {
   sources: string;
@@ -137,7 +158,7 @@ export interface EnvSetupStatus {
 }
 
 export type ChannelKey = 'webhook' | 'telegram' | 'desktop' | 'sound' | 'email' | 'gotify';
-export type SourceKey = 'claude' | 'codex' | 'opencode' | 'gemini' | 'zcode';
+export type SourceKey = 'claude' | 'codex' | 'opencode' | 'gemini' | 'zcode' | 'deepseek';
 
 export const CHANNELS: { key: ChannelKey; titleKey: string; descKey: string }[] = [
   { key: 'webhook', titleKey: 'channel.webhook', descKey: 'channel.webhook.desc' },
@@ -154,4 +175,5 @@ export const SOURCES: { key: SourceKey; titleKey: string; descKey: string; logo:
   { key: 'opencode', titleKey: 'source.opencode', descKey: 'source.opencode.desc', logo: opencodeLogo },
   { key: 'gemini', titleKey: 'source.gemini', descKey: 'source.gemini.desc', logo: geminiLogo },
   { key: 'zcode', titleKey: 'source.zcode', descKey: 'source.zcode.desc', logo: zcodeLogo },
+  { key: 'deepseek', titleKey: 'source.deepseek', descKey: 'source.deepseek.desc', logo: deepseekLogo },
 ];

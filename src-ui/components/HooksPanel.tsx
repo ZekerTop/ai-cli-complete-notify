@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppConfig, HookStatus, HookTarget } from '@/lib/types';
+import { message as showDialog } from '@tauri-apps/plugin-dialog';
+import { SOURCES, type AppConfig, type HookActionResult, type HookStatus, type HookTarget, type SourceKey } from '@/lib/types';
 import { sidecar } from '@/lib/sidecar';
 import Panel from './ui/Panel';
+import SourceLogo from './ui/SourceLogo';
 
 interface HooksState {
   status: HookStatus | null;
   preview: string;
   refreshStatus: () => Promise<HookStatus | null>;
-  install: (target: HookTarget) => Promise<{ ok: boolean; output: string }>;
-  uninstall: (target: HookTarget) => Promise<{ ok: boolean; output: string }>;
+  install: (target: HookTarget) => Promise<HookActionResult>;
+  uninstall: (target: HookTarget) => Promise<HookActionResult>;
+  mount: (target: HookTarget) => Promise<HookActionResult>;
   refreshPreview: (target: HookTarget) => Promise<void>;
 }
 
@@ -20,12 +23,13 @@ interface Props {
   onHooksStatusChange?: (uninstalled: string[]) => void;
 }
 
-const TARGETS: { key: HookTarget; title: string; descKey: string }[] = [
+const TARGETS: { key: SourceKey; title: string; descKey: string }[] = [
   { key: 'claude', title: 'Claude Code', descKey: 'hooks.claude.desc' },
   { key: 'codex', title: 'Codex', descKey: 'hooks.codex.desc' },
   { key: 'gemini', title: 'Gemini CLI', descKey: 'hooks.gemini.desc' },
   { key: 'zcode', title: 'ZCode', descKey: 'hooks.zcode.desc' },
   { key: 'opencode', title: 'OpenCode', descKey: 'hooks.opencode.desc' },
+  { key: 'deepseek', title: 'DeepSeek Harness', descKey: 'hooks.deepseek.desc' },
 ];
 
 const MODE_OPTIONS: {
@@ -38,7 +42,7 @@ const MODE_OPTIONS: {
 ];
 
 export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChange }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [previewTarget, setPreviewTarget] = useState<HookTarget>('claude');
   const [messages, setMessages] = useState<Record<HookTarget, string>>({
     claude: '',
@@ -46,6 +50,7 @@ export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChang
     gemini: '',
     opencode: '',
     zcode: '',
+    deepseek: '',
   });
   const [loading, setLoading] = useState<Record<HookTarget, boolean>>({
     claude: false,
@@ -53,14 +58,22 @@ export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChang
     gemini: false,
     opencode: false,
     zcode: false,
+    deepseek: false,
   });
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const currentMode = MODE_OPTIONS[config.ui.notificationMode === 'watch' ? 1 : 0];
 
   useEffect(() => {
-    hooks.refreshPreview(previewTarget);
+    if (previewTarget !== 'deepseek') hooks.refreshPreview(previewTarget);
   }, [hooks.refreshPreview, previewTarget]);
+
+  useEffect(() => {
+    hooks.refreshStatus();
+  }, [hooks.refreshStatus]);
 
   const setTransientMessage = (target: HookTarget, text: string) => {
     setMessages((current) => ({ ...current, [target]: text }));
+    if (target === 'deepseek') return;
     window.setTimeout(() => {
       setMessages((current) => ({ ...current, [target]: '' }));
     }, 3000);
@@ -78,199 +91,248 @@ export default function HooksPanel({ config, onUpdate, hooks, onHooksStatusChang
     onHooksStatusChange(uninstalled);
   };
 
+  const deepseekError = (result: HookActionResult, fallbackKey: string) => {
+    const key = result.errorCode ? `hooks.deepseek.error.${result.errorCode}` : '';
+    return key && i18n.exists(key) ? t(key) : `${t(fallbackKey)}: ${result.output}`;
+  };
+
+  const handleMount = async () => {
+    setLoading((c) => ({ ...c, deepseek: true }));
+    setMessages((c) => ({ ...c, deepseek: '' }));
+    const result = await hooks.mount('deepseek');
+    setPreviewTarget('deepseek');
+    setLoading((c) => ({ ...c, deepseek: false }));
+    setMessages((c) => ({ ...c, deepseek: result.ok ? t('hooks.deepseek.mountOk') : deepseekError(result, 'hooks.deepseek.mountFail') }));
+  };
+
   const handleInstall = async (target: HookTarget) => {
     setLoading((c) => ({ ...c, [target]: true }));
     const result = await hooks.install(target);
-    if (target === previewTarget) await hooks.refreshPreview(target);
+    if (target === 'deepseek') {
+      setPreviewTarget(target);
+      if (result.ok) setPreviewOpen(true);
+    }
+    if (target !== 'deepseek' && target === previewTarget) await hooks.refreshPreview(target);
     setLoading((c) => ({ ...c, [target]: false }));
-    setTransientMessage(target, result.ok ? t('hooks.installOk') : `${t('hooks.installFail')}: ${result.output}`);
+    const successKey = target === 'deepseek' ? 'hooks.deepseek.generateOk' : 'hooks.installOk';
+    const failureKey = target === 'deepseek' ? 'hooks.deepseek.generateFail' : 'hooks.installFail';
+    setTransientMessage(target, result.ok ? t(successKey) : target === 'deepseek' ? deepseekError(result, failureKey) : `${t(failureKey)}: ${result.output}`);
     await checkAndNotifyStatus();
   };
 
   const handleUninstall = async (target: HookTarget) => {
     setLoading((c) => ({ ...c, [target]: true }));
     const result = await hooks.uninstall(target);
-    if (target === previewTarget) await hooks.refreshPreview(target);
+    if (target !== 'deepseek' && target === previewTarget) await hooks.refreshPreview(target);
     setLoading((c) => ({ ...c, [target]: false }));
-    setTransientMessage(target, result.ok ? t('hooks.uninstallOk') : `${t('hooks.uninstallFail')}: ${result.output}`);
+    const successKey = target === 'deepseek' ? 'hooks.deepseek.removeOk' : 'hooks.uninstallOk';
+    const failureKey = target === 'deepseek' ? 'hooks.deepseek.removeFail' : 'hooks.uninstallFail';
+    setTransientMessage(target, result.ok ? t(successKey) : target === 'deepseek' ? deepseekError(result, failureKey) : `${t(failureKey)}: ${result.output}`);
     await checkAndNotifyStatus();
   };
 
-  const btnStyle = {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))',
+  const openFile = async (filePath: string, target: HookTarget) => {
+    const deepseek = target === 'deepseek';
+    try {
+      const result = await sidecar(['open-file', filePath, ...(deepseek ? ['--text'] : [])]);
+      if (deepseek && result.code !== 0) throw new Error(result.stderr || result.stdout);
+    } catch (error) {
+      console.error('open file failed:', error);
+      if (deepseek) {
+        await hooks.refreshStatus();
+        await showDialog(t('hooks.deepseek.openFail'), { title: 'DeepSeek Harness', kind: 'error' });
+      }
+    }
   };
 
-  const openFile = (filePath: string) => {
-    sidecar(['open-file', filePath]).catch((e) => console.error('open file failed:', e));
-  };
+  const actionClass = 'rounded-md border border-[var(--border-strong)] bg-[var(--surface-strong)] px-2.5 py-1.5 text-xs hover:bg-[var(--accent-soft)] disabled:cursor-not-allowed disabled:opacity-50';
+  const primaryActionClass = 'rounded-md border border-transparent bg-gradient-to-br from-accent to-accent2 px-2.5 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50';
+  const previewStatus = hooks.status?.[previewTarget];
+  const deepseekPreview = previewTarget === 'deepseek' ? hooks.status?.deepseek : undefined;
+  const preview = previewTarget !== 'deepseek' ? hooks.preview
+    : deepseekPreview ? t('hooks.deepseek.preview', {
+      installCommand: deepseekPreview.installCommand,
+      removeCommand: deepseekPreview.removeCommand,
+    }) : '';
+  const previewSettingsPath = previewTarget !== 'deepseek' || deepseekPreview?.installed ? previewStatus?.settingsPath : undefined;
 
   return (
     <Panel title={t('section.hooks.title')} subtitle={t('section.hooks.sub')}>
-      <div className="mb-4">
-        <div className="flex items-center gap-2.5 mb-2">
-          <label className="text-sm">{t('hooks.notificationMode')}</label>
-          <span
-            className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/[0.14] text-[rgba(11,16,34,0.9)] text-[11px] font-extrabold cursor-help border border-white/[0.22]"
-            title={t('hooks.modeHint')}
-          >
-            ?
+      <details className="group mb-4 rounded-xl border border-[var(--border-strong)] bg-[var(--accent-soft)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 focus-visible:outline [&::-webkit-details-marker]:hidden">
+          <span className="min-w-0">
+            <span className="mb-0.5 block text-[11px] text-muted">{t('hooks.notificationMode')}</span>
+            <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <strong className="text-sm">{t(currentMode.titleKey)}</strong>
+              <span className="text-xs text-muted">{t(`hooks.mode.${currentMode.key}.summary`)}</span>
+            </span>
           </span>
-        </div>
+          <span className="inline-flex shrink-0 items-center gap-2 text-xs font-semibold">
+            {t('hooks.advancedSettings')}
+            <span aria-hidden="true" className="h-1.5 w-1.5 rotate-45 border-b border-r border-current group-open:rotate-[225deg]" />
+          </span>
+        </summary>
+        <fieldset className="grid gap-2 border-t border-[var(--border)] p-3 md:grid-cols-2">
+          <legend className="sr-only">{t('hooks.notificationMode')}</legend>
+          {MODE_OPTIONS.map((option) => (
+            <label key={option.key} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 ${
+              currentMode.key === option.key ? 'border-[var(--accent)] bg-[var(--surface-strong)]' : 'border-[var(--border)] bg-[var(--surface-ink)]'
+            }`}>
+              <input
+                type="radio"
+                name="notification-mode"
+                value={option.key}
+                checked={currentMode.key === option.key}
+                onChange={() => onUpdate((c) => ({ ...c, ui: { ...c.ui, notificationMode: option.key } }))}
+                className="mt-0.5 accent-[var(--accent)]"
+              />
+              <span>
+                <strong className="block text-xs">{t(option.titleKey)}</strong>
+                <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t(option.descKey)}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      </details>
 
-        <div
-          role="radiogroup"
-          aria-label={t('hooks.notificationMode')}
-          className="grid grid-cols-1 md:grid-cols-2 gap-2.5"
-        >
-          {MODE_OPTIONS.map((option) => {
-            const active = config.ui.notificationMode === option.key;
-            return (
-              <button
-                key={option.key}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() =>
-                  onUpdate((c) => ({
-                    ...c,
-                    ui: { ...c.ui, notificationMode: option.key },
-                  }))
-                }
-                className={`relative overflow-hidden rounded-2xl border px-4 py-3 text-left transition-all ${
-                  active
-                    ? 'border-[rgba(110,123,255,0.55)] bg-[linear-gradient(180deg,rgba(110,123,255,0.22),rgba(58,108,255,0.10))] shadow-[0_12px_30px_rgba(25,41,92,0.22)]'
-                    : 'border-white/[0.12] bg-[rgba(8,14,30,0.34)] hover:border-white/[0.2] hover:bg-[rgba(12,18,36,0.44)]'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className={`text-sm font-semibold ${active ? 'text-white' : 'text-[rgba(232,239,255,0.9)]'}`}>
-                      {t(option.titleKey)}
-                    </div>
-                    <div className="mt-1 text-xs leading-relaxed text-muted">
-                      {t(option.descKey)}
-                    </div>
-                  </div>
-                  <span
-                    className={`mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border px-1.5 text-[11px] font-semibold ${
-                      active
-                        ? 'border-[rgba(139,168,255,0.44)] bg-[rgba(110,123,255,0.24)] text-white'
-                        : 'border-white/[0.12] bg-black/20 text-muted'
-                    }`}
-                  >
-                    {active ? 'ON' : ''}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3">
+      <div className="grid items-start gap-3 md:grid-cols-2">
         {TARGETS.map((target) => {
           const info = hooks.status?.[target.key];
+          const source = SOURCES.find((item) => item.key === target.key);
           const installed = info?.installed ?? false;
+          const manualSetup = target.key === 'deepseek';
+          const desktop = manualSetup ? hooks.status?.deepseek?.desktop : undefined;
+          const desktopRegistered = desktop?.registered === true;
+          const needsRepair = desktopRegistered && !installed;
           const inactive = target.key === 'zcode' && installed && hooks.status?.zcode?.hooksEnabled === false;
+          const useDesktopMount = desktop?.available === true;
           const message = messages[target.key];
           const busy = loading[target.key];
+          const settingsPath = info?.settingsPath;
+          const installButton = (!installed || inactive || manualSetup) && (
+            <button type="button" onClick={() => handleInstall(target.key)} disabled={busy} className={useDesktopMount ? actionClass : primaryActionClass}>
+              {busy && !useDesktopMount ? '...' : manualSetup ? t(installed || desktopRegistered ? 'hooks.deepseek.update' : 'hooks.deepseek.generate')
+                : inactive ? t('hooks.zcode.enable') : t(target.key === 'opencode' ? 'hooks.installPlugin' : 'hooks.install')}
+            </button>
+          );
+          const removeButton = installed && (
+            <button type="button" onClick={() => handleUninstall(target.key)} disabled={busy || desktopRegistered}
+              title={desktopRegistered ? t('hooks.deepseek.removeBlocked') : undefined} className={actionClass}>
+              {t(manualSetup ? 'hooks.deepseek.remove' : 'hooks.uninstall')}
+            </button>
+          );
+          const openButton = settingsPath && (!manualSetup || installed) && (
+            <button type="button" onClick={() => openFile(settingsPath, target.key)} className={actionClass}>
+              {t('hooks.openFile')}
+            </button>
+          );
           return (
-            <div key={target.key} className="surface-card min-w-0 p-4">
-              <div className="flex items-center justify-between gap-2.5 mb-2">
-                <div className="font-semibold tracking-[0.01em] text-sm">{target.title}</div>
+            <div key={target.key} className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] px-3.5 py-3">
+              <div className="mb-2 flex items-center justify-between gap-2.5">
+                <div className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-[0.01em]">
+                  {source && <SourceLogo source={source} />}
+                  <span>{target.title}</span>
+                </div>
                 <div
                   className={`px-2.5 py-0.5 rounded-full border text-[11px] whitespace-nowrap ${
-                    installed && !inactive
+                    installed && (desktopRegistered || (!manualSetup && !inactive))
                       ? 'text-[rgba(139,219,166,0.92)] border-[rgba(139,219,166,0.30)] bg-[rgba(139,219,166,0.10)]'
+                      : manualSetup && (installed || needsRepair)
+                      ? 'text-amber-200 border-amber-300/30 bg-amber-300/10'
                       : 'text-muted border-white/[0.14] bg-black/20'
                   }`}
                 >
-                  {inactive ? t('hooks.zcode.inactive') : installed ? t('hooks.status.installed') : t('hooks.status.notInstalled')}
+                  {manualSetup
+                    ? t(needsRepair ? 'hooks.deepseek.needsRepair'
+                      : desktopRegistered ? 'hooks.deepseek.registered' : installed ? 'hooks.deepseek.generated' : 'hooks.deepseek.notGenerated')
+                    : inactive ? t('hooks.zcode.inactive') : installed ? t('hooks.status.installed') : t('hooks.status.notInstalled')}
                 </div>
               </div>
-              <div className="text-xs text-muted mb-1">{t(target.descKey)}</div>
-              {target.key === 'codex' && (
-                <div className="text-xs text-muted mb-2 leading-relaxed">{t('hooks.codex.trustHint')}</div>
-              )}
-              {info?.settingsPath && (
-                <div className="text-[11px] text-muted break-all mb-2">{info.settingsPath}</div>
-              )}
+              <p className="mb-2 text-xs leading-relaxed text-muted" role={manualSetup && message ? 'status' : undefined}>
+                {manualSetup ? message || t(needsRepair ? useDesktopMount ? 'hooks.deepseek.repairMount' : 'hooks.deepseek.repairLocal'
+                  : desktopRegistered ? 'hooks.deepseek.desktopRegistered'
+                  : useDesktopMount ? desktop.registered === null ? 'hooks.deepseek.desktopUnknown' : 'hooks.deepseek.desktopHint'
+                  : 'hooks.deepseek.manualHint') : t(`hooks.${target.key}.summary`)}
+              </p>
               <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => handleInstall(target.key)}
-                  disabled={(installed && !inactive) || busy}
-                  className={`px-3 py-1.5 rounded-xl border text-xs transition-colors disabled:cursor-not-allowed ${
-                    installed && !inactive
-                      ? 'border-white/[0.12] bg-white/[0.05] text-muted'
-                      : 'border-white/[0.14] bg-gradient-to-br from-accent to-accent2 text-white cursor-pointer'
-                  }`}
-                >
-                  {busy && (!installed || inactive) ? '...' : inactive ? t('hooks.zcode.enable') : installed ? t('hooks.status.installed') : t('hooks.install')}
-                </button>
-                <button
-                  onClick={() => handleUninstall(target.key)}
-                  disabled={!installed || busy}
-                  className={`px-3 py-1.5 rounded-xl border text-xs transition-colors disabled:cursor-not-allowed ${
-                    installed
-                      ? 'border-white/[0.14] text-[var(--text)] cursor-pointer'
-                      : 'border-white/[0.12] bg-white/[0.04] text-muted'
-                  }`}
-                  style={installed ? btnStyle : undefined}
-                >
-                  {busy && installed ? '...' : t('hooks.uninstall')}
-                </button>
-                {info?.settingsPath && (
+                {useDesktopMount ? (
                   <button
-                    onClick={() => openFile(info.settingsPath)}
-                    className="px-3 py-1.5 rounded-xl border border-white/[0.14] text-xs cursor-pointer"
-                    style={btnStyle}
+                    type="button"
+                    onClick={handleMount}
+                    disabled={busy}
+                    className={primaryActionClass}
                   >
-                    {t('hooks.openFile')}
+                    {busy ? '...' : t(desktopRegistered ? 'hooks.deepseek.mountUpdate' : 'hooks.deepseek.mount')}
                   </button>
-                )}
-                {message && <span className="text-xs text-muted ml-1">{message}</span>}
+                ) : installButton}
+                {installed && openButton}
+                {!useDesktopMount && removeButton}
               </div>
+              {message && !manualSetup && <p role="status" className="mt-2 text-xs text-muted">{message}</p>}
+              <details className="mt-2 border-t border-[var(--border)] text-xs text-muted">
+                <summary className="w-fit cursor-pointer rounded pt-1.5 hover:text-[var(--text)] focus-visible:outline">
+                  {t('hooks.configDetails')}
+                </summary>
+                <div className="mt-1.5 space-y-1.5 leading-relaxed">
+                  <p>{t(target.descKey)}</p>
+                  {target.key === 'codex' && <p>{t('hooks.codex.trustHint')}</p>}
+                  {useDesktopMount && desktopRegistered && !needsRepair && <p>{t('hooks.deepseek.updateHint')}</p>}
+                  {settingsPath && <p className="break-all font-mono text-[11px]">{settingsPath}</p>}
+                  {(useDesktopMount || (!installed && openButton)) && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {useDesktopMount && <>{installButton}{removeButton}</>}
+                      {!installed && openButton}
+                    </div>
+                  )}
+                </div>
+              </details>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-3.5">
-        <div className="flex items-center gap-2.5">
-          <label className="text-sm">{t('hooks.configPreview')}</label>
-          <select
-            value={previewTarget}
-            onChange={(e) => setPreviewTarget(e.target.value as HookTarget)}
-            className="px-2.5 py-1.5 rounded-xl border border-white/[0.16] bg-[rgba(6,10,24,0.55)] text-[var(--text)] outline-none text-sm"
-          >
-            {TARGETS.map((target) => (
-              <option key={target.key} value={target.key}>
-                {target.title}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => navigator.clipboard.writeText(hooks.preview)}
-            className="px-2.5 py-1 rounded-[10px] border border-white/[0.14] text-xs cursor-pointer"
-            style={btnStyle}
-          >
-            {t('hooks.copy')}
-          </button>
-          {hooks.status?.[previewTarget]?.settingsPath && (
-            <button
-              onClick={() => openFile(hooks.status![previewTarget]!.settingsPath)}
-              className="px-2.5 py-1 rounded-[10px] border border-white/[0.14] text-xs cursor-pointer"
-              style={btnStyle}
+      <details open={previewOpen} onToggle={(event) => setPreviewOpen(event.currentTarget.open)}
+        className="group mt-3 rounded-lg border border-[var(--border)] bg-[var(--surface-strong)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs text-muted focus-visible:outline [&::-webkit-details-marker]:hidden">
+          {t('hooks.configPreview')}
+          <span aria-hidden="true" className="h-1.5 w-1.5 rotate-45 border-b border-r border-current group-open:rotate-[225deg]" />
+        </summary>
+        <div className="px-3 pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              aria-label={t('hooks.previewTarget')}
+              value={previewTarget}
+              onChange={(e) => setPreviewTarget(e.target.value as HookTarget)}
+              className="rounded-md border border-[var(--border-strong)] bg-[var(--surface-ink)] px-2.5 py-1.5 text-xs"
             >
-              {t('hooks.openFile')}
+              {TARGETS.map((target) => (
+                <option key={target.key} value={target.key}>
+                  {target.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(preview)}
+              className={actionClass}
+            >
+              {t('hooks.copy')}
             </button>
-          )}
+            {previewSettingsPath && (
+              <button
+                type="button"
+                onClick={() => openFile(previewSettingsPath, previewTarget)}
+                className={actionClass}
+              >
+                {t('hooks.openFile')}
+              </button>
+            )}
+          </div>
+          <pre className="mt-2 max-h-[220px] overflow-auto whitespace-pre-wrap break-all rounded-md border border-[var(--border)] bg-[var(--surface-ink)] p-2.5 text-xs leading-relaxed">
+            {preview || '...'}
+          </pre>
         </div>
-        <pre className="mt-2.5 p-2.5 bg-black/25 border border-white/[0.10] rounded-xl text-xs leading-relaxed overflow-auto max-h-[220px] whitespace-pre-wrap break-all">
-          {hooks.preview || '...'}
-        </pre>
-      </div>
-      <div className="mt-2.5 text-xs text-muted leading-relaxed">{t('hooks.hint')}</div>
+      </details>
     </Panel>
   );
 }

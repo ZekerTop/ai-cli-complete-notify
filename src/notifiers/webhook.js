@@ -10,6 +10,10 @@ const WEBHOOK_MESSAGE_MARKER = 'AI提醒';
 
 // Logo key map for light and dark themes.
 const LOGO_MAP = {
+  'deepseek harness': {
+    light: 'img_v3_0217k_08a616d9-b683-41cf-ab9e-1ba8ac77de1g',
+    dark: 'img_v3_0217k_08a616d9-b683-41cf-ab9e-1ba8ac77de1g'
+  },
   'zcode': {
     light: 'img_v3_0215i_61c21733-9f18-4807-a8ff-72c8f67e5b2g',
     dark: 'img_v3_0215i_61c21733-9f18-4807-a8ff-72c8f67e5b2g'
@@ -198,7 +202,8 @@ const SOURCE_WEBHOOK_ENV_NAMES = Object.freeze({
   codex: 'CODEX_WEBHOOK_URLS',
   gemini: 'GEMINI_WEBHOOK_URLS',
   opencode: 'OPENCODE_WEBHOOK_URLS',
-  zcode: 'ZCODE_WEBHOOK_URLS'
+  zcode: 'ZCODE_WEBHOOK_URLS',
+  deepseek: 'DEEPSEEK_WEBHOOK_URLS'
 });
 
 function readConfigUrls(value) {

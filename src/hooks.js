@@ -1140,6 +1140,10 @@ function getHookStatus(target) {
     gemini: getGeminiHookStatus(),
     opencode: getOpenCodeHookStatus(),
     zcode: getZcodeHookStatus(),
+    deepseek: {
+      ...require('./deepseek-plugin').getDeepseekHookStatus(),
+      desktop: require('./deepseek-desktop').getDeepseekDesktopStatus(),
+    },
     herdr: { supported: true }
   };
 }
@@ -1152,6 +1156,7 @@ function installHook(target) {
   if (target === 'opencode') return installOpenCodeHook(exePath);
   if (target === 'herdr') return installHerdrHook(exePath);
   if (target === 'zcode') return installZcodeHook(exePath);
+  if (target === 'deepseek') return require('./deepseek-plugin').installDeepseekHook(exePath);
   return { ok: false, error: `Unknown target: ${target}` };
 }
 
@@ -1162,6 +1167,7 @@ function uninstallHook(target) {
   if (target === 'opencode') return uninstallOpenCodeHook();
   if (target === 'herdr') return uninstallHerdrHook();
   if (target === 'zcode') return uninstallZcodeHook();
+  if (target === 'deepseek') return require('./deepseek-plugin').uninstallDeepseekHook();
   return { ok: false, error: `Unknown target: ${target}` };
 }
 
@@ -1186,6 +1192,9 @@ function getHookConfigPreview(target) {
   }
   if (target === 'zcode') {
     return getZcodeConfigPreview(exePath);
+  }
+  if (target === 'deepseek') {
+    return require('./deepseek-plugin').getDeepseekConfigPreview();
   }
   return '';
 }

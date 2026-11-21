@@ -10,8 +10,8 @@ const { notifyEmail } = require('./notifiers/email');
 const { notifyGotify } = require('./notifiers/gotify');
 const { summarizeTaskDetailed } = require('./summary');
 const { focusTarget } = require('./focus');
-const { checkAndRememberNotification, forgetNotification } = require('./state');
-const { acquireCodexNotificationClaim } = require('./codex-notification-claim');
+const { checkAndRememberNotification, forgetNotification, makeNotificationFingerprint } = require('./state');
+const { acquireCodexNotificationClaim, acquireDeepseekNotificationClaim } = require('./codex-notification-claim');
 
 const NOTIFICATION_DEDUPE_MS = Math.max(30 * 1000, Number(process.env.NOTIFICATION_DEDUPE_MS || 2 * 60 * 1000));
 
@@ -73,9 +73,9 @@ function shouldSkipByNotificationMode({ sourceName, fromHook, notificationMode }
   const mode = notificationMode === 'hooks' ? 'hooks' : 'watch';
   const hookCapable = sourceName === 'claude' || sourceName === 'codex' || sourceName === 'gemini';
 
-  // OpenCode / Herdr / ZCode have no watch path and always use hooks, so a
+  // OpenCode / Herdr / ZCode / DeepSeek have no watch path and always use hooks, so a
   // mode meant to gate log polling must never silence their only signal.
-  if (sourceName === 'opencode' || sourceName === 'herdr' || sourceName === 'zcode') {
+  if (sourceName === 'opencode' || sourceName === 'herdr' || sourceName === 'zcode' || sourceName === 'deepseek') {
     return null;
   }
 
@@ -139,21 +139,24 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
       || ''
   ).trim();
 
-  let codexClaim = null;
+  // Explicit keys must ignore cwd, which can differ between hooks and Watch.
+  const dedupeCwd = explicitDedupeKey ? '' : cwdToUse;
+  let notificationClaim = null;
   let notificationAttemptToken;
   if (!skipDedupe && dedupeText) {
     let duplicated;
     if (sourceName === 'codex' && explicitDedupeKey.startsWith('codex-complete:')) {
-      codexClaim = await acquireCodexNotificationClaim(explicitDedupeKey, { dedupeMs: NOTIFICATION_DEDUPE_MS });
-      duplicated = !codexClaim;
+      notificationClaim = await acquireCodexNotificationClaim(explicitDedupeKey, { dedupeMs: NOTIFICATION_DEDUPE_MS });
+      duplicated = !notificationClaim;
+    } else if (sourceName === 'deepseek') {
+      const fingerprint = makeNotificationFingerprint({ source: sourceName, cwd: dedupeCwd, text: dedupeText });
+      notificationClaim = await acquireDeepseekNotificationClaim(fingerprint, { dedupeMs: NOTIFICATION_DEDUPE_MS });
+      duplicated = !notificationClaim;
     } else {
       if (sourceName === 'codex') notificationAttemptToken = randomBytes(16).toString('hex');
       duplicated = checkAndRememberNotification({
         source: sourceName,
-        // Explicit dedupe keys are content-scoped (e.g. Gemini hook/watch) and
-        // must ignore cwd — GUI watch cwd often differs from the project cwd in
-        // the hook payload, which would otherwise break cross-path dedupe.
-        cwd: explicitDedupeKey ? '' : cwdToUse,
+        cwd: dedupeCwd,
         text: dedupeText,
         dedupeMs: NOTIFICATION_DEDUPE_MS,
         attemptToken: notificationAttemptToken,
@@ -334,11 +337,11 @@ async function sendNotifications({ source, taskInfo, durationMs, cwd, projectNam
     notificationSucceeded = results.some((result) => result.ok === true);
     return { skipped: false, reason: null, results, summary: summaryDiagnostics };
   } finally {
-    if (codexClaim) codexClaim.complete(notificationSucceeded);
+    if (notificationClaim) notificationClaim.complete(notificationSucceeded);
     if (!notificationSucceeded && notificationAttemptToken) {
       forgetNotification({
         source: sourceName,
-        cwd: explicitDedupeKey ? '' : cwdToUse,
+        cwd: dedupeCwd,
         text: dedupeText,
         attemptToken: notificationAttemptToken,
       });

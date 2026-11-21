@@ -2,16 +2,16 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.18.0)
+# AI CLI Complete Notify (v2.19.0)
 
-![Version](https://img.shields.io/badge/version-2.18.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.19.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![Download macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
 
 English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![UI Preview](docs/images/home-v2.17.0.png)
+![UI Preview](docs/images/desktop-v2.19.0.png)
 </div>
 
 ## Sponsors
@@ -30,7 +30,7 @@ English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한�
 
 ### 📖 Introduction
 
-An intelligent task completion notification tool for Claude Code / Codex / OpenCode / Gemini / ZCode, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
+An intelligent task completion notification tool for Claude Code / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness, supporting multiple notification channels and flexible configuration options. Get notified automatically through various methods when AI assistants complete long-running tasks, so you don't have to wait in front of your computer.
 
 **Supported Notification Methods:**
 
@@ -42,10 +42,10 @@ An intelligent task completion notification tool for Claude Code / Codex / OpenC
 ## ✨ Key Features(For more detailed update logs, please refer to the end of the article)
 
 - 🎯 **Smart Debouncing**: Automatically adjusts notification timing based on task type - 60s for tool calls, only 15s without tool calls
-- 🔀 **Source Control**: Independent enable/disable and threshold settings for Claude / Codex / OpenCode / Gemini / ZCode
+- 🔀 **Source Control**: Independent enable/disable and threshold settings for Claude / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness
 - 📡 **Multi-Channel Push**: Support multiple notification methods simultaneously to ensure message delivery
 - ⏱️ **Duration Threshold**: Only notify when tasks exceed the set duration to avoid frequent interruptions
-- 🪝 **Hooks + Watch Integration**: Claude Code / Codex / Gemini CLI / ZCode can use native hooks, OpenCode can use a global plugin, and Watch remains available as a fallback
+- 🪝 **Hooks + Watch Integration**: Claude Code / Codex / Gemini CLI / ZCode can use native hooks, OpenCode can use a global plugin, DeepSeek Harness uses a local plugin, with macOS Desktop mounting or manual registration in other profiles, and Watch remains available as a fallback for supported sources
 - 🧠 **AI Summary (Optional)**: Generate a short summary quickly; fallback to the original task if it times out
 - 🖥️ **Desktop Application**: GUI configuration with language switching, tray hiding, and auto-start
 - 🔐 **Configuration Separation**: Runtime configuration separated from sensitive information for security
@@ -65,13 +65,14 @@ Benefits:
 - Claude Code often splits a request into sub-tasks. To avoid spam, this tool only notifies after the whole turn completes.
 - Log monitoring relies on a quiet period to confirm completion, so notifications are not instant (default 60s with tool calls, 15s without).
 - For faster completion alerts, prefer Hooks for Claude Code / Codex / Gemini CLI / ZCode and the global plugin for OpenCode. Codex requires a client version with native hook support and explicit hook trust; use Watch for clients without native hook support or with hooks disabled; hybrid mode keeps Watch as a fallback.
-- Watch and Hooks **can run together in hybrid mode**. Recommended hybrid setup: Claude Code / Codex / Gemini / OpenCode / ZCode use Hooks or plugins, with Watch running as a fallback where available. Codex Hook and Watch use the same session/turn key to deduplicate completion alerts; other sources keep their existing content-based deduplication. **Watch-only** mode suppresses installed Claude/Codex/Gemini hooks so the two options stay distinct; hook-only sources (OpenCode, Herdr, ZCode) are never silenced by it.
+- Watch and hooks **can run together in hybrid mode**. Use hooks or plugins with log monitoring as a fallback where supported. Codex Hook and Watch use the same session and turn to deduplicate completion alerts. DeepSeek Harness also deduplicates by session and turn, while other sources use content-based deduplication.
+- **Watch only (troubleshooting)** is under **Integrations → Advanced settings**. It pauses hook alerts for Claude Code, Codex, and Gemini CLI and relies on log monitoring for those sources. OpenCode, Herdr, ZCode, and DeepSeek Harness keep using their hooks or plugins.
 
 ## Hooks vs Watch
 
-- **Hooks / plugin events** use explicit lifecycle events emitted by the AI CLI itself. For Claude Code, supported Codex clients, Gemini CLI, OpenCode, and ZCode, that means reminders can fire closer to the real finish point instead of waiting for a quiet-period guess.
+- **Hooks / plugin events** use explicit lifecycle events emitted by the AI CLI itself. For Claude Code, supported Codex clients, Gemini CLI, OpenCode, ZCode, and DeepSeek Harness, that means reminders can fire closer to the real finish point instead of waiting for a quiet-period guess.
 - **Hooks** do not require a long-running background watcher for those tools, which reduces idle overhead and lowers the chance of log-parsing false positives.
-- **Watch** remains the universal fallback. It supports Codex clients without native hook support or with hooks disabled or unconfigured, but it depends on local logs and debounce time to infer that a turn has ended.
+- **Watch** provides a fallback for Claude / Codex / Gemini. It supports Codex clients without native hook support or with hooks disabled or unconfigured, but it depends on local logs and debounce time to infer that a turn has ended.
 - In practice, Hooks / plugin events were added because Claude Code's `Stop`, Codex's `Stop`, ZCode's `Stop`, Gemini CLI's `AfterAgent`, and OpenCode's `session.status` idle / `session.idle` / `session.error` events provide more timely and accurate completion signals than watch-based log polling. Codex can use native hooks when the client supports them; Watch remains available as a fallback.
 
 ## 🚀 Quick Start
@@ -135,7 +136,8 @@ npm run dist:mac:dmg
 
 - **Top Bar**: Language switching, Watch monitoring toggle, window controls
 - **Channel Configuration**: Configure Webhook, Telegram, Email, and other notification channels
-- **Source Settings**: Set enable status and duration thresholds for Claude / Codex / OpenCode / Gemini / ZCode separately
+- **Source Settings**: Set enable status and duration thresholds for Claude / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness separately
+- **Integrations** shows the current notification mode above six cards with logos, status, and common actions. Configuration details and the command preview start collapsed.
 - **Monitoring Configuration**: Set polling interval and debounce time with smart adjustment support
 - **Confirm reminder (default: OFF)**: Effective only in Watch mode. When enabled, it triggers only when Codex shows an interactive choice prompt that requires your selection or submission (Plan mode); normal output text will not trigger it. Only one reminder is sent per turn: once a confirm reminder is triggered, that turn will not send a separate task-complete reminder.
 - **Watch logs**: Persisted locally with one-click open and retention days.
@@ -145,10 +147,12 @@ npm run dist:mac:dmg
 
 ### Interface Preview
 
-![Global Channels](docs/images/通道.png)
-![Source Settings](docs/images/各cli来源.png)
+![Global Channels](docs/images/channels-v2.19.0.png)
+![Source Settings](docs/images/sources-v2.19.0.png)
 ![Interactive monitoring](docs/images/交互式监听.png)
-![Hook Integration](docs/images/Hook集成.png)
+
+[Updated Integrations page](docs/images/desktop-v2.19.0.png)
+
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
 
@@ -243,7 +247,7 @@ Notes:
 node ai-reminder.js notify --source claude --task "Task completed"
 ```
 
-### Native Hooks / Plugin Mode (Recommended for Claude Code / Codex / Gemini CLI / OpenCode / ZCode)
+### Native Hooks / Plugin Mode (Recommended for Claude Code / Codex / Gemini CLI / OpenCode / ZCode / DeepSeek Harness)
 
 ```bash
 # Check current hook status
@@ -290,6 +294,43 @@ Notes:
 - Herdr installs the [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) plugin through `herdr plugin install`, listens to `pane.agent_status_changed` (`done` / `blocked`), and writes `AI_REMINDER_PATH` into the plugin's `config.env` (auto-detected from the current executable path). Herdr notifications use their own `herdr` source, so titles are prefixed `[Herdr]` and its channels are configured separately (see `sources.herdr`). The community plugin forces delivery, so duration thresholds do not filter these events.
 - Codex installation registers `UserPromptSubmit` and `Stop` command hooks in `CODEX_HOME/hooks.json` (default `~/.codex/hooks.json`), preserving existing settings and other hooks. `UserPromptSubmit` starts timing and `Stop` checks the configured duration threshold; `0` allows each completed turn to notify. Uninstall removes only this tool's handlers.
 - **Configured does not mean active:** after installing or updating, open `/hooks` in a Codex client with native hook support, review / trust the new definitions, and ensure hooks are enabled. This installer does not change Codex trust decisions or enable a disabled hooks runner. Not every Codex client supports native hooks; use Watch for clients without native hook support or with hooks disabled; hybrid mode keeps Watch as a fallback.
+
+### DeepSeek Harness (Desktop mounting / manual profile setup)
+
+DeepSeek Harness is an independent source, disabled by default (`sources.deepseek.enabled`), with no Watch path. It notifies only when a main-session turn directly requested by the user completes successfully, with the reply body and optional AI summary. A threshold of `0` allows each completed turn to notify. A positive value requires the recorded duration to reach that many minutes. `DEEPSEEK_WEBHOOK_URLS` optionally overrides this source's webhook destinations.
+
+On macOS, **Integrations → DeepSeek Harness** offers **Mount in Desktop / Update Desktop mount** when the official bundled `dsh` and an initialized Desktop profile are available. Launch Harness once, then press **⌘Q to quit fully** before mounting. The app generates the plugin and registers it in the `desktop` profile. You can also mount it from the CLI.
+
+```bash
+node ai-reminder.js hooks mount --target deepseek --json
+```
+
+The card uses three status colors.
+
+- Green **Registered** confirms that the Desktop profile points to this plugin directory and the required local files are present.
+- Yellow **Generated** confirms that the local plugin files exist and Desktop registration is still unconfirmed.
+- Yellow **Needs repair** indicates a Desktop registration with missing or incomplete local files. Restore them with **Update Desktop mount**, or use **Update plugin** when Desktop mounting is unavailable.
+- Gray **Not generated** indicates that the local bundle is missing.
+
+**Reopen Harness**, enable the DeepSeek source and the desired source/global channels, then complete one real task to verify delivery. A successful Test Notification does not verify Harness plugin execution.
+
+For other platforms or profiles, or when Desktop is unavailable, use **Generate plugin / Update plugin** and register manually.
+
+```bash
+node ai-reminder.js hooks install --target deepseek
+node ai-reminder.js hooks status --target deepseek
+node ai-reminder.js hooks preview --target deepseek
+dsh plugin --profile YOUR_PROFILE add "/ABSOLUTE/PATH/deepseek-plugin"
+```
+
+`hooks install` writes `package.json`, `index.js` and `cordis.patch.yml` in the app data directory's `deepseek-plugin` folder. Replace the example path with that directory and `YOUR_PROFILE` with your actual profile. For Desktop, use **Desktop's bundled `dsh`** with `--profile desktop` and follow the same quit and reopen steps.
+
+Keep the plugin directory while Harness links to it. Unregister with the matching `dsh` and profile before deleting local files. The app protects the directory when macOS Desktop registration is confirmed or cannot be verified. Check other profiles manually.
+
+```bash
+dsh plugin --profile YOUR_PROFILE remove ai-cli-complete-notify-deepseek-plugin
+node ai-reminder.js hooks uninstall --target deepseek
+```
 
 ### Optional third-party tools (Herdr)
 
@@ -340,7 +381,7 @@ node ai-reminder.js stop --source gemini --task "Build project"
 
 ### Common Parameters
 
-- `--source` / `--sources`: Specify AI source (claude / codex / opencode / gemini / zcode / all). `watch --sources all` currently covers Claude / Codex / Gemini; OpenCode and ZCode use the plugin / hook paths above.
+- `--source` / `--sources`: Specify AI source (claude / codex / opencode / gemini / zcode / deepseek / all). `watch --sources all` currently covers Claude / Codex / Gemini; OpenCode, ZCode and DeepSeek Harness use the plugin / hook paths above.
 - `--task`: Task description
 - `--interval-ms`: Polling interval (milliseconds)
 - `--gemini-quiet-ms`: Gemini debounce time (milliseconds)
@@ -385,6 +426,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
 # ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
+# DEEPSEEK_WEBHOOK_URLS=https://example.com/deepseek-hook
 # Feishu card format (true/false). .env overrides settings.json.
 # WEBHOOK_USE_FEISHU_CARD=false
 # Webhooks send summary-only when AI summary succeeds by default.
@@ -554,7 +596,7 @@ macOS notes:
 - 🎯 **Smart debouncing** automatically adjusts wait time based on AI message type, improving notification accuracy
 - 💡 **Monitoring mode** is suitable for long-term operation, recommend setting auto-start or keeping it running in a background terminal
 - 💡 **EXE starts with Watch enabled by default**: toggle it in the top bar if you don?t need it.
-- 🪝 **Hooks / plugin mode** uses explicit completion events for Claude Code / supported Codex clients / Gemini CLI / OpenCode / ZCode. Hybrid mode is recommended: use hooks or plugins and keep Watch as a fallback; Codex hooks require review / trust in `/hooks` and an enabled hooks runner.
+- 🪝 **Hooks / plugin mode** uses explicit completion events for Claude Code / supported Codex clients / Gemini CLI / OpenCode / ZCode / DeepSeek Harness. Hybrid mode is recommended: use hooks or plugins and keep Watch where available; Codex hooks require review / trust in `/hooks` and an enabled hooks runner.
 - ✅ **Confirm prompt toggle guidance (default: OFF)**: turn it on if AI often asks “confirm/approve/continue”; keep it off if you only want final completion alerts without intermediate interruptions. Note: if you set `CODEX_COMPLETION_ONLY=1` in `.env`, Codex confirm alerts are disabled (set it to `0` or remove it).
 - 🧭 **Click to return** is more reliable but still best-effort due to OS focus rules; for VSCode extensions choose the VSCode target and ensure VSCode is not minimized
 
@@ -565,6 +607,20 @@ macOS notes:
 
 > `v2.x` is the current Tauri-based desktop line. `v1.x` was the Electron-based line.
 
+
+### 2.19.0
+
+- Added DeepSeek Harness as an independent source with reply bodies, optional AI summaries, duration thresholds and session/turn deduplication for successful, directly user-requested main-session turns. It is disabled by default, has no Watch path, and supports macOS Desktop mounting or manual profile registration.
+- Redesigned Integrations with six logo cards, collapsible configuration details, and a collapsed command preview. DeepSeek uses green for **Registered**. The current mode stays visible, and **Watch only (troubleshooting)** is under **Advanced settings**.
+- Added the DeepSeek logo to Feishu notification cards.
+- Fixed Windows Codex notification claims failing with `EPERM` during directory renames by shortening file-handle lifetimes and retrying temporary rename contention.
+- Added Codex Watch support for `request_user_input_async`, including question titles and string options. An asynchronous tool acknowledgement keeps the turn waiting for user input instead of treating it as completed.
+- Codex Watch now follows recently growing session logs even when Windows leaves their modification time unchanged and newer chats fill the normal watch limit.
+- Codex completion and confirmation attempts that fail on all channels no longer mark the event as delivered. Sends using content-based deduplication release only their own failed reservation, preserving a newer successful record when an older request fails late.
+- Feishu cards replace local-path and ordinary-URL images in the output body with text descriptions. Webhooks retry HTTP `429` and `5xx` responses up to twice; Watch diagnostics include delivery errors with webhook URLs redacted.
+- Opening the Watch log now uses one sidecar invocation and Notepad on Windows, reports missing files and launcher failures, and avoids loading notification providers for file/path utilities.
+
+Thanks to [w-java123](https://github.com/w-java123) for [PR #43](https://github.com/ZekerTop/ai-cli-complete-notify/pull/43) and [PR #44](https://github.com/ZekerTop/ai-cli-complete-notify/pull/44).
 
 ### 2.18.0
 

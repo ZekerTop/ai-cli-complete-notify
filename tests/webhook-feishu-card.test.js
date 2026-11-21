@@ -3,7 +3,7 @@ const { EventEmitter } = require('node:events');
 const https = require('node:https');
 const test = require('node:test');
 
-test('Feishu card keeps Codex output content in interactive payload', async (t) => {
+test('Feishu interactive cards preserve output and use the source’s logo', async (t) => {
   const originalRequest = https.request;
   const previousEnv = {
     WEBHOOK_USE_FEISHU_CARD: process.env.WEBHOOK_USE_FEISHU_CARD,
@@ -79,6 +79,18 @@ test('Feishu card keeps Codex output content in interactive payload', async (t) 
   assert.equal(zcodeResult.ok, true);
   assert.equal(postedPayload.card.header.icon.img_key, 'img_v3_0215i_61c21733-9f18-4807-a8ff-72c8f67e5b2g');
 
+  const { getSourceLabel } = require('../src/format');
+  const deepseekResult = await notifyWebhook({
+    config: { channels: { webhook: { urls: ['https://open.feishu.cn/open-apis/bot/v2/hook/test'], useFeishuCard: true } } },
+    sourceName: 'deepseek', sourceLabel: getSourceLabel('deepseek'), title: 'DeepSeek Harness 完成',
+    taskInfo: 'DeepSeek Harness 完成', projectName: 'app', outputContent: 'DeepSeek final answer', summaryUsed: false,
+  });
+  assert.equal(deepseekResult.ok, true);
+  assert.equal(postedPayload.msg_type, 'interactive');
+  assert.deepEqual(postedPayload.card.header.icon, {
+    tag: 'custom_icon', img_key: 'img_v3_0217k_08a616d9-b683-41cf-ab9e-1ba8ac77de1g',
+  });
+  assert.match(JSON.stringify(postedPayload.card), /DeepSeek final answer/);
 });
 
 test('Feishu card hides original output by default when summary is present', async (t) => {

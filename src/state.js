@@ -114,6 +114,7 @@ module.exports = {
   markTaskStart,
   consumeTaskStart,
   makeTaskKey,
+  makeNotificationFingerprint,
   loadState,
   checkAndRememberNotification,
   forgetNotification

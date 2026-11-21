@@ -2,16 +2,16 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.18.0)
+# AI CLI Complete Notify (v2.19.0)
 
-![Version](https://img.shields.io/badge/version-2.18.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.19.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![下载 macOS DMG](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
 
 [English](README.md) | 简体中文 | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![界面预览](docs/images/home-v2.17.0.png)
+![界面预览](docs/images/desktop-v2.19.0.png)
 
 </div>
 
@@ -31,7 +31,7 @@
 
 ### 📖 简介
 
-面向 Claude Code / Codex / OpenCode / Gemini / ZCode 的智能任务完成提醒工具，支持多种通知渠道和灵活的配置选项。当 AI 助手完成长时间任务时，自动通过多种方式通知您，让您无需守在电脑前等待。
+面向 Claude Code / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness 的智能任务完成提醒工具，支持多种通知渠道和灵活的配置选项。当 AI 助手完成长时间任务时，自动通过多种方式通知您，让您无需守在电脑前等待。
 
 **支持的通知方式：**
 
@@ -43,10 +43,10 @@
 ## ✨ 核心特性（更多详细更新日志见文末）
 
 - 🎯 **智能去抖**：根据任务类型自动调整提醒时机，有工具调用时等待 60 秒，无工具调用时仅需 15 秒
-- 🔀 **分源控制**：Claude / Codex / OpenCode / Gemini / ZCode 独立启用与阈值设置
+- 🔀 **分源控制**：Claude / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness 独立启用与阈值设置
 - 📡 **多通道推送**：同时支持多种通知方式，确保消息送达
 - ⏱️ **耗时阈值**：只在任务超过设定时长时提醒，避免频繁打扰
-- 🪝 **Hooks + Watch 混合集成**：Claude Code / Codex / Gemini CLI / ZCode 可走原生 Hook，OpenCode 可走全局插件事件，Watch 保留兜底
+- 🪝 **Hooks + Watch 混合集成**：Claude Code / Codex / Gemini CLI / ZCode 可走原生 Hook，OpenCode 可走全局插件事件，DeepSeek Harness 使用本地插件，支持 macOS Desktop 一键挂载或其他 profile 手动安装，支持 Watch 的来源保留兜底
 - 🧠 **AI 摘要（可选）**：任务完成后快速生成简短摘要，超时自动回退
 - 🖥️ **桌面应用**：图形界面配置，支持中英文切换、托盘隐藏、开机自启
 - 🔐 **配置分离**：运行配置与敏感信息分离，安全可靠
@@ -66,13 +66,14 @@
 - Claude Code 往往会拆分为多个子任务，为避免每个子任务都提醒，本项目只在“整轮完成”后再通知。
 - 监听模式依赖日志变化，需要一个去抖静默时间确认结束，因此提醒不是即时触发（默认有工具调用时 60 秒、无工具调用时 15 秒）。
 - 如果想要更快、更干净的提醒：Claude Code / Codex / Gemini CLI / ZCode 优先使用 Hook，OpenCode 优先使用全局插件。Codex 需要客户端版本支持原生 hooks 并完成信任；未支持或未启用原生 hooks 的客户端继续使用 Watch；混合模式保留 Watch 兜底。
-- Watch 与 Hooks **在混合模式下可以同时开启**。推荐混合：Claude Code / Codex / Gemini / OpenCode / ZCode 用 Hooks 或插件，同时保留可用的 Watch 兜底；Codex Hook 与 Watch 按同一 session / turn 去重，其他来源沿用既有的内容去重。**仅 Watch** 模式会屏蔽 Claude/Codex/Gemini 已安装的 hooks，使两种模式语义保持区分；仅走 Hook 的来源（OpenCode、Herdr、ZCode）不会被该模式屏蔽。
+- Watch 与 Hooks **在混合模式下可以同时开启**。推荐混合模式，优先使用 Hook 或插件，并为支持的来源保留日志监听兜底。Codex Hook 与 Watch 按同一 session / turn 去重，DeepSeek Harness 同样按 session / turn 去重，其他来源沿用内容去重。
+- 「集成 → 高级设置」中的 **仅 Watch（排障）** 暂停 Claude Code、Codex、Gemini CLI 的 Hook 提醒，这三个来源依赖日志监听。OpenCode、Herdr、ZCode、DeepSeek Harness 仍走各自的 Hook 或插件。
 
 ## Hooks 与 Watch 的区别
 
-- **Hook / 插件事件** 直接利用 AI CLI 自己发出的显式生命周期事件。对 Claude Code、支持原生 hooks 的 Codex 客户端、Gemini CLI、OpenCode 和 ZCode 来说，这意味着提醒可以更接近真实完成时刻，而不是依赖静默时间去猜测。
+- **Hook / 插件事件** 直接利用 AI CLI 自己发出的显式生命周期事件。对 Claude Code、支持原生 hooks 的 Codex 客户端、Gemini CLI、OpenCode、ZCode 和 DeepSeek Harness 来说，这意味着提醒可以更接近真实完成时刻，而不是依赖静默时间去猜测。
 - **Hook** 不需要为这些工具长期常驻一个后台监听器，空闲期开销更小，也更不容易因为日志解析产生误判。
-- **Watch** 仍然是通用兜底方案。它适用于未支持或未启用原生 hooks 的 Codex 客户端，也适合没有配置 Hook 的场景，但它必须依赖本地日志和去抖静默时间来推断一轮是否真正结束。
+- **Watch** 为 Claude / Codex / Gemini 提供日志兜底。它适用于未支持或未启用原生 hooks 的 Codex 客户端，也适合没有配置 Hook 的场景，但它必须依赖本地日志和去抖静默时间来推断一轮是否真正结束。
 - 实际上，之所以增加 Hook / 插件事件选项，主要是因为 Claude Code 的 `Stop`、Codex 的 `Stop`、ZCode 的 `Stop`、Gemini CLI 的 `AfterAgent`，以及 OpenCode 的 `session.status` idle / `session.idle` / `session.error`，相比日志轮询能提供更及时、更准确的完成信号；支持原生 hooks 的 Codex 客户端也可通过 Hook 提醒，同时保留 Watch 兜底。
 
 ## 🚀 快速开始
@@ -136,7 +137,8 @@ npm run dist:mac:dmg
 
 - **顶部栏**：语言切换、Watch 监听开关、窗口控制
 - **通道配置**：配置 Webhook、Telegram、邮件等通知渠道
-- **来源设置**：为 Claude / Codex / OpenCode / Gemini / ZCode 分别设置启用状态和耗时阈值
+- **来源设置**：为 Claude / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness 分别设置启用状态和耗时阈值
+- **集成**：顶部显示当前通知模式。六张卡片用 Logo、状态和常用按钮展示各工具，事件说明、配置路径和底部命令预览可按需展开。
 - **监听配置**：设置轮询间隔和去抖时间，支持智能调整
 - **确认提醒（默认关闭）**：仅在 Watch 监听生效。开启后，仅当 Codex 出现交互式选项框（需要你选择/提交，Plan 模式）时提醒；不会因普通输出文本触发。同一轮只提醒一次：触发“确认提醒”后本轮不再发送“任务完成提醒”。
 - **监听日志**：本地持久化，可一键打开，并支持保留天数设置。
@@ -146,10 +148,12 @@ npm run dist:mac:dmg
 
 ### 界面预览
 
-![Global Channels](docs/images/通道.png)
-![Source Settings](docs/images/各cli来源.png)
+![全局通知通道](docs/images/channels-v2.19.0.png)
+![来源设置](docs/images/sources-v2.19.0.png)
 ![Interactive monitoring](docs/images/交互式监听.png)
-![Hook integration](docs/images/Hook集成.png)  
+
+[新版集成页](docs/images/desktop-v2.19.0.png)
+
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
 
@@ -244,7 +248,7 @@ wslpath -w ~/.codex
 node ai-reminder.js notify --source claude --task "任务完成"
 ```
 
-### 原生 Hook / 插件模式（推荐用于 Claude Code / Codex / Gemini CLI / OpenCode / Herdr / ZCode）
+### 原生 Hook / 插件模式（推荐用于 Claude Code / Codex / Gemini CLI / OpenCode / Herdr / ZCode / DeepSeek Harness）
 
 ```bash
 # 查看当前 Hook 状态
@@ -291,6 +295,46 @@ node ai-reminder.js hooks uninstall --target herdr
 - Herdr 通过 `herdr plugin install` 安装 [`herdr-ai-notify`](https://github.com/8liang/herdr-ai-notify) 插件，监听 `pane.agent_status_changed`（`done` / `blocked`），并自动把当前可执行文件路径写入插件配置目录下的 `config.env`（`AI_REMINDER_PATH`）。Herdr 通知使用独立的 `herdr` 源，标题前缀显示 `[Herdr]`，其通道可在 `sources.herdr` 中单独配置。社区插件强制发送事件，耗时阈值不会过滤这些提醒。
 - Codex 安装会在 `CODEX_HOME/hooks.json`（默认 `~/.codex/hooks.json`）注册 `UserPromptSubmit` 和 `Stop` command hooks，保留既有设置与其他 Hook。`UserPromptSubmit` 开始计时，`Stop` 按配置的耗时阈值判断；阈值为 `0` 时每轮完成均可提醒。卸载只移除本工具的处理器。
 - **已配置不代表已启用**：安装或更新后，需要进入支持原生 hooks 的 Codex，在 `/hooks` 中 review / trust 新定义，并确认 hooks 已开启。安装器不会修改 Codex 的信任决定，也不会开启已关闭的 hooks runner。并非所有 Codex 客户端都支持原生 hooks，未支持或未启用原生 hooks 的客户端继续使用 Watch；混合模式保留 Watch 兜底。
+
+### DeepSeek Harness（Desktop 一键挂载／手动 profile 安装）
+
+DeepSeek Harness 通过插件接收用户直接发起的主会话完成事件，支持回复正文和可选 AI 摘要。来源默认关闭（`sources.deepseek.enabled`），无 Watch 路径。阈值 `0` 时，每轮成功完成均可提醒。设为正数时，耗时须达到指定分钟数。`DEEPSEEK_WEBHOOK_URLS` 可单独指定该来源的 Webhook 地址。
+
+**macOS Desktop 一键挂载**
+
+1. 启动一次 Harness Desktop 完成初始化，再按 **⌘Q** 完全退出。
+2. 在提醒工具的「集成 → DeepSeek Harness」点击「一键挂载」。工具会生成插件，并通过内置 `dsh` 注册到 `desktop` profile。
+3. 看到绿色「已注册」后，重新打开 Harness。在提醒工具中启用 DeepSeek 来源和所需通道，然后在 Harness 完成一轮对话，确认收到提醒。
+
+绿色「已注册」表示 Desktop profile 已注册且本地插件文件齐全，是否触发以实际通知为准。黄色「已生成」表示本地插件文件已就绪。黄色「待修复」表示已注册但文件不完整，可点击「更新挂载」修复，挂载不可用时可点击「更新插件」。灰色「未生成」表示还没有本地插件。
+
+CLI 也可执行同样的挂载操作。
+
+```bash
+node ai-reminder.js hooks mount --target deepseek --json
+```
+
+**手动安装**
+
+未检测到 Desktop 或使用其他 profile 时，可点击「生成插件」，再按预览中的路径手动注册。把 `YOUR_PROFILE` 和示例目录替换成实际值。
+
+```bash
+node ai-reminder.js hooks install --target deepseek
+node ai-reminder.js hooks status --target deepseek
+node ai-reminder.js hooks preview --target deepseek
+dsh plugin --profile YOUR_PROFILE add "/ABSOLUTE/PATH/deepseek-plugin"
+```
+
+注册会链接本地 `deepseek-plugin` 目录，请保留它并重启 Harness。手动操作 `desktop` profile 时，同样要先退出 Harness Desktop，并使用 **Desktop 内置的 `dsh`**。
+
+**卸载**
+
+先从实际 profile 解除注册，再移除本地文件。检测到 macOS Desktop profile 仍有注册时，应用会保留插件目录。
+
+```bash
+dsh plugin --profile YOUR_PROFILE remove ai-cli-complete-notify-deepseek-plugin
+node ai-reminder.js hooks uninstall --target deepseek
+```
 
 ### 可选第三方工具（Herdr）
 
@@ -343,7 +387,7 @@ node ai-reminder.js stop --source gemini --task "构建项目"
 
 ### 常用参数
 
-- `--source` / `--sources`：指定 AI 来源（claude / codex / opencode / gemini / zcode / all）。其中 `watch --sources all` 当前覆盖 Claude / Codex / Gemini；OpenCode、ZCode 走上面的插件 / Hook 方案。
+- `--source` / `--sources`：指定 AI 来源（claude / codex / opencode / gemini / zcode / deepseek / all）。其中 `watch --sources all` 当前覆盖 Claude / Codex / Gemini；OpenCode、ZCode、DeepSeek Harness 走上面的插件 / Hook 方案。
 - `--task`：任务描述
 - `--interval-ms`：轮询间隔（毫秒）
 - `--gemini-quiet-ms`：Gemini 去抖时间（毫秒）
@@ -388,6 +432,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
 # ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
+# DEEPSEEK_WEBHOOK_URLS=https://example.com/deepseek-hook
 # 飞书卡片格式（true/false），.env 优先于 settings.json
 # WEBHOOK_USE_FEISHU_CARD=false
 # Webhook 默认在 AI 摘要成功时只发送摘要；打开后同时附带原始输出
@@ -601,7 +646,7 @@ macOS 说明：
 - 🎯 **智能去抖**会根据 AI 消息类型自动调整等待时间，提升提醒准确性
 - 💡 **监听模式**适合长时间运行，建议设置开机自启或在后台终端中保持运行
 - 💡 **EXE 启动默认开启 Watch 监听**：如不需要可在顶部开关关闭。
-- 🪝 **Hooks / 插件模式**适用于 Claude Code / 支持原生 hooks 的 Codex 客户端 / Gemini CLI / OpenCode / ZCode，直接使用显式完成事件；推荐混合模式，同时保留 Watch 兜底。Codex 需在 `/hooks` 中完成 review / trust 并开启 hooks。
+- 🪝 **Hooks / 插件模式**适用于 Claude Code / 支持原生 hooks 的 Codex 客户端 / Gemini CLI / OpenCode / ZCode / DeepSeek Harness，直接使用显式完成事件；推荐混合模式，为支持的来源保留 Watch 兜底。Codex 需在 `/hooks` 中完成 review / trust 并开启 hooks。
 - ✅ **确认提醒开关建议（默认关闭）**：当 AI 经常问你“是否继续/是否授权/请确认”时建议开启；如果你只想收到“任务完成提醒”，建议保持关闭，避免中间输出触发提醒。注意：若你在 `.env` 里设置了 `CODEX_COMPLETION_ONLY=1`，Codex 的确认提醒会被禁用（需改为 `0` 或删除该项）。
 - 🧭 **点击切回**更可靠，但仍受系统焦点限制；若是 VSCode 插件场景，建议选择 VSCode 目标，并确保 VSCode 未最小化/未被专注助手拦截
 
@@ -612,6 +657,20 @@ macOS 说明：
 
 > `v2.x` 是当前的 Tauri 桌面版本线，`v1.x` 为旧的 Electron 版本线。
 
+
+### 2.19.0
+
+- 新增独立 DeepSeek Harness 来源，仅通知用户直接发起且成功完成的主会话轮次，支持回复正文、可选 AI 摘要、耗时阈值和会话／回合去重。默认关闭、无 Watch 路径；UI／CLI 可生成本地插件，并挂载至检测到的官方 macOS Harness Desktop；其他 profile 保留手动流程。挂载前须完全退出 Harness，完成后重新打开；已注册不代表实际激活，删除本地文件前须先在 Harness 解注册。
+- 更新「集成」页。六张卡片加入 Logo，配置详情和命令预览默认折叠，DeepSeek 的「已注册」用绿色标记。顶部保留当前通知模式，「仅 Watch（排障）」移入高级设置。
+- 飞书通知卡片新增 DeepSeek 图标。
+- 修复 Windows 下 Codex 通知占位目录重命名报 `EPERM` 的问题：缩短文件句柄占用时间，并对临时重命名冲突进行重试。
+- Codex Watch 支持 `request_user_input_async`，兼容问题标题和字符串选项；异步工具返回接收确认（ACK）后，仍保持等待用户回复，不会误判为任务完成。
+- Codex 会话日志即使因 Windows 持续写入而未更新修改时间，也会按文件增长继续跟踪，避免近期仍增长的旧会话被较新的聊天挤出监听范围。
+- Codex 完成与确认提醒全部通道发送失败时，不再提前标记为已送达；采用内容去重的提醒发送失败后只撤销本次预占，避免旧请求晚失败时清掉较新的成功记录。
+- 飞书卡片将输出正文中的本地路径和普通 URL 图片降级为文字说明；Webhook 对 HTTP `429`、`5xx` 最多追加两次重试，Watch 日志保留发送失败原因并隐藏 Webhook URL。
+- 打开 Watch 日志改为单次 sidecar 调用，Windows 使用记事本；明确报告文件不存在或启动失败，文件与路径工具不再加载通知通道。
+
+感谢 [w-java123](https://github.com/w-java123) 贡献 [PR #43](https://github.com/ZekerTop/ai-cli-complete-notify/pull/43) 和 [PR #44](https://github.com/ZekerTop/ai-cli-complete-notify/pull/44)。
 
 ### 2.18.0
 

@@ -41,7 +41,7 @@ function inspectClaim(claimDir, dedupeMs, leaseMs) {
     return 'available';
   }
   const ownerName = entries.find((name) => /^owner-\d+-[a-f0-9]+\.json$/.test(name));
-  if (!ownerName) throw new Error('Invalid Codex notification claim directory');
+  if (!ownerName) throw new Error('Invalid notification claim directory');
   const ownerPath = path.join(claimDir, ownerName);
   let owner;
   let stat;
@@ -64,11 +64,11 @@ function inspectClaim(claimDir, dedupeMs, leaseMs) {
   return 'available';
 }
 
-async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
+async function acquireNotificationClaim(directory, dedupeKey, options = {}) {
   const dedupeMs = options.dedupeMs || 2 * 60 * 1000;
   const leaseMs = options.leaseMs || 3 * 60 * 1000;
   const pollMs = options.pollMs || 50;
-  const root = path.join(getDataDir(), 'codex-notification-claims');
+  const root = path.join(getDataDir(), directory);
   const key = createHash('sha256').update(dedupeKey).digest('hex');
   const claimDir = path.join(root, key);
   fs.mkdirSync(root, { recursive: true });
@@ -157,4 +157,12 @@ async function acquireCodexNotificationClaim(dedupeKey, options = {}) {
   }
 }
 
-module.exports = { acquireCodexNotificationClaim };
+function acquireCodexNotificationClaim(dedupeKey, options) {
+  return acquireNotificationClaim('codex-notification-claims', dedupeKey, options);
+}
+
+function acquireDeepseekNotificationClaim(dedupeKey, options) {
+  return acquireNotificationClaim('deepseek-notification-claims', dedupeKey, options);
+}
+
+module.exports = { acquireCodexNotificationClaim, acquireDeepseekNotificationClaim };

@@ -4,6 +4,7 @@ const SOURCE_LABELS = {
   opencode: 'OpenCode',
   gemini: 'Gemini',
   herdr: 'Herdr',
+  deepseek: 'DeepSeek Harness',
   zcode: 'ZCode'
 };
 

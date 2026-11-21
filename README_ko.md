@@ -2,16 +2,16 @@
 
 <img width="128" src="https://github.com/ZekerTop/ai-cli-complete-notify/blob/main/desktop/assets/tray.png?raw=true">
 
-# AI CLI Complete Notify (v2.18.0)
+# AI CLI Complete Notify (v2.19.0)
 
-![Version](https://img.shields.io/badge/version-2.18.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.19.0-blue.svg)
 ![License](https://img.shields.io/badge/license-ISC-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20WSL-lightgrey.svg)
 [![macOS DMG 다운로드](https://img.shields.io/github/v/release/ZekerTop/ai-cli-complete-notify?label=macOS%20DMG&logo=apple)](https://github.com/ZekerTop/ai-cli-complete-notify/releases/latest)
 
 [English](README.md) | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | 한국어 | [日本語](README_ja.md)
 
-![UI Preview](docs/images/home-v2.17.0.png)
+![UI Preview](docs/images/desktop-v2.19.0.png)
 
 </div>
 
@@ -31,7 +31,7 @@
 
 ### 📖 소개
 
-AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini / ZCode 작업 완료 알림 도구입니다. AI 도구가 긴 작업을 마쳤을 때 데스크톱 알림, 소리, Webhook, Telegram, Email 등 여러 채널로 알려 주기 때문에 컴퓨터 앞에서 계속 기다릴 필요가 없습니다.
+AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness 작업 완료 알림 도구입니다. AI 도구가 긴 작업을 마쳤을 때 데스크톱 알림, 소리, Webhook, Telegram, Email 등 여러 채널로 알려 주기 때문에 컴퓨터 앞에서 계속 기다릴 필요가 없습니다.
 
 **지원 알림 채널:**
 
@@ -42,10 +42,10 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini / ZCode 작업
 ## ✨ 주요 기능
 
 - 🎯 **스마트 디바운스**: 작업 유형에 따라 알림 시점을 자동 조정합니다. 도구 호출이 있으면 기본 60초, 없으면 기본 15초를 기다립니다.
-- 🔀 **소스별 제어**: Claude / Codex / OpenCode / Gemini / ZCode를 각각 켜고 끌 수 있으며, 시간 임계값과 알림 채널도 따로 설정할 수 있습니다.
+- 🔀 **소스별 제어**: Claude / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness를 각각 켜고 끌 수 있으며, 시간 임계값과 알림 채널도 따로 설정할 수 있습니다.
 - 📡 **멀티 채널 알림**: Webhook, Telegram, Email, 데스크톱 알림, 사운드를 동시에 사용할 수 있습니다.
 - ⏱️ **소요 시간 임계값**: 지정한 시간보다 오래 걸린 작업에만 알림을 보내 불필요한 방해를 줄입니다.
-- 🪝 **Hooks + Watch 혼합 방식**: Claude Code / Codex / Gemini CLI / ZCode는 네이티브 Hook을, OpenCode는 전역 플러그인 이벤트를 사용할 수 있으며 Watch는 폴백으로 유지됩니다.
+- 🪝 **Hooks + Watch 혼합 방식**: Claude Code / Codex / Gemini CLI / ZCode는 네이티브 Hook을, OpenCode는 전역 플러그인 이벤트를 사용할 수 있으며 DeepSeek Harness는 macOS Desktop 등록 또는 다른 profile의 수동 등록을 지원하는 로컬 플러그인을 사용하며, 지원 소스에서는 Watch를 폴백으로 유지합니다.
 - 🧠 **AI 요약(선택 사항)**: 작업 완료 후 짧은 요약을 생성하고, 실패하거나 시간 초과되면 원래 내용으로 되돌아갑니다.
 - 🖥️ **데스크톱 앱**: GUI 설정, 언어 전환, 트레이/메뉴 막대 숨김, 로그인 시 자동 시작을 지원합니다.
 - 🔐 **설정 분리**: 실행 설정과 민감한 토큰/키를 분리하여 `.env`로 관리할 수 있습니다.
@@ -61,13 +61,13 @@ AI CLI Complete Notify는 Claude Code / Codex / OpenCode / Gemini / ZCode 작업
 - Claude Code는 하나의 요청을 여러 하위 작업으로 나눌 수 있습니다. 알림이 과도하게 발생하지 않도록 이 도구는 전체 턴이 끝났을 때만 알림을 보냅니다.
 - Watch 모드는 로그 변화를 기반으로 완료를 추정하므로 조용한 시간이 지나야 알림이 발생합니다. 즉시 알림이 아닙니다.
 - 더 빠르고 정확한 알림이 필요하면 Claude Code / Codex / Gemini CLI / ZCode는 Hook을, OpenCode는 전역 플러그인을 우선 사용하세요. Codex는 네이티브 hooks 지원 버전과 신뢰 승인이 필요합니다. 네이티브 hooks를 지원하지 않거나 hooks가 꺼진 클라이언트는 Watch를 계속 사용하며, 혼합 모드에서도 Watch 폴백을 유지합니다.
-- 혼합 모드에서는 Hook과 Watch를 함께 사용하며 같은 완료 이벤트의 중복 알림을 제거합니다. Watch 전용 모드는 Claude/Codex/Gemini hooks를 차단하지만, Hook/플러그인 전용 소스인 OpenCode, Herdr, ZCode는 차단하지 않습니다.
+- 혼합 모드를 권장합니다. Hook과 Watch를 함께 사용하며 같은 완료 이벤트의 중복 알림을 제거합니다. 문제를 점검할 때는 **Integrations → Advanced settings → Watch only (troubleshooting)**를 선택하세요. 이 모드는 Claude Code, Codex, Gemini CLI의 Hook 알림을 끄고 Watch의 로그 감시로 알립니다. OpenCode, Herdr, ZCode, DeepSeek Harness는 각 소스의 Hook 또는 플러그인을 사용합니다.
 
 ## Hooks와 Watch의 차이
 
 - **Hook / 플러그인 이벤트**는 AI CLI가 직접 내보내는 생명주기 이벤트(예: Claude Code / Codex / ZCode의 `Stop`, Gemini CLI의 `AfterAgent`, OpenCode의 `session.status` idle)를 사용하므로 실제 완료 시점에 더 가깝습니다.
 - **Hook**은 해당 도구에 대해 장시간 백그라운드 로그 감시기를 유지할 필요가 없습니다.
-- **Watch**는 범용 fallback입니다. 네이티브 hooks가 미지원, 비활성화 또는 미구성 상태인 Codex 클라이언트에서 유용합니다.
+- **Watch**는 Claude / Codex / Gemini에 로그 기반 폴백을 제공합니다. 네이티브 hooks가 미지원, 비활성화 또는 미구성 상태인 Codex 클라이언트에서 유용합니다.
 
 ## 🚀 빠른 시작
 
@@ -130,7 +130,8 @@ npm run dist:mac:dmg
 
 - **상단 바**: 언어 전환, Watch 토글, 창 제어.
 - **채널 설정**: Webhook, Telegram, Email, 데스크톱 알림, 사운드 설정.
-- **소스 설정**: Claude / Codex / OpenCode / Gemini / ZCode별 활성화 상태와 시간 임계값 설정.
+- **소스 설정**: Claude / Codex / OpenCode / Gemini / ZCode / DeepSeek Harness별 활성화 상태와 시간 임계값 설정.
+- **Integrations** 페이지 상단에 현재 알림 모드가 표시됩니다. **Advanced settings**에서 모드를 바꿀 수 있습니다. 카드 6개에서 각 도구의 로고, 설정 상태, 주요 작업을 확인하세요. 이벤트와 설정 파일 경로는 카드의 **Configuration details**에서 볼 수 있습니다. 설정 상세 정보와 하단의 **Command and configuration preview**는 기본적으로 접혀 있습니다.
 - **감시 설정**: 폴링 간격과 디바운스 시간 설정.
 - **확인 알림(기본 OFF)**: Codex가 선택/제출이 필요한 대화형 프롬프트를 표시할 때만 알림을 보냅니다.
 - **AI 요약**: API URL, Key, 모델, 타임아웃 fallback 설정.
@@ -138,10 +139,12 @@ npm run dist:mac:dmg
 
 ### 화면 미리보기
 
-![Global Channels](docs/images/通道.png)
-![Source Settings](docs/images/各cli来源.png)
+![전역 알림 채널](docs/images/channels-v2.19.0.png)
+![소스 설정](docs/images/sources-v2.19.0.png)
 ![Interactive monitoring](docs/images/交互式监听.png)
-![Hook Integration](docs/images/Hook集成.png)
+
+[Hook 및 플러그인 통합 화면](docs/images/desktop-v2.19.0.png)
+
 ![AI Summary](docs/images/AI摘要.png)
 ![Advanced Settings](docs/images/系统设置.png)
 
@@ -210,6 +213,41 @@ ZCode는 Hook 전용이며 Watch 경로가 없고 기본적으로 비활성화�
 ZCode 소스를 활성화하고 **Hooks / Plugin Integration**에서 Hook을 설치한 뒤 새 ZCode 세션을 시작하세요. `UserPromptSubmit`이 타이머를 시작하고 `Stop`이 소요 시간 임계값을 확인합니다. `0`이면 매 턴 완료 시 알림을 허용하고, 양수이면 해당 분 수 이상 실행되어야 합니다. 시작 시간이 없으면 양수 임계값에서는 알림을 보내지 않습니다. 기존 Stop 전용 설정은 Hook을 다시 설치해야 합니다. ZCode 채널 설정은 개별적으로 변경할 수 있지만, 실제 전송에는 해당 전역 채널의 활성화와 설정이 필요합니다.
 ZCode Hook을 설치하거나 업데이트한 뒤에는 **ZCode를 완전히 종료하고 다시 실행한 다음 새 세션을 시작하세요**. 설치 전에 만든 세션은 시작 시 불러온 Hook 설정을 유지할 수 있습니다. 테스트 알림은 도착하지만 실제 작업 알림이 오지 않는다면 ZCode 소스와 대상 채널이 활성화되어 있는지 확인하고, 임계값을 잠시 `0`으로 설정한 뒤 재시작한 새 세션에서 테스트하세요. 테스트 알림은 직접 전송되며 소요 시간 임계값을 건너뛰므로 실제 Hook 실행 여부를 검증하지 않습니다.
 
+### DeepSeek Harness (Desktop 등록 / profile 수동 등록)
+
+DeepSeek Harness는 독립 소스이며 기본적으로 비활성화됩니다(`sources.deepseek.enabled`). Watch 경로는 없습니다. 사용자가 직접 시작한 메인 세션의 턴이 성공적으로 완료될 때만 알림을 보내며, 응답 본문과 기존 AI 요약 설정을 사용할 수 있습니다. 소스와 필요한 소스별/전역 채널을 활성화하세요. 임계값 `0`은 매 턴 완료 시 알림을 허용하고, 양수는 기록된 실제 소요 시간이 해당 분 수 이상이어야 합니다. `DEEPSEEK_WEBHOOK_URLS`로 이 소스의 Webhook 주소를 따로 지정할 수 있습니다.
+
+macOS에서 공식 Harness Desktop에 포함된 `dsh`와 초기화된 `desktop` profile이 모두 확인되면 **Hooks / Plugin Integration → DeepSeek Harness**에 **Mount in Desktop / Update Desktop mount**가 표시됩니다. Harness를 한 번 실행하여 초기화한 뒤 **⌘Q로 완전히 종료**하고 등록하세요. 로컬 플러그인을 생성하여 `desktop` profile에만 등록하며, Harness를 자동 종료하거나 다른 profile을 선택하지 않습니다. 해당 CLI 명령은 다음과 같습니다.
+
+```bash
+node ai-reminder.js hooks mount --target deepseek --json
+```
+
+카드의 녹색 **Registered**는 Desktop profile 등록과 필수 로컬 파일을 확인한 상태, 노란색 **Generated**는 로컬 파일 생성 완료, 회색 **Not generated**는 미생성을 뜻합니다. 노란색 **Needs repair**는 등록은 완료되었지만 필수 파일이 부족한 상태입니다. **Update Desktop mount**로 복구하세요. Desktop 등록 기능을 사용할 수 없으면 **Update plugin**을 사용하세요. 등록 후 Harness를 다시 열고 DeepSeek Harness 소스와 필요한 채널을 켠 다음 실제로 한 턴을 실행하여 알림을 확인하세요. 카드 상태나 테스트 알림만으로는 Harness의 플러그인 실행을 확인할 수 없습니다.
+
+지원하지 않는 플랫폼, Desktop이 감지되지 않은 경우 또는 다른 profile에서는 **Generate plugin / Update plugin**과 수동 등록을 계속 사용할 수 있습니다.
+
+```bash
+node ai-reminder.js hooks install --target deepseek
+node ai-reminder.js hooks status --target deepseek
+node ai-reminder.js hooks preview --target deepseek
+```
+
+`hooks install`은 앱 데이터 디렉터리의 `deepseek-plugin` 아래에 `package.json`, `index.js`, `cordis.patch.yml`을 생성할 뿐 Harness 설치나 플러그인 등록은 하지 않습니다. 미리보기의 절대 경로를 사용하고 `YOUR_PROFILE`을 실제 사용하는 profile로 바꾸세요.
+
+```bash
+dsh plugin --profile YOUR_PROFILE add "/ABSOLUTE/PATH/deepseek-plugin"
+```
+
+등록된 동안 이 디렉터리를 유지하세요. Desktop 수동 등록도 초기화 후 완전히 종료하고 **Desktop에 포함된 `dsh`**와 `--profile desktop`을 사용합니다. npm의 `dsh`로 Desktop profile을 변경하지 마세요. 완료 후 Harness를 다시 여세요.
+
+macOS Desktop profile 등록이 감지되면 이 앱은 등록 해제 전까지 로컬 bundle 삭제를 차단합니다. 다른 profile도 파일 삭제 전에 수동으로 등록을 해제해야 합니다. 해당 Harness의 `dsh`와 실제 profile로 패키지를 제거하고 등록을 해제한 뒤 로컬 bundle을 삭제하세요.
+
+```bash
+dsh plugin --profile YOUR_PROFILE remove ai-cli-complete-notify-deepseek-plugin
+node ai-reminder.js hooks uninstall --target deepseek
+```
+
 ### 선택적 타사 도구 (Herdr)
 
 **Third-party tools → Herdr**를 열면 상태를 자동으로 확인합니다. **① Check → ② Install and connect plugin…** 순서로 진행한 다음 알림을 별도로 켜세요. Herdr는 한 창에서 Codex 같은 AI 도구를 실행하고 관리하는 독립적인 터미널 도구입니다. Herdr 안에서 실행한 작업만 알림 대상이며, Codex 데스크톱 사용자에게는 필요하지 않습니다. Herdr ≥ 0.7.0, Bash, Python 3가 필요하며 macOS 앱은 내장 Node를 사용합니다. 준비 완료·성공은 녹색, 설정이 필요한 상태는 노란색으로 표시합니다. Herdr를 끄면 채널 조작이 회색으로 비활성화되지만 선택은 유지됩니다. 일반 시작 및 watch에서는 Herdr를 호출하지 않으며 페이지를 열어도 자동 설치하지 않습니다. 사용자 설정과 기존 AI 연동을 유지하고, 선택했으며 전역으로 활성화된 채널만 사용합니다. 같은 작업에 기본 연동과 Herdr를 함께 사용하면 중복 알림이 발생할 수 있습니다. **?**를 클릭하면 설명을 펼치거나 접을 수 있습니다. **Plugin repository**는 [herdr-ai-notify](https://github.com/8liang/herdr-ai-notify)로, 기여자 링크는 [8liang](https://github.com/8liang)의 GitHub 프로필로 이동합니다.
@@ -275,6 +313,7 @@ WEBHOOK_URLS=https://open.feishu.cn/open-apis/bot/v2/hook/XXXXX
 # GEMINI_WEBHOOK_URLS=https://example.com/gemini-hook
 # OPENCODE_WEBHOOK_URLS=https://example.com/opencode-hook
 # ZCODE_WEBHOOK_URLS=https://example.com/zcode-hook
+# DEEPSEEK_WEBHOOK_URLS=https://example.com/deepseek-hook
 NOTIFICATION_ENABLED=true
 SOUND_ENABLED=true
 
@@ -340,7 +379,7 @@ macOS 참고:
 - `notify` 명령은 시간 임계값을 무시하고 즉시 알림을 보냅니다.
 - Webhook은 기본적으로 Feishu post 형식을 사용합니다. WeCom/DingTalk는 텍스트 형식으로 전송됩니다.
 - 스마트 밴드/워치 알림은 보통 휴대폰 알림 동기화, Webhook relay, Telegram, Email을 통해 간접적으로 구현합니다.
-- Hooks / 플러그인 모드는 Claude Code / 지원되는 Codex 클라이언트 / Gemini CLI / OpenCode / ZCode에 적합하며, Watch 폴백을 함께 쓰는 혼합 모드를 권장합니다. Codex는 `/hooks`에서 review / trust를 완료하고 hooks를 켜야 합니다.
+- Hooks / 플러그인 모드는 Claude Code / 지원되는 Codex 클라이언트 / Gemini CLI / OpenCode / ZCode / DeepSeek Harness에 적합하며, 지원 소스에서는 Watch 폴백을 함께 쓰는 혼합 모드를 권장합니다. Codex는 `/hooks`에서 review / trust를 완료하고 hooks를 켜야 합니다.
 
 ## 변경 이력
 
@@ -349,6 +388,20 @@ macOS 참고:
 
 > `v2.x`는 현재 Tauri 기반 데스크톱 라인이고, `v1.x`는 이전 Electron 라인입니다. 전체 이전 버전 이력은 [English](README.md) 또는 [简体中文](README_zh.md)를 참고하세요.
 
+
+### 2.19.0
+
+- DeepSeek Harness를 독립 소스로 추가했습니다. 사용자가 직접 시작한 메인 세션의 성공 완료 턴을 대상으로 응답 본문, 선택적 AI 요약, 소요 시간 임계값, 세션/턴별 중복 제거를 지원합니다. 기본 비활성화이며 Watch 경로는 없습니다. UI/CLI에서 로컬 플러그인을 생성하고 감지된 공식 macOS Harness Desktop에 등록할 수 있습니다. 다른 profile은 수동 등록을 유지합니다. 등록 전에 Harness를 완전히 종료하고 완료 후 다시 시작해야 합니다. 등록 완료 상태는 활성화를 확인하지 않으며 로컬 파일 삭제 전에는 Harness에서 등록을 해제해야 합니다.
+- 통합 카드 6개에 로고를 추가하고, 설정 상세 정보와 명령 미리보기를 기본적으로 접었습니다. 현재 알림 모드는 페이지 상단에 표시하며, 모드 변경은 **Advanced settings**로 옮겼습니다. 저장해 둔 모드 선택은 유지됩니다. DeepSeek는 등록 완료를 녹색, 파일 생성 완료를 노란색, 미생성을 회색으로 표시하며 실행 안내를 한 줄로 줄였습니다.
+- Feishu 알림 카드에 DeepSeek 로고를 추가했습니다.
+- Windows에서 Codex 알림 선점 디렉터리의 이름 변경이 `EPERM`으로 실패하는 문제를 수정했습니다. 파일 핸들 유지 시간을 줄이고 일시적인 이름 변경 충돌을 재시도합니다.
+- Codex Watch가 `request_user_input_async`를 지원하며 질문 제목과 문자열 선택지를 처리합니다. 비동기 도구의 접수 응답 후에도 사용자 답변 대기 상태를 유지하여 작업 완료로 잘못 판단하지 않습니다.
+- Windows에서 계속 쓰는 세션 로그의 수정 시간이 갱신되지 않아도 파일 크기 증가를 추적합니다. 새 채팅이 일반 감시 한도를 채워도 크기가 증가하는 이전 세션을 계속 감시합니다.
+- Codex 완료·확인 알림이 모든 채널에서 전송에 실패하면 전달 완료로 기록하지 않습니다. 내용 기반 중복 제거를 사용하는 전송이 실패하면 해당 시도의 선점 기록만 해제하여, 이전 요청의 늦은 실패가 새로운 성공 기록을 지우지 않도록 합니다.
+- Feishu 카드의 출력 본문에 있는 로컬 경로나 일반 URL 이미지를 설명 문구로 대체합니다. Webhook은 HTTP `429`·`5xx` 응답을 최대 2회 재시도하고, Watch 로그는 Webhook URL을 가린 전송 오류를 표시합니다.
+- Watch 로그를 한 번의 sidecar 호출로 열고 Windows에서는 메모장을 사용합니다. 파일 없음과 실행 실패를 표시하며 파일·경로 명령에서는 알림 제공자를 불러오지 않습니다.
+
+[PR #43](https://github.com/ZekerTop/ai-cli-complete-notify/pull/43)과 [PR #44](https://github.com/ZekerTop/ai-cli-complete-notify/pull/44)를 기여해 주신 [w-java123](https://github.com/w-java123) 님께 감사드립니다.
 
 ### 2.18.0
 

@@ -18,6 +18,7 @@ const {
   getZcodeHookNotificationContext,
 } = require('./hook-context');
 const { getCodexHookNotificationContext } = require('./codex-hook');
+const { getDeepseekHookNotificationContext } = require('./deepseek-hook');
 const { exec, spawn } = require('child_process');
 const path = require('path');
 
@@ -42,22 +43,24 @@ function printHelp() {
   ${invoke} paths
   ${invoke} env-status [--create-example]
   ${invoke} hooks  status    [--target herdr]
-  ${invoke} hooks  install   --target claude|codex|gemini|opencode|herdr|zcode
-  ${invoke} hooks  uninstall --target claude|codex|gemini|opencode|herdr|zcode
-  ${invoke} hooks  preview   --target claude|codex|gemini|opencode|herdr|zcode
+  ${invoke} hooks  install   --target claude|codex|gemini|opencode|herdr|zcode|deepseek
+  ${invoke} hooks  mount     --target deepseek
+  ${invoke} hooks  uninstall --target claude|codex|gemini|opencode|herdr|zcode|deepseek
+  ${invoke} hooks  preview   --target claude|codex|gemini|opencode|herdr|zcode|deepseek
   ${invoke} config
 
 说明:
-  - source 支持: claude / codex / opencode / gemini / herdr / zcode
+  - source 支持: claude / codex / opencode / gemini / herdr / zcode / deepseek
   - 阈值提醒建议使用 start/stop（自动计算耗时）
   - 最省事的接入方式是 run：由 ${PRODUCT_NAME} 负责计时并在命令结束后提醒
   - 交互式 / VSCode 插件场景建议使用 watch：自动监听本机日志并在每次回复完成后提醒（Claude / Codex / Gemini）
   - hooks：Claude Code / Codex / Gemini CLI 使用原生 hooks；Codex 安装后请在 /hooks 中审核并信任配置，保持 hooks 功能开启；OpenCode 通过全局 plugin 接收 session.status idle / session.idle / session.error 事件；Herdr 通过 herdr plugin install 安装 herdr-ai-notify 插件并写入 AI_REMINDER_PATH 配置；ZCode 通过用户级 config.json 注册 UserPromptSubmit / Stop process hooks（安装后完全退出 ZCode 并新建会话）
+  - DeepSeek Harness：macOS Desktop 完全退出后可一键挂载；其他 profile 可生成本地原生插件后手动挂载。只提醒直接用户主会话的成功完成，不使用 Watch
 
 配置:
   - settings: ${getConfigPath()}
   - dataDir: ${getDataDir()}
-  - env: WEBHOOK_URLS, <SOURCE>_WEBHOOK_URLS (CLAUDE/CODEX/GEMINI/OPENCODE/ZCODE), TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_HOST/EMAIL_USER/EMAIL_PASS/EMAIL_FROM/EMAIL_TO
+  - env: WEBHOOK_URLS, <SOURCE>_WEBHOOK_URLS (CLAUDE/CODEX/GEMINI/OPENCODE/ZCODE/DEEPSEEK), TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, EMAIL_HOST/EMAIL_USER/EMAIL_PASS/EMAIL_FROM/EMAIL_TO
 `);
 }
 
@@ -76,7 +79,7 @@ function sleep(ms) {
 }
 
 function isValidHookTarget(target) {
-  return target === 'claude' || target === 'codex' || target === 'gemini' || target === 'opencode' || target === 'herdr' || target === 'zcode';
+  return target === 'claude' || target === 'codex' || target === 'gemini' || target === 'opencode' || target === 'herdr' || target === 'zcode' || target === 'deepseek';
 }
 
 async function runCli(argv) {
@@ -226,9 +229,17 @@ async function runCli(argv) {
   }
 
   if (command === 'hooks') {
-    const { getHookStatus, installHook, uninstallHook, getHookConfigPreview } = require('./hooks');
+    const { getExePath, getHookStatus, installHook, uninstallHook, getHookConfigPreview } = require('./hooks');
     const subCommand = positional[1] || 'status';
     const target = String(flags.target || flags.t || '');
+
+    if (subCommand === 'mount') {
+      const result = target === 'deepseek'
+        ? require('./deepseek-desktop').mountDeepseekDesktop(getExePath())
+        : { ok: false, errorCode: 'INVALID_TARGET', error: '请指定 --target deepseek' };
+      console.log(JSON.stringify(result));
+      return { ok: result.ok, mode: 'hooks', subCommand, result, exitCode: result.ok ? 0 : 1 };
+    }
 
     if (subCommand === 'status') {
       const status = getHookStatus(target);
@@ -238,26 +249,36 @@ async function runCli(argv) {
 
     if (subCommand === 'install') {
       if (!isValidHookTarget(target)) {
-        console.error('请指定 --target claude / codex / gemini / opencode / herdr / zcode');
+        console.error('请指定 --target claude / codex / gemini / opencode / herdr / zcode / deepseek');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = installHook(target);
       if (flags.json) {
         console.log(JSON.stringify({ ok: result.ok, step: result.step, errorCode: result.errorCode }));
       } else {
-        console.log(result.ok ? `已安装 ${target} 集成 -> ${result.settingsPath}` : `安装失败: ${result.error}`);
+        console.log(result.ok
+          ? `${target === 'deepseek' ? '已生成本地插件' : `已安装 ${target} 集成`} -> ${result.settingsPath}`
+          : `安装失败: ${result.error}`);
         if (result.ok && target === 'codex') console.log('请在 Codex 的 /hooks 中审核并信任新增 hooks；如已关闭 hooks 功能，请自行开启。');
+        if (result.ok && target === 'deepseek') {
+          console.log(result.instructions);
+          console.log(result.installCommand);
+        }
       }
       return { ok: result.ok, mode: 'hooks', subCommand: 'install', result };
     }
 
     if (subCommand === 'uninstall') {
       if (!isValidHookTarget(target)) {
-        console.error('请指定 --target claude / codex / gemini / opencode / herdr / zcode');
+        console.error('请指定 --target claude / codex / gemini / opencode / herdr / zcode / deepseek');
         return { ok: false, mode: 'hooks', error: 'Missing or invalid --target' };
       }
       const result = uninstallHook(target);
-      console.log(result.ok ? `已卸载 ${target} 集成` : `卸载失败: ${result.error}`);
+      if (target === 'deepseek' && flags.json) {
+        console.log(JSON.stringify({ ok: result.ok, errorCode: result.errorCode, error: result.error }));
+        return { ok: result.ok, mode: 'hooks', subCommand, result, exitCode: result.ok ? 0 : 1 };
+      }
+      console.log(result.ok ? (target === 'deepseek' ? '已移除本地插件文件；Harness profile 中的注册需单独移除。' : `已卸载 ${target} 集成`) : `卸载失败: ${result.error}`);
       return { ok: result.ok, mode: 'hooks', subCommand: 'uninstall', result };
     }
 
@@ -367,7 +388,8 @@ async function runCli(argv) {
     const isZcodeHook = fromHook && source === 'zcode';
     const isGeminiHook = fromHook && source === 'gemini';
     const isCodexHook = fromHook && source === 'codex';
-    const silentStdoutHook = isZcodeHook || isGeminiHook || isCodexHook;
+    const isDeepseekHook = fromHook && source === 'deepseek';
+    const silentStdoutHook = isZcodeHook || isGeminiHook || isCodexHook || isDeepseekHook;
     const originalLog = console.log;
     const desktopStdout = process.env.AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT;
     const durationMinutes = toNumberOrNull(flags['duration-minutes']);
@@ -376,8 +398,8 @@ async function runCli(argv) {
     if (silentStdoutHook) {
       console.log = (...args) => console.error(...args);
     }
-    // Hook stdout belongs to Codex, not the Tauri notification bridge.
-    if (isCodexHook) process.env.AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT = '0';
+    // Native hook stdout must not be used by the Tauri notification bridge.
+    if (isCodexHook || isDeepseekHook) process.env.AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT = '0';
 
     try {
       let hookContext = null;
@@ -399,17 +421,19 @@ async function runCli(argv) {
       const hookNotificationContext =
         isCodexHook
           ? getCodexHookNotificationContext(hookContext, effectiveTask)
-          : fromHook && source === 'claude'
-          ? getClaudeHookNotificationContext(hookContext, effectiveTask, { onlyInteractive: claudeOnlyInteractive })
-          : fromHook && source === 'gemini'
-            ? getGeminiHookNotificationContext(hookContext, effectiveTask)
-            : fromHook && source === 'opencode'
-              ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
-              : fromHook && source === 'herdr'
-                ? getHerdrHookNotificationContext(hookContext, effectiveTask)
-                : fromHook && source === 'zcode'
-                  ? getZcodeHookNotificationContext(hookContext, effectiveTask)
-                  : null;
+          : isDeepseekHook
+            ? getDeepseekHookNotificationContext(hookContext, effectiveTask)
+            : fromHook && source === 'claude'
+              ? getClaudeHookNotificationContext(hookContext, effectiveTask, { onlyInteractive: claudeOnlyInteractive })
+              : fromHook && source === 'gemini'
+                ? getGeminiHookNotificationContext(hookContext, effectiveTask)
+                : fromHook && source === 'opencode'
+                  ? getOpenCodeHookNotificationContext(hookContext, effectiveTask)
+                  : fromHook && source === 'herdr'
+                    ? getHerdrHookNotificationContext(hookContext, effectiveTask)
+                    : fromHook && source === 'zcode'
+                      ? getZcodeHookNotificationContext(hookContext, effectiveTask)
+                      : null;
 
       if (hookNotificationContext && hookNotificationContext.skip) {
         const skipped = {
@@ -428,9 +452,9 @@ async function runCli(argv) {
       const result = await sendNotifications({
         source,
         taskInfo: hookNotificationContext?.taskInfo || effectiveTask,
-        durationMs: isCodexHook ? hookNotificationContext?.durationMs : isZcodeHook ? zcodeTiming?.durationMs : durationMs,
+        durationMs: isCodexHook || isDeepseekHook ? hookNotificationContext?.durationMs : isZcodeHook ? zcodeTiming?.durationMs : durationMs,
         cwd: effectiveCwd,
-        force: !isZcodeHook && !isCodexHook && Boolean(flags.force),
+        force: !isZcodeHook && !isCodexHook && !isDeepseekHook && Boolean(flags.force),
         fromHook,
         outputContent: hookNotificationContext?.outputContent,
         summaryContext: hookNotificationContext?.summaryContext,
@@ -442,13 +466,13 @@ async function runCli(argv) {
       printResult(result);
       return { ok: true, mode: 'notify', result };
     } finally {
-      if (isCodexHook) {
+      if (isCodexHook || isDeepseekHook) {
         if (desktopStdout == null) delete process.env.AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT;
         else process.env.AI_CLI_COMPLETE_NOTIFY_DESKTOP_STDOUT = desktopStdout;
       }
       if (silentStdoutHook) {
         console.log = originalLog;
-        if (isGeminiHook || isCodexHook) {
+        if (isGeminiHook || isCodexHook || isDeepseekHook) {
           originalLog('{}');
         }
       }

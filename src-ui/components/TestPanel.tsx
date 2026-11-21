@@ -62,6 +62,7 @@ export default function TestPanel() {
           <option value="opencode">OpenCode</option>
           <option value="gemini">Gemini</option>
           <option value="zcode">ZCode</option>
+          <option value="deepseek">DeepSeek Harness</option>
         </select>
 
         <label className="text-sm">{t('test.duration')}</label>

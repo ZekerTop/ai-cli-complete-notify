@@ -11,7 +11,7 @@
 
 [English](README.md) | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | 日本語
 
-![UI Preview](docs/images/desktop-v2.19.0.png)
+![デスクトップアプリの通知ホーム画面と、通知チャネル・通知音の設定](docs/images/channels-v2.19.0.png)
 
 </div>
 
@@ -139,14 +139,17 @@ npm run dist:mac:dmg
 
 ### 画面プレビュー
 
-![グローバル通知チャネル](docs/images/channels-v2.19.0.png)
-![ソース設定](docs/images/sources-v2.19.0.png)
-![Interactive monitoring](docs/images/交互式监听.png)
+[通知ホーム画面を見る](docs/images/channels-v2.19.0.png)
 
-[Hook とプラグインの連携画面](docs/images/desktop-v2.19.0.png)
+![Claude や DeepSeek Harness などのソースごとの通知設定](docs/images/sources-v2.19.0.png)
 
-![AI Summary](docs/images/AI摘要.png)
-![Advanced Settings](docs/images/系统设置.png)
+![ポーリング間隔、ログの保存期間、監視ログが表示された Watch 画面](docs/images/交互式监听.png)
+
+![現在の通知モードと、各ツールの Hook・プラグインの設定状態](docs/images/desktop-v2.19.0.png)
+
+![モデルの提供元、API、タイムアウト、テストボタンを含む AI 要約設定](docs/images/AI摘要.png)
+
+![自動起動やウィンドウを閉じるときの動作を設定するシステム画面](docs/images/系统设置.png)
 
 ### トレイとメニューバー
 

@@ -11,7 +11,7 @@
 
 [English](README.md) | 简体中文 | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![界面预览](docs/images/desktop-v2.19.0.png)
+![通知首页，展示全局通道和提示音设置](docs/images/channels-v2.19.0.png)
 
 </div>
 
@@ -148,14 +148,17 @@ npm run dist:mac:dmg
 
 ### 界面预览
 
-![全局通知通道](docs/images/channels-v2.19.0.png)
-![来源设置](docs/images/sources-v2.19.0.png)
-![Interactive monitoring](docs/images/交互式监听.png)
+[查看通知首页截图](docs/images/channels-v2.19.0.png)
 
-[新版集成页](docs/images/desktop-v2.19.0.png)
+![各工具的通知来源设置](docs/images/sources-v2.19.0.png)
 
-![AI Summary](docs/images/AI摘要.png)
-![Advanced Settings](docs/images/系统设置.png)
+![Watch 轮询设置和实时日志](docs/images/交互式监听.png)
+
+![六个工具的 Hook 和插件集成状态](docs/images/desktop-v2.19.0.png)
+
+![AI 摘要的服务商、模型和超时设置](docs/images/AI摘要.png)
+
+![启动、关闭窗口和切回工作界面选项](docs/images/系统设置.png)
 
 ### 托盘功能
 

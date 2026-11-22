@@ -11,7 +11,7 @@
 
 [English](README.md) | [简体中文](README_zh.md) | 繁體中文 | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![介面預覽](docs/images/desktop-v2.19.0.png)
+![通知首頁，顯示全域通知管道與提示音設定](docs/images/channels-v2.19.0.png)
 
 </div>
 
@@ -138,14 +138,17 @@ npm run dist:mac:dmg
 
 ### 介面預覽
 
-![全域通知管道](docs/images/channels-v2.19.0.png)
-![來源設定](docs/images/sources-v2.19.0.png)
-![Interactive monitoring](docs/images/交互式监听.png)
+[查看通知首頁的全域通知管道與提示音](docs/images/channels-v2.19.0.png)
 
-[新版整合頁](docs/images/desktop-v2.19.0.png)
+![來源設定頁，顯示六個來源的開關、耗時門檻與通知管道](docs/images/sources-v2.19.0.png)
 
-![AI Summary](docs/images/AI摘要.png)
-![Advanced Settings](docs/images/系统设置.png)
+![Watch 監聽面板，左側是輪詢與日誌設定，右側是監聽日誌](docs/images/交互式监听.png)
+
+![整合頁，顯示通知模式、六個工具的 Hook 或插件狀態，以及收合的設定詳細資料](docs/images/desktop-v2.19.0.png)
+
+![AI 摘要設定，顯示模型平台、API、逾時與測試選項](docs/images/AI摘要.png)
+
+![系統設定，顯示關閉行為、開機自動啟動、無感啟動與點擊通知切回工作介面的選項](docs/images/系统设置.png)
 
 ### 托盤與選單列
 

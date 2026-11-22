@@ -11,7 +11,8 @@
 
 English | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
 
-![UI Preview](docs/images/desktop-v2.19.0.png)
+![Notifications home showing global channels and sound settings](docs/images/channels-v2.19.0.png)
+
 </div>
 
 ## Sponsors
@@ -147,14 +148,17 @@ npm run dist:mac:dmg
 
 ### Interface Preview
 
-![Global Channels](docs/images/channels-v2.19.0.png)
-![Source Settings](docs/images/sources-v2.19.0.png)
-![Interactive monitoring](docs/images/交互式监听.png)
+[View the Notifications home screenshot](docs/images/channels-v2.19.0.png)
 
-[Updated Integrations page](docs/images/desktop-v2.19.0.png)
+![Per-source notification settings](docs/images/sources-v2.19.0.png)
 
-![AI Summary](docs/images/AI摘要.png)
-![Advanced Settings](docs/images/系统设置.png)
+![Watch polling settings and live logs](docs/images/交互式监听.png)
+
+![Hook and plugin integrations for six tools](docs/images/desktop-v2.19.0.png)
+
+![AI summary provider, model and timeout settings](docs/images/AI摘要.png)
+
+![System preferences for startup, closing and window focus](docs/images/系统设置.png)
 
 ### Tray Function
 

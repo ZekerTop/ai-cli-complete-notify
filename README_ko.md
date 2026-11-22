@@ -11,7 +11,7 @@
 
 [English](README.md) | [简体中文](README_zh.md) | [繁體中文](README_zh-TW.md) | 한국어 | [日本語](README_ja.md)
 
-![UI Preview](docs/images/desktop-v2.19.0.png)
+![전역 알림 채널과 알림음을 설정하는 데스크톱 앱의 알림 홈 화면](docs/images/channels-v2.19.0.png)
 
 </div>
 
@@ -139,14 +139,17 @@ npm run dist:mac:dmg
 
 ### 화면 미리보기
 
-![전역 알림 채널](docs/images/channels-v2.19.0.png)
-![소스 설정](docs/images/sources-v2.19.0.png)
-![Interactive monitoring](docs/images/交互式监听.png)
+[알림 홈 화면 보기](docs/images/channels-v2.19.0.png)
 
-[Hook 및 플러그인 통합 화면](docs/images/desktop-v2.19.0.png)
+![Claude와 DeepSeek Harness 등 도구별 알림 설정](docs/images/sources-v2.19.0.png)
 
-![AI Summary](docs/images/AI摘要.png)
-![Advanced Settings](docs/images/系统设置.png)
+![폴링 간격과 로그 보관 기간, 감시 로그가 표시된 Watch 화면](docs/images/交互式监听.png)
+
+![현재 알림 모드와 각 도구의 Hook 및 플러그인 설정 상태](docs/images/desktop-v2.19.0.png)
+
+![모델 제공업체, API, 제한 시간, 테스트 버튼이 있는 AI 요약 설정](docs/images/AI摘要.png)
+
+![자동 시작과 창을 닫을 때의 동작을 설정하는 시스템 화면](docs/images/系统设置.png)
 
 ### 트레이와 메뉴 막대
 

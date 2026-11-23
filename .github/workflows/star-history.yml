@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: narayann7/star-history-action@29310fc87122228fe128d811f14027be3ca99601
         with:
-          token: ${{ secrets.STAR_HISTORY_TOKEN }}
+          token: ${{ github.token }}
           repos: ${{ github.repository }}
           output-dir: assets/star-history
           type: Date
